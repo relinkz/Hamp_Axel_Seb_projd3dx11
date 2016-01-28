@@ -4,7 +4,7 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 
-int WINAPI WinMain
+int WINAPI main
 (
 	HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
@@ -22,3 +22,4 @@ int WINAPI WinMain
 		// return 0 to Windows
 		return 0;
 }
+
