@@ -1,11 +1,24 @@
 // Hamp_Axel_Seb_projd3dx11.cpp : Defines the entry point for the console application.
 //
+#include <Windows.h>
+#include <d3d11.h>
+#include <d3dcompiler.h>
 
-#include "stdafx.h"
-
-
-int main()
+int WINAPI WinMain
+(
+	HINSTANCE hInstance,
+	HINSTANCE hPrevInstance,
+	LPSTR lpCmdLine,
+	int nCmdShow
+	)
 {
-    return 0;
-}
+	
+		// create a "Hello World" message box using MessageBox()
+		MessageBox(NULL,
+			L"Hello World!",
+			L"Just another Hello World program!",
+			MB_ICONEXCLAMATION | MB_OK);
 
+		// return 0 to Windows
+		return 0;
+}
