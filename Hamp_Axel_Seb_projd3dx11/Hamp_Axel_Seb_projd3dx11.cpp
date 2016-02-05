@@ -1,12 +1,8 @@
 #include <windows.h>
 
-#include <d3d11.h>
-#include <d3dcompiler.h>
-#include "SimpleMath.h"
-
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dcompiler.lib")
-
+#include "Parser.h"
 
 HWND InitWindow(HINSTANCE hInstance);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
