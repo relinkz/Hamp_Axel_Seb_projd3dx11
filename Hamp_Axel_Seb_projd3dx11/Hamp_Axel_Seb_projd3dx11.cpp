@@ -2,6 +2,7 @@
 
 #include <d3d11.h>
 #include <d3dcompiler.h>
+#include "SimpleMath.h"
 
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dcompiler.lib")
@@ -19,10 +20,61 @@ ID3D11RenderTargetView* gBackbufferRTV = nullptr;
 
 ID3D11Buffer* gVertexBuffer = nullptr;
 
+ID3D11Buffer* worldSpaceBuffer = nullptr;
+ID3D11Buffer* worldViewProjection = nullptr;
+
 ID3D11InputLayout* gVertexLayout = nullptr;
 ID3D11VertexShader* gVertexShader = nullptr;
 ID3D11PixelShader* gPixelShader = nullptr;
 
+using namespace DirectX;
+using namespace DirectX::SimpleMath;
+
+//Matrices
+SimpleMath::Matrix* viewSpace;
+SimpleMath::Matrix* projectionSpace;
+SimpleMath::Matrix* worldSpace; // need one worldSpace for each object in the world
+
+
+
+
+
+void createWorldMatrices()
+{
+	//ViewSpace
+	viewSpace = new Matrix(XMMatrixLookAtLH
+		(
+		SimpleMath::Vector3(0, 0, -2),	//Position
+		SimpleMath::Vector3(0, 0, 0),	//lookAtTarget
+		SimpleMath::Vector3(0, 1, 0)	//upVector
+		));
+	
+	//ProjectionMatrix
+	 projectionSpace = new Matrix(XMMatrixPerspectiveFovLH
+		 (
+			 3.14f*0.45f,		// FOV
+			 640.0f / 480.0f,	//Aspect Ratio
+			 0.5f,				//near plane
+			 20.0f				//far plane
+			 ));
+
+	 //buffers
+	 D3D11_BUFFER_DESC viewSpaceDesc;
+	 memset(&viewSpaceDesc, 0, sizeof(viewSpace));
+	 viewSpaceDesc.Usage					= D3D11_USAGE_DYNAMIC;
+	 viewSpaceDesc.BindFlags				= D3D11_BIND_CONSTANT_BUFFER;
+	 viewSpaceDesc.ByteWidth				= sizeof(Matrix);
+	 viewSpaceDesc.CPUAccessFlags			= D3D11_CPU_ACCESS_WRITE;
+	 viewSpaceDesc.MiscFlags				= 0;
+	 viewSpaceDesc.StructureByteStride		= 0;
+
+	 D3D11_SUBRESOURCE_DATA viewSpaceData;
+	 memset(&viewSpaceData, 0, sizeof(viewSpace));
+	 viewSpaceData.pSysMem = viewSpace;
+
+	 gDevice->CreateBuffer(&viewSpaceDesc, &viewSpaceData, &worldSpaceBuffer);
+
+}
 void CreateShaders()
 {
 	//create vertex shader
@@ -119,6 +171,7 @@ void SetViewport()
 void Render()
 {
 	// clear the back buffer to a deep blue
+
 	float clearColor[] = { 0, 0, 0, 1 };
 	gDeviceContext->ClearRenderTargetView(gBackbufferRTV, clearColor);
 
@@ -136,6 +189,29 @@ void Render()
 	gDeviceContext->IASetInputLayout(gVertexLayout);
 
 
+	//update constantbuffers
+
+	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
+	
+	gDeviceContext->UpdateSubresource(
+		worldSpaceBuffer,		//pointer to the destination
+		D3D11CalcSubresource(0, 0, 0),
+		NULL,
+		worldSpaceBuffer,      //a pointer to the source
+		0,
+		sizeof(Matrix)
+		);
+	/*
+	void UpdateSubresource(
+  [in]                 ID3D11Resource *pDstResource,
+  [in]                 UINT           DstSubresource,
+  [in, optional] const D3D11_BOX      *pDstBox,
+  [in]           const void           *pSrcData,
+  [in]                 UINT           SrcRowPitch,
+  [in]                 UINT           SrcDepthPitch
+);
+	*/
+
 	gDeviceContext->Draw(3, 0);
 }
 
@@ -149,6 +225,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		CreateDirect3DContext(wndHandle); //2. Skapa och koppla SwapChain, Device och Device Context
 
 		SetViewport(); //3. Sätt viewport
+
+		createWorldMatrices(); //initierar världsmatriserna här, vid frågor och klagomål, så ansvarar jag inte för detta!
 
 		CreateShaders(); //4. Skapa vertex- och pixel-shaders
 
