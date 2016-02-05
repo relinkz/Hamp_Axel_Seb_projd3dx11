@@ -21,6 +21,9 @@
     <ClCompile Include="Hamp_Axel_Seb_projd3dx11.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Parser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Vertex.hlsl">

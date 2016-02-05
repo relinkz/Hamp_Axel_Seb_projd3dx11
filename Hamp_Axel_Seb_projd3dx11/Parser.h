@@ -14,8 +14,7 @@ class Parser
 public:
 	Parser();
 	~Parser();
-	void progressFile(const string& dest);
-	//getVerticies(); const
+	void progressFile(const string& dest) throw(...);
 	string toString() const;
 
 private:
