@@ -9,16 +9,26 @@
 using namespace DirectX::SimpleMath;
 using namespace std;
 
+struct intArr 
+{
+	int a;
+	int b;
+	int c;
+};
+
 class Parser
 {
 public:
 	Parser();
-	~Parser();
+	virtual ~Parser();
 	void progressFile(const string& dest) throw(...);
-	string toString() const;
-
 private:
+	string mtllib;
+	string geometry;
+	string usemtl;
+
 	vector<Vector3*>verticies;
+	vector<Vector3*>vertexNormals;
+	vector<intArr*> faces;
 	vector<Vector2*>UVtext;
-	vector<Vector3*>faces;
 };

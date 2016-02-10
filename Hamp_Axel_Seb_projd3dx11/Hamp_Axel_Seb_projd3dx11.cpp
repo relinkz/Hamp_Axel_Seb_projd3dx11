@@ -38,7 +38,9 @@ SimpleMath::Matrix* worldSpace; // need one worldSpace for each object in the wo
 void createWorldMatrices()
 {
 	Parser test;
-	test.progressFile("box.txt");
+	test.progressFile("obj.txt");
+
+	test;
 	//ViewSpace
 	viewSpace = new Matrix(XMMatrixLookAtLH
 		(
