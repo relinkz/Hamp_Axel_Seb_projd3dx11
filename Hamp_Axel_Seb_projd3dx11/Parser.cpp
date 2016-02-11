@@ -5,7 +5,6 @@ using namespace std;
 
 Parser::Parser()
 {
-
 }
 
 Parser::~Parser()
@@ -44,14 +43,14 @@ void Parser::progressFile(const string& dest) throw(...)
 				file >> vertex[1];
 				file >> vertex[2];
 
-				this->verticies.push_back(new Vector3(vertex[0], vertex[1], vertex[2]));
+				this->verticies.push_back(Vector3(vertex[0], vertex[1], vertex[2]));
 			}
 			else if (data == "vt")
 			{
 				file >> UVcoord[0];
 				file >> UVcoord[1];
 
-				this->UVtext.push_back(new Vector2(UVcoord[0], UVcoord[1]));
+				this->UVtext.push_back(Vector2(UVcoord[0], UVcoord[1]));
 			}
 			//handle the normals
 			else if (data == "vn")
@@ -60,7 +59,7 @@ void Parser::progressFile(const string& dest) throw(...)
 				file >> vertexNormals[1];
 				file >> vertexNormals[2];
 
-				this->vertexNormals.push_back(new Vector3(vertexNormals[0], vertexNormals[1], vertexNormals[2]));
+				this->vertexNormals.push_back(Vector3(vertexNormals[0], vertexNormals[1], vertexNormals[2]));
 			}
 			//the geometry
 			else if (data == "g")
@@ -83,44 +82,69 @@ void Parser::progressFile(const string& dest) throw(...)
 			//faces
 			else if (data == "f")
 			{
-				int posOfNextIndex;
-				int** faceArray = new int*[3];
-				string subString[3];
-				string faceVertex[3] = { "", "", "" };
-
+				string* temp;
 				for (int i = 0; i < 3; i++)
 				{
-					faceArray[i] = new int[3];
-					file >> faceVertex[i];
+					file >> data;
+					this->loadDataIntoList(data);
 				}
-
-
-				//for every vertex
-				//do it as a string an convert it into a int
-				for (int i = 0; i < 3; i++)
-				{
-					for (int j = 0; j < 3; j++)
-					{
-						posOfNextIndex = faceVertex[i].rfind('/');
-						if (posOfNextIndex != -1)// 1/1/1 
-							faceVertex[i].replace(posOfNextIndex, 1, "");
-					}
-				}
-				intArr* toClass;
-				for (int i = 0; i < 3; i++)
-				{
-					toClass = new intArr;
-					toClass->a = (int)faceVertex[i].at(0) - 48;
-					toClass->b = (int)faceVertex[i].at(1) - 48;
-					toClass->c = (int)faceVertex[i].at(2) - 48;
-					
-					//faceArray[i][j] = (int)faceVertex[i].at(j) - 48; //ascii convert
-					this->faces.push_back(toClass);
-				}
-
 			}
 
 		}
 	}
 	file.close();
+}
+
+void Parser::loadDataIntoList(const string& triangleDesc)
+{
+	string strIndex[3] = { "","","" };
+	stringstream test;
+
+	int counter = 0;
+	int nrOfCharacters = triangleDesc.size();
+	string temp = "";
+	int stringStart = 0;
+	int vertexCount = 0;
+
+	for (int i = 0; i < nrOfCharacters; i++)
+	{
+		if (triangleDesc[i] == '/')
+		{
+			//if / was hit
+			for (int j=0; j < counter; j++)
+			{
+				temp = triangleDesc.substr((i-counter), counter);
+				strIndex[vertexCount] = temp;
+				vertexCount++;
+				counter = 0;
+			}
+		}
+		else
+		{
+			if (i == nrOfCharacters - 1)
+			{
+				//last part in the string
+				temp = triangleDesc.substr((nrOfCharacters - 1), 1);
+				strIndex[vertexCount] = temp;
+			}
+			//continue
+			counter++;
+		}
+	}
+
+
+	triangleData data
+	{
+		0,0,0
+	};
+	string::size_type size = strIndex[0].size();
+	data.vIndex = stoi(strIndex[0], &size);
+
+	size = strIndex[1].size();
+	data.txIndex = stoi(strIndex[1], &size);
+
+	size = strIndex[2].size();
+	data.vNormIndex = stoi(strIndex[2], &size);
+
+	this->triVertex.push_front(data);
 }

@@ -2,6 +2,7 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <list>
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #include "SimpleMath.h"
@@ -9,11 +10,11 @@
 using namespace DirectX::SimpleMath;
 using namespace std;
 
-struct intArr 
+struct triangleData 
 {
-	int a;
-	int b;
-	int c;
+	int vIndex;
+	int txIndex;
+	int vNormIndex;
 };
 
 class Parser
@@ -27,8 +28,9 @@ private:
 	string geometry;
 	string usemtl;
 
-	vector<Vector3*>verticies;
-	vector<Vector3*>vertexNormals;
-	vector<intArr*> faces;
-	vector<Vector2*>UVtext;
+	vector<Vector3>verticies;
+	vector<Vector3>vertexNormals;
+	list<triangleData>triVertex;
+	vector<Vector2>UVtext;
+	void loadDataIntoList(const string& triangleDesc);
 };

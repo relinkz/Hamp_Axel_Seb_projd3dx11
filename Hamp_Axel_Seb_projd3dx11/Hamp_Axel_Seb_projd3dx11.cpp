@@ -40,7 +40,7 @@ void createWorldMatrices()
 	Parser test;
 	test.progressFile("obj.txt");
 
-	test;
+	//test;
 	//ViewSpace
 	viewSpace = new Matrix(XMMatrixLookAtLH
 		(
@@ -217,6 +217,7 @@ void Render()
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	MSG msg = { 0 };
 	HWND wndHandle = InitWindow(hInstance); //1. Skapa fönster
 

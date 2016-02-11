@@ -148,6 +148,7 @@
   <ItemGroup>
     <Text Include="obj.txt" />
     <Text Include="ReadMe.txt" />
+    <Text Include="sphere1.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Hamp_Axel_Seb_projd3dx11.cpp" />
