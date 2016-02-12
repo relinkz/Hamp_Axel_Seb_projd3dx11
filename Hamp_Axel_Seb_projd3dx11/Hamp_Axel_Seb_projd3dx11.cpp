@@ -37,10 +37,6 @@ SimpleMath::Matrix* worldSpace; // need one worldSpace for each object in the wo
 
 void createWorldMatrices()
 {
-	Parser test;
-	test.progressFile("obj.txt");
-
-	//test;
 	//ViewSpace
 	viewSpace = new Matrix(XMMatrixLookAtLH
 		(
@@ -98,7 +94,8 @@ void CreateShaders()
 	//create input layout (verified using vertex shader)
 	D3D11_INPUT_ELEMENT_DESC inputDesc[] = {
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 	gDevice->CreateInputLayout(inputDesc, ARRAYSIZE(inputDesc), pVS->GetBufferPointer(), pVS->GetBufferSize(), &gVertexLayout);
 	// we do not need anymore this COM object, so we release it.
@@ -127,22 +124,21 @@ void CreateShaders()
 
 void CreateTriangleData()
 {
-	struct TriangleVertex
-	{
-		float x, y, z;
-		float r, g, b;
-	};
+	Parser fromFile;
+	fromFile.progressFile("obj.txt");
+
+
 
 	TriangleVertex triangleVertices[3] =
 	{
 		0.0f, 0.5f, 0.0f,	//v0 pos
-		1.0f, 0.0f, 0.0f,	//v0 color
+		1.0f, 0.0f,	//v0 color
 
 		0.5f, -0.5f, 0.0f,	//v1
-		0.0f, 1.0f, 0.0f,	//v1 color
+		0.0f, 1.0f,	//v1 color
 
 		-0.5f, -0.5f, 0.0f, //v2
-		0.0f, 0.0f, 1.0f	//v2 color
+		0.0f, 0.0f//v2 color
 	};
 
 	D3D11_BUFFER_DESC bufferDesc;
@@ -181,10 +177,10 @@ void Render()
 	gDeviceContext->GSSetShader(nullptr, nullptr, 0);
 	gDeviceContext->PSSetShader(gPixelShader, nullptr, 0);
 
-	UINT32 vertexSize = sizeof(float) * 6;
+	UINT32 vertexSize = sizeof(float) * 5;
 	UINT32 offset = 0;
-	gDeviceContext->IASetVertexBuffers(0, 1, &gVertexBuffer, &vertexSize, &offset);
 
+	gDeviceContext->IASetVertexBuffers(0, 1, &gVertexBuffer, &vertexSize, &offset);
 	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	gDeviceContext->IASetInputLayout(gVertexLayout);
 

@@ -5,6 +5,7 @@ using namespace std;
 
 Parser::Parser()
 {
+	this->finished = false;
 }
 
 Parser::~Parser()
@@ -86,7 +87,7 @@ void Parser::progressFile(const string& dest) throw(...)
 				for (int i = 0; i < 3; i++)
 				{
 					file >> data;
-					this->loadDataIntoList(data);
+					this->loadDataIntoTriangleData(data);
 				}
 			}
 
@@ -95,7 +96,7 @@ void Parser::progressFile(const string& dest) throw(...)
 	file.close();
 }
 
-void Parser::loadDataIntoList(const string& triangleDesc)
+void Parser::loadDataIntoTriangleData(const string& triangleDesc)
 {
 	string strIndex[3] = { "","","" };
 	stringstream test;
@@ -147,4 +148,9 @@ void Parser::loadDataIntoList(const string& triangleDesc)
 	data.vNormIndex = stoi(strIndex[2], &size);
 
 	this->triVertex.push_front(data);
+}
+
+void processDataIntoList()
+{
+
 }
