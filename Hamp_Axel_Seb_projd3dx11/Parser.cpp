@@ -96,6 +96,32 @@ void Parser::progressFile(const string& dest) throw(...)
 	file.close();
 }
 
+//getters
+int Parser::getNrOfTriangleVertices() const
+{
+	return this->finalVertexes.size();
+}
+
+string Parser::getMtllib() const
+{
+	return this->mtllib;
+}
+
+string Parser::getGeometry() const
+{
+	return this->geometry;
+}
+
+string Parser::getUseMtl() const
+{
+	return this->usemtl;
+}
+
+Vector3 Parser::getVertex(const int &nr) const
+{
+	return this->verticies[nr];
+}
+
 void Parser::loadDataIntoTriangleData(const string& triangleDesc)
 {
 	string strIndex[3] = { "","","" };
@@ -147,10 +173,43 @@ void Parser::loadDataIntoTriangleData(const string& triangleDesc)
 	size = strIndex[2].size();
 	data.vNormIndex = stoi(strIndex[2], &size);
 
-	this->triVertex.push_front(data);
+	//push front
+	this->triVertex.push_back(data);
 }
 
-void processDataIntoList()
+void Parser::createList()
 {
+	TriangleVertex newVertex;
+	triangleData temp;
+	
+	int size = this->verticies.size();
 
+	while(this->triVertex.empty() != true)
+	{
+		temp = this->triVertex.front();
+
+		newVertex.x = this->verticies.at(temp.vIndex-1).x;
+		newVertex.y = this->verticies.at(temp.vIndex-1).y;
+		newVertex.z = this->verticies.at(temp.vIndex-1).z;
+
+		newVertex.u = this->UVtext.at(temp.txIndex-1).x;
+		newVertex.v = this->UVtext.at(temp.txIndex-1).y;
+
+		newVertex.nx = this->vertexNormals.at(temp.vNormIndex).x;
+		newVertex.ny = this->vertexNormals.at(temp.vNormIndex).y;
+		newVertex.nz = this->vertexNormals.at(temp.vNormIndex).z;
+
+		this->finalVertexes.push_back(newVertex);
+		this->triVertex.pop_front();
+	}
+}
+
+TriangleVertex Parser::popFirst()
+{
+	TriangleVertex temp;
+
+	temp = this->finalVertexes.front();
+	this->finalVertexes.pop_front();
+
+	return temp;
 }

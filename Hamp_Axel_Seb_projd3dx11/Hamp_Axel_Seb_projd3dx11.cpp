@@ -13,8 +13,10 @@ IDXGISwapChain* gSwapChain = nullptr;
 ID3D11Device* gDevice = nullptr;
 ID3D11DeviceContext* gDeviceContext = nullptr;
 ID3D11RenderTargetView* gBackbufferRTV = nullptr;
+TriangleVertex* triangleVertices = nullptr;
 
 ID3D11Buffer* gVertexBuffer = nullptr;
+ID3D11Buffer* gIndexBuffer = nullptr;
 
 ID3D11Buffer* worldSpaceBuffer = nullptr;
 ID3D11Buffer* worldViewProjection = nullptr;
@@ -30,10 +32,6 @@ using namespace DirectX::SimpleMath;
 SimpleMath::Matrix* viewSpace;
 SimpleMath::Matrix* projectionSpace;
 SimpleMath::Matrix* worldSpace; // need one worldSpace for each object in the world
-
-
-
-
 
 void createWorldMatrices()
 {
@@ -53,6 +51,8 @@ void createWorldMatrices()
 			 0.5f,				//near plane
 			 20.0f				//far plane
 			 ));
+
+
 
 	 //buffers
 	 D3D11_BUFFER_DESC viewSpaceDesc;
@@ -124,32 +124,77 @@ void CreateShaders()
 
 void CreateTriangleData()
 {
+
 	Parser fromFile;
+	
 	fromFile.progressFile("obj.txt");
+	int nrOfVert = 0;
+	//fromFile2.progressFile("obj2.txt");
+	int counter = 0;
+	//vector<TriangleVertex> triangleVertices;
 
+	TriangleVertex triangleVertices[36];
+	
 
-
-	TriangleVertex triangleVertices[3] =
+	fromFile.createList();
+	nrOfVert = fromFile.getNrOfTriangleVertices();
+	//TriangleVertex* triangleVertices = new TriangleVertex[nrOfVert];
+	//triangleVertices = new TriangleVertex[nrOfVert];
+	//fromFile2.createList();
+	for (int i = 0; i < nrOfVert; i++)
 	{
-		0.0f, 0.5f, 0.0f,	//v0 pos
-		1.0f, 0.0f,	//v0 color
+		//openGL
+		triangleVertices[i] = fromFile.popFirst();
+		//triangleVertices.push_back(fromFile.popFirst());
+	}
 
-		0.5f, -0.5f, 0.0f,	//v1
-		0.0f, 1.0f,	//v1 color
+	//Convert
+	for (int i = 0; i < nrOfVert; i++)
+	{
+		if (counter == 1)
+		{
+			//swap(triangleVertices[i], triangleVertices[i + 1]);
+			TriangleVertex temp = triangleVertices[i];
 
-		-0.5f, -0.5f, 0.0f, //v2
-		0.0f, 0.0f//v2 color
-	};
+			triangleVertices[i] = triangleVertices[i+1];
+			triangleVertices[i+1] = temp;
+			
+		}
+		else if (counter == 2)
+			counter = -1;
+			
+		counter++;
+	}
+
+
+	//TriangleVertex triangleVertices[3] =
+	//{
+	//	-0.5f, -0.5f, 0.5f,
+	//	0.0f, 0.0f, 1.0f,//v0 pos
+	//	1.0f, 0.0f,	//v0 color
+
+	//	0.5f, 0.5f, 0.5f, //v2
+	//	-0.5f, 0.0f, 1.0f, //v0 pos  första raden här är den sista positionen
+	//	1.0f, 0.0f,
+	//	
+	//	0.5f, -0.5f, 0.5f,	//v1
+	//	0.0f, 0.0f, 1.0f,//v0 pos
+	//	1.0f, 0.0f		//v1 color
+
+	//	
+	//};
 
 	D3D11_BUFFER_DESC bufferDesc;
 	memset(&bufferDesc, 0, sizeof(bufferDesc));
 	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	bufferDesc.ByteWidth = sizeof(triangleVertices);
+	bufferDesc.ByteWidth = sizeof(triangleVertices);  //triangleVertices
 
 	D3D11_SUBRESOURCE_DATA data;
 	data.pSysMem = triangleVertices;
 	gDevice->CreateBuffer(&bufferDesc, &data, &gVertexBuffer);
+
+	//delete triangleVertices;
 }
 
 void SetViewport()
@@ -177,10 +222,12 @@ void Render()
 	gDeviceContext->GSSetShader(nullptr, nullptr, 0);
 	gDeviceContext->PSSetShader(gPixelShader, nullptr, 0);
 
-	UINT32 vertexSize = sizeof(float) * 5;
+	UINT32 vertexSize = sizeof(TriangleVertex);
+	//UINT32 vertexSize = sizeof(float) * 9;// får inte vara 8 av någon anledngin
 	UINT32 offset = 0;
 
 	gDeviceContext->IASetVertexBuffers(0, 1, &gVertexBuffer, &vertexSize, &offset);
+	//gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	gDeviceContext->IASetInputLayout(gVertexLayout);
 
@@ -197,18 +244,8 @@ void Render()
 		0,
 		sizeof(Matrix)
 		);
-	/*
-	void UpdateSubresource(
-  [in]                 ID3D11Resource *pDstResource,
-  [in]                 UINT           DstSubresource,
-  [in, optional] const D3D11_BOX      *pDstBox,
-  [in]           const void           *pSrcData,
-  [in]                 UINT           SrcRowPitch,
-  [in]                 UINT           SrcDepthPitch
-);
-	*/
 
-	gDeviceContext->Draw(3, 0);
+	gDeviceContext->Draw(36,0);
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)

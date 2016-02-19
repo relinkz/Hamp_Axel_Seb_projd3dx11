@@ -20,7 +20,8 @@ struct triangleData
 struct TriangleVertex
 {
 	float x, y, z;
-	float u, v;
+	float nx, ny, nz;
+	float u, v;	
 };
 
 class Parser
@@ -31,11 +32,14 @@ public:
 	void progressFile(const string& dest) throw(...);
 	
 	/*getters*/
-	int getNrOfTriangleVertices()	const;
-	string getMtllib()				const;
-	string getGeometry()			const;
-	string useMtl()					const;
+	int getNrOfTriangleVertices()			const;
+	string getMtllib()						const;
+	string getGeometry()					const;
+	string getUseMtl()						const;
 
+	Vector3 getVertex(const int &nr)		const;
+	void createList();
+	TriangleVertex popFirst();
 
 private:
 	string mtllib;
@@ -50,5 +54,5 @@ private:
 	vector<Vector2>UVtext;
 
 	void loadDataIntoTriangleData(const string& triangleDesc);
-	void processDataIntoList();
+	
 };
