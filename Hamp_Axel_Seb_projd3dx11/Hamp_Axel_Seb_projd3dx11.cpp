@@ -3,6 +3,8 @@
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dcompiler.lib")
 #include "Parser.h"
+#include "Camera.h"
+
 
 HWND InitWindow(HINSTANCE hInstance);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -19,11 +21,14 @@ ID3D11Buffer* gVertexBuffer = nullptr;
 ID3D11Buffer* gIndexBuffer = nullptr;
 
 ID3D11Buffer* worldSpaceBuffer = nullptr;
-ID3D11Buffer* worldViewProjection = nullptr;
 
+ID3D11GeometryShader *gGeometryShader = nullptr;
 ID3D11InputLayout* gVertexLayout = nullptr;
 ID3D11VertexShader* gVertexShader = nullptr;
 ID3D11PixelShader* gPixelShader = nullptr;
+Camera WorldCamera;
+int nrOfVertexDrawn = 0;
+
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -33,15 +38,21 @@ SimpleMath::Matrix* viewSpace;
 SimpleMath::Matrix* projectionSpace;
 SimpleMath::Matrix* worldSpace; // need one worldSpace for each object in the world
 
+SimpleMath::Matrix* worldViewProj = nullptr;
+
 void createWorldMatrices()
 {
+	Matrix* WVP_Ptr = nullptr;
 	//ViewSpace
-	viewSpace = new Matrix(XMMatrixLookAtLH
+	//viewSpace = &WorldCamera.getViewMatrix();
+
+	viewSpace = new Matrix(DirectX::XMMatrixLookAtLH
 		(
-		SimpleMath::Vector3(0, 0, -2),	//Position
-		SimpleMath::Vector3(0, 0, 0),	//lookAtTarget
-		SimpleMath::Vector3(0, 1, 0)	//upVector
-		));
+			Vector3(0, 0, -2),	//Position
+			Vector3(0, 0, 0),	//lookAtTarget
+			Vector3(0, 1, 0)	//upVector
+			));
+
 	
 	//ProjectionMatrix
 	 projectionSpace = new Matrix(XMMatrixPerspectiveFovLH
@@ -52,7 +63,9 @@ void createWorldMatrices()
 			 20.0f				//far plane
 			 ));
 
+	 worldSpace = new Matrix();
 
+	 worldViewProj = new Matrix((*worldSpace) * (*viewSpace) * (*projectionSpace));
 
 	 //buffers
 	 D3D11_BUFFER_DESC viewSpaceDesc;
@@ -64,12 +77,36 @@ void createWorldMatrices()
 	 viewSpaceDesc.MiscFlags				= 0;
 	 viewSpaceDesc.StructureByteStride		= 0;
 
-	 D3D11_SUBRESOURCE_DATA viewSpaceData;
+	 D3D11_SUBRESOURCE_DATA testa;
+	 testa.pSysMem = worldViewProj;
+
+
+	 D3D11_MAPPED_SUBRESOURCE viewSpaceData;
 	 memset(&viewSpaceData, 0, sizeof(viewSpace));
-	 viewSpaceData.pSysMem = viewSpace;
 
-	 gDevice->CreateBuffer(&viewSpaceDesc, &viewSpaceData, &worldSpaceBuffer);
+	 gDevice->CreateBuffer(&viewSpaceDesc, &testa, &worldSpaceBuffer);
+	 
+	// HRESULT test = gDeviceContext->Map(worldSpaceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &viewSpaceData);
 
+	 WVP_Ptr = (Matrix*)viewSpaceData.pData;
+	 //WVP_Ptr = (&worldViewProj->Transpose());
+	 unsigned int nrOfBuffers = 1; 
+	
+	// gDeviceContext->Unmap(worldSpaceBuffer, 0);
+	
+	 
+	 // gDeviceContext->Unmap(worldSpaceBuffer, 0);
+
+	 //gDevice->CreateMappedBuffer(&viewSpaceDesc, &viewSpaceData, &worldSpaceBuffer)
+
+	 
+	
+	 
+
+	
+
+	 //WVP_Ptr = (Matrix*)viewSpaceData.pData;
+	
 }
 void CreateShaders()
 {
@@ -117,6 +154,22 @@ void CreateShaders()
 						// https://msdn.microsoft.com/en-us/library/windows/desktop/hh968107(v=vs.85).aspx
 		);
 
+	//create geometry shader
+	ID3DBlob *pGS = nullptr;
+	D3DCompileFromFile(
+		L"GeometryShader.hlsl",
+		nullptr,
+		nullptr,
+		"main",
+		"gs_4_0",
+		0,
+		0,
+		&pGS,
+		nullptr
+		);
+
+	gDevice->CreateGeometryShader(pGS->GetBufferPointer(), pGS->GetBufferSize(), nullptr, &gGeometryShader);
+
 	gDevice->CreatePixelShader(pPS->GetBufferPointer(), pPS->GetBufferSize(), nullptr, &gPixelShader);
 	// we do not need anymore this COM object, so we release it.
 	pPS->Release();
@@ -127,13 +180,13 @@ void CreateTriangleData()
 
 	Parser fromFile;
 	
-	fromFile.progressFile("obj.txt");
+	fromFile.progressFile("sphere1.txt");
 	int nrOfVert = 0;
 	//fromFile2.progressFile("obj2.txt");
 	int counter = 0;
-	//vector<TriangleVertex> triangleVertices;
+	vector<TriangleVertex> triangleVertices;
 
-	TriangleVertex triangleVertices[36];
+	//TriangleVertex triangleVertices[36];
 	
 
 	fromFile.createList();
@@ -144,7 +197,7 @@ void CreateTriangleData()
 	for (int i = 0; i < nrOfVert; i++)
 	{
 		//openGL
-		triangleVertices[i] = fromFile.popFirst();
+		triangleVertices.push_back(fromFile.popFirst());
 		//triangleVertices.push_back(fromFile.popFirst());
 	}
 
@@ -166,32 +219,16 @@ void CreateTriangleData()
 		counter++;
 	}
 
-
-	//TriangleVertex triangleVertices[3] =
-	//{
-	//	-0.5f, -0.5f, 0.5f,
-	//	0.0f, 0.0f, 1.0f,//v0 pos
-	//	1.0f, 0.0f,	//v0 color
-
-	//	0.5f, 0.5f, 0.5f, //v2
-	//	-0.5f, 0.0f, 1.0f, //v0 pos  första raden här är den sista positionen
-	//	1.0f, 0.0f,
-	//	
-	//	0.5f, -0.5f, 0.5f,	//v1
-	//	0.0f, 0.0f, 1.0f,//v0 pos
-	//	1.0f, 0.0f		//v1 color
-
-	//	
-	//};
+	nrOfVertexDrawn = triangleVertices.size();
 
 	D3D11_BUFFER_DESC bufferDesc;
 	memset(&bufferDesc, 0, sizeof(bufferDesc));
 	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	bufferDesc.ByteWidth = sizeof(triangleVertices);  //triangleVertices
+	bufferDesc.ByteWidth = sizeof(*triangleVertices.data()) * nrOfVertexDrawn;  //triangleVertices
 
 	D3D11_SUBRESOURCE_DATA data;
-	data.pSysMem = triangleVertices;
+	data.pSysMem = triangleVertices.data();
 	gDevice->CreateBuffer(&bufferDesc, &data, &gVertexBuffer);
 
 	//delete triangleVertices;
@@ -219,7 +256,8 @@ void Render()
 	gDeviceContext->VSSetShader(gVertexShader, nullptr, 0);
 	gDeviceContext->HSSetShader(nullptr, nullptr, 0);
 	gDeviceContext->DSSetShader(nullptr, nullptr, 0);
-	gDeviceContext->GSSetShader(nullptr, nullptr, 0);
+	//gDeviceContext->GSSetShader(gGeometryShader, nullptr, 0);
+	//gDeviceContext->GSSetShader(nullptr, nullptr, 0);
 	gDeviceContext->PSSetShader(gPixelShader, nullptr, 0);
 
 	UINT32 vertexSize = sizeof(TriangleVertex);
@@ -227,6 +265,7 @@ void Render()
 	UINT32 offset = 0;
 
 	gDeviceContext->IASetVertexBuffers(0, 1, &gVertexBuffer, &vertexSize, &offset);
+	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 	//gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	gDeviceContext->IASetInputLayout(gVertexLayout);
@@ -234,18 +273,10 @@ void Render()
 
 	//update constantbuffers
 
-	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
-	
-	gDeviceContext->UpdateSubresource(
-		worldSpaceBuffer,		//pointer to the destination
-		D3D11CalcSubresource(0, 0, 0),
-		NULL,
-		worldSpaceBuffer,      //a pointer to the source
-		0,
-		sizeof(Matrix)
-		);
+	//gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
+	//gDeviceContext->GSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 
-	gDeviceContext->Draw(36,0);
+	gDeviceContext->Draw(nrOfVertexDrawn,0);
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
@@ -260,16 +291,18 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 		SetViewport(); //3. Sätt viewport
 
-		createWorldMatrices(); //initierar världsmatriserna här, vid frågor och klagomål, så ansvarar jag inte för detta!
-
 		CreateShaders(); //4. Skapa vertex- och pixel-shaders
+
+		createWorldMatrices(); //initierar världsmatriserna här, vid frågor och klagomål, så ansvarar jag inte för detta!
 
 		CreateTriangleData(); //5. Definiera triangelvertiser, 6. Skapa vertex buffer, 7. Skapa input layout
 
 		ShowWindow(wndHandle, nCmdShow);
 
+
 		while (WM_QUIT != msg.message)
 		{
+			WorldCamera.Update(wndHandle); //update worldcamera
 			if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 			{
 				TranslateMessage(&msg);
