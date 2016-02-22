@@ -14,7 +14,8 @@ struct PS_OUT
 
 float4 main(PS_OUT input) : SV_TARGET
 {
-	//input.Norm = saturate(input.Norm);
-	//return float4(input.Norm,0);
-	return float4(1,0,0,0);
+	input.Norm = saturate(input.Norm);
+	//input.Norm.x += 0.5;
+	return float4(input.Norm,1);
+	//return float4(1,0,0,0);
 }

@@ -17,6 +17,10 @@ ID3D11DeviceContext* gDeviceContext = nullptr;
 ID3D11RenderTargetView* gBackbufferRTV = nullptr;
 TriangleVertex* triangleVertices = nullptr;
 
+//dephbuffer
+ID3D11DepthStencilView* gDepthBuffer = nullptr;
+ID3D11Texture2D* pDepthStencil = nullptr;
+
 ID3D11Buffer* gVertexBuffer = nullptr;
 ID3D11Buffer* gIndexBuffer = nullptr;
 
@@ -37,7 +41,7 @@ using namespace DirectX::SimpleMath;
 SimpleMath::Matrix* viewSpace;
 SimpleMath::Matrix* projectionSpace;
 SimpleMath::Matrix* worldSpace; // need one worldSpace for each object in the world
-
+Vector3 cameraPos = Vector3(0, 0, -2);
 SimpleMath::Matrix* worldViewProj = nullptr;
 
 void createWorldMatrices()
@@ -48,12 +52,12 @@ void createWorldMatrices()
 
 	viewSpace = new Matrix(DirectX::XMMatrixLookAtLH
 		(
-			Vector3(0, 0, -2),	//Position
+			Vector3(2, 0, -2),	//Position
 			Vector3(0, 0, 0),	//lookAtTarget
 			Vector3(0, 1, 0)	//upVector
 			));
 
-	
+	//viewSpace = &WorldCamera.getViewMatrix();
 	//ProjectionMatrix
 	 projectionSpace = new Matrix(XMMatrixPerspectiveFovLH
 		 (
@@ -66,6 +70,7 @@ void createWorldMatrices()
 	 worldSpace = new Matrix();
 
 	 worldViewProj = new Matrix((*worldSpace) * (*viewSpace) * (*projectionSpace));
+	 worldViewProj = &worldViewProj->Transpose();
 
 	 //buffers
 	 D3D11_BUFFER_DESC viewSpaceDesc;
@@ -80,17 +85,17 @@ void createWorldMatrices()
 	 D3D11_SUBRESOURCE_DATA testa;
 	 testa.pSysMem = worldViewProj;
 
-
-	 D3D11_MAPPED_SUBRESOURCE viewSpaceData;
-	 memset(&viewSpaceData, 0, sizeof(viewSpace));
-
 	 gDevice->CreateBuffer(&viewSpaceDesc, &testa, &worldSpaceBuffer);
+
+	 //D3D11_MAPPED_SUBRESOURCE viewSpaceData;
+	 //memset(&viewSpaceData, 0, sizeof(viewSpace));
+
 	 
 	// HRESULT test = gDeviceContext->Map(worldSpaceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &viewSpaceData);
 
-	 WVP_Ptr = (Matrix*)viewSpaceData.pData;
+	 //WVP_Ptr = (Matrix*)viewSpaceData.pData;
 	 //WVP_Ptr = (&worldViewProj->Transpose());
-	 unsigned int nrOfBuffers = 1; 
+	 //unsigned int nrOfBuffers = 1; 
 	
 	// gDeviceContext->Unmap(worldSpaceBuffer, 0);
 	
@@ -248,10 +253,35 @@ void SetViewport()
 
 void Render()
 {
+
+	*viewSpace = WorldCamera.getViewMatrix();
+	*worldSpace = DirectX::XMMatrixRotationY(3.14f);
+	*worldViewProj = Matrix((*worldSpace) * (*viewSpace) * (*projectionSpace));
+	worldViewProj = &worldViewProj->Transpose();
+
+
+	Matrix* WVP_Ptr = nullptr;
+	D3D11_MAPPED_SUBRESOURCE viewSpaceData;
+	memset(&viewSpaceData, 0, sizeof(viewSpace));
+
+	HRESULT test = gDeviceContext->Map(worldSpaceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &viewSpaceData);
+	memcpy(viewSpaceData.pData, worldViewProj->m, sizeof(*worldViewProj));
+	//WVP_Ptr = (Matrix*)viewSpaceData.pData;
+	//WVP_Ptr = &worldViewProj->Invert();
+	//WVP_Ptr = worldViewProj;
+	//unsigned int nrOfBuffers = 1;
+
+	gDeviceContext->Unmap(worldSpaceBuffer, 0);
+
+
+	// gDeviceContext->Unmap(worldSpaceBuffer, 0);
+
 	// clear the back buffer to a deep blue
 
 	float clearColor[] = { 0, 0, 0, 1 };
 	gDeviceContext->ClearRenderTargetView(gBackbufferRTV, clearColor);
+	//clear depthbuffer
+	gDeviceContext->ClearDepthStencilView(gDepthBuffer, D3D11_CLEAR_DEPTH, 1, 0);
 
 	gDeviceContext->VSSetShader(gVertexShader, nullptr, 0);
 	gDeviceContext->HSSetShader(nullptr, nullptr, 0);
@@ -410,12 +440,42 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		ID3D11Texture2D* pBackBuffer = nullptr;
 		gSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
 
+		//create dephbuffer
+		D3D11_TEXTURE2D_DESC descDepth;
+		descDepth.Width = 640.0f;
+		descDepth.Height = 480.0f;
+		descDepth.MipLevels = 1;
+		descDepth.ArraySize = 1;
+		descDepth.Format = DXGI_FORMAT_D32_FLOAT;
+		descDepth.SampleDesc.Count = 4;
+		descDepth.SampleDesc.Quality = 0;
+		descDepth.Usage = D3D11_USAGE_DEFAULT;
+		descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+		descDepth.CPUAccessFlags = 0;
+		descDepth.MiscFlags = 0;
+
+		hr = gDevice->CreateTexture2D(&descDepth, NULL, &pDepthStencil);
+
+		D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
+		memset(&descDSV, 0, sizeof(descDSV));
+		descDSV.Format = DXGI_FORMAT_D32_FLOAT;
+		descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
+		descDSV.Texture2D.MipSlice = 0;
+
 		// use the back buffer address to create the render target
 		gDevice->CreateRenderTargetView(pBackBuffer, NULL, &gBackbufferRTV);
 		pBackBuffer->Release();
 
 		// set the render target as the back buffer
 		gDeviceContext->OMSetRenderTargets(1, &gBackbufferRTV, NULL);
+
+		gDevice->CreateDepthStencilView
+			(
+				pDepthStencil, // Depth stencil texture
+				&descDSV, // Depth stencil desc
+				&gDepthBuffer
+				);		// [out] Depth stencil view
+
 	}
 	return hr;
 }

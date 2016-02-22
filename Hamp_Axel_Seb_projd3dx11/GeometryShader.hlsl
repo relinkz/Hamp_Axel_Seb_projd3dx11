@@ -23,10 +23,9 @@ struct VS_OUT
 void main(triangle VS_OUT input[3], inout TriangleStream< VS_OUT > data)
 {
 
-
 	float4 normal = float4(cross(input[1].Pos - input[0].Pos, input[2].Pos - input[0].Pos), 0.0f);
 
-		normal = normalize(normal);
+	normal = normalize(normal);
 
 	float4 rotNorm = mul(normal, worldViewMatrix);
 		rotNorm = normalize(rotNorm);

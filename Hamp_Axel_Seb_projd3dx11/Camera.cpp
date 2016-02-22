@@ -55,17 +55,17 @@ void Camera::Update(HWND hWnd)
 	upDown = this->lookUpPoint - Vector3(0, 0, 0);
 	upDown.Normalize();
 
-	if (GetAsyncKeyState(VK_LEFT) || posDiff.x < 0)
+	if (GetAsyncKeyState(VK_LEFT))
 	{
-		rotation = XMMatrixRotationY(-0.001f);
-		this->lookAtPoint = XMVector3Transform(this->lookAtPoint, rotation);
-		this->lookRightPoint = XMVector3Transform(this->lookRightPoint, rotation);
+		rotation = DirectX::XMMatrixRotationY(-0.001f);
+		this->lookAtPoint = DirectX::XMVector3Transform(this->lookAtPoint, rotation);
+		this->lookRightPoint = DirectX::XMVector3Transform(this->lookRightPoint, rotation);
 	}
-	else if (GetAsyncKeyState(VK_RIGHT)|| posDiff.x > 0 )
+	else if (GetAsyncKeyState(VK_RIGHT))
 	{
-		rotation = XMMatrixRotationY(0.001f);
-		this->lookAtPoint = XMVector3Transform(this->lookAtPoint, rotation);
-		this->lookRightPoint = XMVector3Transform(this->lookRightPoint, rotation);
+		rotation = DirectX::XMMatrixRotationY(0.001f);
+		this->lookAtPoint = DirectX::XMVector3Transform(this->lookAtPoint, rotation);
+		this->lookRightPoint = DirectX::XMVector3Transform(this->lookRightPoint, rotation);
 	}
 
 	lookAtVector = this->lookAtPoint - Vector3(0, 0, 0);
@@ -74,19 +74,19 @@ void Camera::Update(HWND hWnd)
 	leftRight = this->lookRightPoint - Vector3(0, 0, 0);
 	leftRight.Normalize();
 
-	if (this->yRotation > -3.14f / 3 &&  (GetAsyncKeyState(VK_UP) ||posDiff.y < 0))
+	if (this->yRotation > -3.14f / 3 &&  (GetAsyncKeyState(VK_UP)))
 	{
-		rotation = XMMatrixRotationAxis(leftRight, -0.001f);
+		rotation = DirectX::XMMatrixRotationAxis(leftRight, -0.001f);
 		this->yRotation += -0.001f;
-		this->lookAtPoint = XMVector3Transform(this->lookAtPoint, rotation);
-		this->lookUpPoint = XMVector3Transform(this->lookUpPoint, rotation);
+		this->lookAtPoint = DirectX::XMVector3Transform(this->lookAtPoint, rotation);
+		this->lookUpPoint = DirectX::XMVector3Transform(this->lookUpPoint, rotation);
 	}
-	else if (this->yRotation < 3.14f / 3 &&  (GetAsyncKeyState(VK_DOWN) ||posDiff.y > 0))
+	else if (this->yRotation < 3.14f / 3 &&  (GetAsyncKeyState(VK_DOWN)))
 	{
-		rotation = XMMatrixRotationAxis(leftRight, 0.001f);
+		rotation = DirectX::XMMatrixRotationAxis(leftRight, 0.001f);
 		this->yRotation += 0.001f;
-		this->lookAtPoint = XMVector3Transform(this->lookAtPoint, rotation);
-		this->lookUpPoint = XMVector3Transform(this->lookUpPoint, rotation);
+		this->lookAtPoint = DirectX::XMVector3Transform(this->lookAtPoint, rotation);
+		this->lookUpPoint = DirectX::XMVector3Transform(this->lookUpPoint, rotation);
 	}
 
 
@@ -146,18 +146,18 @@ Matrix Camera::getViewMatrix()
 	Vector3 upDown;
 
 	//Create translation matrix to move points to positions realtive to the camera
-	moveToCameraPos = XMMatrixTranslation(this->Pos.x,this->Pos.y,this->Pos.z);
+	moveToCameraPos = DirectX::XMMatrixTranslation(this->Pos.x,this->Pos.y,this->Pos.z);
 
 	//move lookAtPoint to its position relative to the camera
 	Vector3 newLookPoint = Vector3(0, 0, 1);
-	newLookPoint = XMVector3Transform(this->lookAtPoint, moveToCameraPos);
+	newLookPoint = DirectX::XMVector3Transform(this->lookAtPoint, moveToCameraPos);
 
 	//move lookUpPoint to its position relative to the camera
 	Vector3 newLookUpPoint = Vector3(0, 1, 0);
-	newLookUpPoint = XMVector3Transform(this->lookUpPoint, moveToCameraPos);
+	newLookUpPoint = DirectX::XMVector3Transform(this->lookUpPoint, moveToCameraPos);
 	upDown = newLookUpPoint - this->Pos;
 
-	viewMatrix = Matrix(XMMatrixLookAtLH(this->Pos, newLookPoint, Vector3(0,1,0)));
+	viewMatrix = Matrix(DirectX::XMMatrixLookAtLH(this->Pos, newLookPoint, Vector3(0,1,0)));
 
 	return viewMatrix;
 }
