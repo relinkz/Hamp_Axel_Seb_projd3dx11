@@ -1,3 +1,5 @@
+#ifndef PARSER_H
+#define PARSER_H
 #include <string>
 #include <sstream>
 #include <fstream>
@@ -10,7 +12,7 @@
 using namespace DirectX::SimpleMath;
 using namespace std;
 
-struct triangleData 
+struct triangleData
 {
 	int vIndex;
 	int txIndex;
@@ -21,7 +23,7 @@ struct TriangleVertex
 {
 	float x, y, z;
 	float nx, ny, nz;
-	float u, v;	
+	float u, v;
 };
 
 class Parser
@@ -56,3 +58,5 @@ private:
 	void loadDataIntoTriangleData(const string& triangleDesc);
 	
 };
+
+#endif
