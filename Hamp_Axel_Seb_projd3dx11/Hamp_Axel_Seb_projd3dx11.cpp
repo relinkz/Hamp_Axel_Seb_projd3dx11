@@ -1,8 +1,9 @@
 #include <windows.h>
-
+#include <iostream>
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #include "SimpleMath.h"
+#include "LightHandler.h"
 
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dcompiler.lib")
@@ -19,13 +20,18 @@ ID3D11DeviceContext* gDeviceContext = nullptr;
 ID3D11RenderTargetView* gBackbufferRTV = nullptr;
 
 ID3D11Buffer* gVertexBuffer = nullptr;
+ID3D11Buffer* cbPerFreameBuffer = nullptr;
 
 ID3D11Buffer* worldSpaceBuffer = nullptr;
 ID3D11Buffer* worldViewProjection = nullptr;
+ID3D11Buffer* lightBuffer = nullptr;
 
 ID3D11InputLayout* gVertexLayout = nullptr;
 ID3D11VertexShader* gVertexShader = nullptr;
 ID3D11PixelShader* gPixelShader = nullptr;
+
+LightHandler* lights = nullptr;
+
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -52,7 +58,7 @@ void createWorldMatrices()
 	//ProjectionMatrix
 	 projectionSpace = new Matrix(XMMatrixPerspectiveFovLH
 		 (
-			 3.14f*0.45f,		// FOV
+			 3.14f*0.45f,		//FOV
 			 640.0f / 480.0f,	//Aspect Ratio
 			 0.5f,				//near plane
 			 20.0f				//far plane
@@ -127,6 +133,62 @@ void CreateShaders()
 
 void CreateTriangleData()
 {
+
+
+	/*PosLight light;
+
+	D3D11_BUFFER_DESC lightDesc;
+	memset(&lightDesc, 0, sizeof(lightDesc));
+	lightDesc.Usage = D3D11_USAGE_DYNAMIC;
+	lightDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	lightDesc.ByteWidth = sizeof(light);
+	lightDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	lightDesc.MiscFlags = 0;
+	lightDesc.StructureByteStride = 0;
+
+	D3D11_SUBRESOURCE_DATA lightData;
+	memset(&lightData, 0, sizeof(lightData));
+	lightData.pSysMem = &light;
+
+	gDevice->CreateBuffer(&lightDesc, &lightData, &lightBuffer);*/
+
+
+	//lights->addPosLight(0,0,0);
+
+	/*
+	D3D11_BUFFER_DESC lightDesc;
+	memset(&lightDesc, 0, sizeof(lightDesc));
+	lightDesc.Usage = D3D11_USAGE_DYNAMIC;
+	lightDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	lightDesc.ByteWidth = sizeof(lights.getLights());
+	lightDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	lightDesc.MiscFlags = 0;
+	lightDesc.StructureByteStride = 0;
+
+	D3D11_SUBRESOURCE_DATA lightData;
+	memset(&lightData, 0, sizeof(lightData));
+	lightData.pSysMem = &lights.getLights();
+
+	
+	gDevice->CreateBuffer(&lightDesc, &lightData, &lightBuffer);
+
+
+	gDevice->CreateBuffer(&lightDesc, &lightData, &lightBuffer);*/
+
+
+	lights = new LightHandler();
+
+	lights->addPosLight(0, 0, -2);
+	lights->addPosLight(0, 0, -2);
+
+
+	gDevice->CreateBuffer(&lights->getDesc(), &lights->getData(), &lightBuffer);
+
+	/*if (lights->sendToBuffer(gDevice, lightBuffer) == false)
+	{
+		std::cout << "error: wrong with LightBuffer\n";
+	}*/
+
 	struct TriangleVertex
 	{
 		float x, y, z;
@@ -170,6 +232,8 @@ void SetViewport()
 
 void Render()
 {
+
+
 	// clear the back buffer to a deep blue
 
 	float clearColor[] = { 0, 0, 0, 1 };
@@ -191,16 +255,19 @@ void Render()
 
 	//update constantbuffers
 
-	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
+
+	//gDeviceContext->VSSetConstantBuffers(0, 2, &worldSpaceBuffer);
 	
-	gDeviceContext->UpdateSubresource(
-		worldSpaceBuffer,		//pointer to the destination
-		D3D11CalcSubresource(0, 0, 0),
-		NULL,
-		worldSpaceBuffer,      //a pointer to the source
-		0,
-		sizeof(Matrix)
-		);
+	gDeviceContext->VSSetConstantBuffers(0, 1, &lightBuffer);
+
+	//gDeviceContext->UpdateSubresource(
+	//	worldSpaceBuffer,		//pointer to the destination
+	//	D3D11CalcSubresource(0, 0, 0),
+	//	NULL,
+	//	worldSpaceBuffer,      //a pointer to the source
+	//	0,
+	//	sizeof(Matrix)
+	//	);
 	/*
 	void UpdateSubresource(
   [in]                 ID3D11Resource *pDstResource,

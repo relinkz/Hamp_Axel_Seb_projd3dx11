@@ -21,6 +21,9 @@
     <ClCompile Include="Hamp_Axel_Seb_projd3dx11.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="LightHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Vertex.hlsl">
@@ -29,5 +32,13 @@
     <FxCompile Include="PixelShader.hlsl">
       <Filter>Source Files</Filter>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="light.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LightHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
