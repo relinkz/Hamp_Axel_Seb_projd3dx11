@@ -25,13 +25,13 @@ LightHandler::~LightHandler()
 }
 
 //funkar ej
-bool LightHandler::sendToBuffer(ID3D11Device* device, ID3D11Buffer* buffer)
+bool LightHandler::sendToBuffer(ID3D11Device* device)
 {
 	if (device != nullptr)
 	{
-		device->CreateBuffer(&lightDesc, &lightData, &buffer);
+		device->CreateBuffer(&lightDesc, &lightData, &this->cLightBuffer);
 
-		if (buffer != nullptr)
+		if (this->cLightBuffer != nullptr)
 		{
 			return true;
 		}
@@ -70,4 +70,9 @@ D3D11_SUBRESOURCE_DATA LightHandler::getData()
 PosLight* LightHandler::getLights()
 {
 	return this->lights;
+}
+
+ID3D11Buffer* LightHandler::getCLightBuffer() const
+{
+	return this->cLightBuffer;
 }

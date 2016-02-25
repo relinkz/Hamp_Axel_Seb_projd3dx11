@@ -96,6 +96,104 @@ void Parser::progressFile(const string& dest) throw(...)
 	file.close();
 }
 
+void Parser::loadMaterial(const string& dest)
+{
+	stringstream errorMessage;
+	stringstream dataStream;
+	string data = "";
+	this->material = Material();
+
+	ifstream file;
+	file.open(dest);
+
+	if (file.is_open() == false)
+	{
+		errorMessage << "Could not find the destination" << endl;
+	}
+	else
+	{
+		while (file.eof() == false)
+		{
+			file >> data;
+
+			if (data == "newmtl")
+			{
+				file >> data;
+				this->material.setName(data);
+			}
+			else if (data == "illum")
+			{
+				file >> data;
+				string::size_type size = data.size();
+				this->material.setIlluminationModel(stoi(data, &size));
+			}
+			else if (data == "Kd")
+			{
+				string::size_type size = data.size();
+				file >> data;
+				Vector3 temp;
+				temp.x = stof(data, &size);
+				file >> data;
+				temp.y = stof(data, &size);
+				file >> data;
+				temp.z = stof(data, &size);
+				
+				this->material.setDiffuse(temp);
+			}
+			else if (data == "Ka")
+			{
+				string::size_type size = data.size();
+				file >> data;
+				Vector3 temp;
+				temp.x = stof(data, &size);
+				file >> data;
+				temp.y = stof(data, &size);
+				file >> data;
+				temp.z = stof(data, &size);
+
+				this->material.setDiffuse(temp);
+			}
+			else if(data == "Tf")
+			{
+				string::size_type size = data.size();
+				file >> data;
+				Vector3 temp;
+				temp.x = stof(data, &size);
+				file >> data;
+				temp.y = stof(data, &size);
+				file >> data;
+				temp.z = stof(data, &size);
+
+				this->material.setTransmissionFilter(temp);
+			}
+			else if (data == "Ni")
+			{
+				file >> data;
+				string::size_type size = data.size();
+				this->material.setOpticalDensity(stof(data, &size));
+			}
+			else if (data == "Ks")
+			{
+				Vector3 temp;
+				string::size_type size = data.size();
+				file >> data;
+				
+				temp.x = stof(data, &size);
+				file >> data;
+				temp.y = stof(data, &size);
+				file >> data;
+				temp.z = stof(data, &size);
+
+				this->material.setDiffuse(temp);
+			}
+			else
+			{
+				throw("Cannot find argument in the register!");
+			}
+		}
+	}
+
+}
 //getters
 int Parser::getNrOfTriangleVertices() const
 {
@@ -140,6 +238,7 @@ void Parser::loadDataIntoTriangleData(const string& triangleDesc)
 			//if / was hit
 			for (int j=0; j < counter; j++)
 			{
+				//I am not a smart man, but it works... :)
 				temp = triangleDesc.substr((i-counter), counter);
 				strIndex[vertexCount] = temp;
 				vertexCount++;
@@ -148,14 +247,14 @@ void Parser::loadDataIntoTriangleData(const string& triangleDesc)
 		}
 		else
 		{
+			//continue
+			counter++;
 			if (i == nrOfCharacters - 1)
 			{
 				//last part in the string
-				temp = triangleDesc.substr((nrOfCharacters - 1), 1);
+				temp = triangleDesc.substr((i - counter + 1), counter);
 				strIndex[vertexCount] = temp;
 			}
-			//continue
-			counter++;
 		}
 	}
 
@@ -195,9 +294,9 @@ void Parser::createList()
 		newVertex.u = this->UVtext.at(temp.txIndex-1).x;
 		newVertex.v = this->UVtext.at(temp.txIndex-1).y;
 
-		newVertex.nx = this->vertexNormals.at(temp.vNormIndex).x;
-		newVertex.ny = this->vertexNormals.at(temp.vNormIndex).y;
-		newVertex.nz = (-1) * this->vertexNormals.at(temp.vNormIndex).z;
+		newVertex.nx = this->vertexNormals.at(temp.vNormIndex - 1).x;
+		newVertex.ny = this->vertexNormals.at(temp.vNormIndex - 1).y;
+		newVertex.nz = (-1) * this->vertexNormals.at(temp.vNormIndex - 1).z;
 
 		this->finalVertexes.push_back(newVertex);
 		this->triVertex.pop_front();

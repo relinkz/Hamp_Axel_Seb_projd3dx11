@@ -1,6 +1,5 @@
 #ifndef PARSER_H
 #define PARSER_H
-#include <string>
 #include <sstream>
 #include <fstream>
 #include <vector>
@@ -8,9 +7,7 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #include "SimpleMath.h"
-
-using namespace DirectX::SimpleMath;
-using namespace std;
+#include "Material.h"
 
 struct triangleData
 {
@@ -32,6 +29,7 @@ public:
 	Parser();
 	virtual ~Parser();
 	void progressFile(const string& dest) throw(...);
+	void loadMaterial(const string& dest) throw(...);
 	
 	/*getters*/
 	int getNrOfTriangleVertices()			const;
@@ -48,6 +46,7 @@ private:
 	string geometry;
 	string usemtl;
 	bool finished;
+	Material material;
 
 	vector<Vector3>verticies;
 	vector<Vector3>vertexNormals;
@@ -56,7 +55,6 @@ private:
 	vector<Vector2>UVtext;
 
 	void loadDataIntoTriangleData(const string& triangleDesc);
-	
 };
 
 #endif

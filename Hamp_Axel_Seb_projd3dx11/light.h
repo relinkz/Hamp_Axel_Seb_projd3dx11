@@ -20,8 +20,8 @@ struct PosLight
 		this->z = -2.0f;
 		this->w = 1.0f;
 		this->pad = 0.0f;
-		this->ambient = 0.0f;
-		this->diffuse = 0.0f;
+		this->ambient = 0.8f;
+		this->diffuse = 0.2f;
 		this->strength = 5.0f;
 
 	}

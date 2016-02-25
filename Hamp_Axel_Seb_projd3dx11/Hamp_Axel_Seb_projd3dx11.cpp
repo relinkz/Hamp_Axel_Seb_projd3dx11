@@ -5,6 +5,7 @@
 #include "Parser.h"
 #include "Object.h"
 #include "Camera.h"
+#include "LightHandler.h"
 
 
 HWND InitWindow(HINSTANCE hInstance);
@@ -35,6 +36,7 @@ Camera WorldCamera;
 Object worldObject;
 int nrOfVertexDrawn = 0;
 
+LightHandler pointLight = LightHandler();
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -42,11 +44,13 @@ using namespace DirectX::SimpleMath;
 
 
 //Matrices
-SimpleMath::Matrix* viewSpace;
-SimpleMath::Matrix* projectionSpace;
-SimpleMath::Matrix* worldSpace; // need one worldSpace for each object in the world
+SimpleMath::Matrix* viewSpace = nullptr;
+SimpleMath::Matrix* projectionSpace = nullptr;
+SimpleMath::Matrix* worldSpace = nullptr; // need one worldSpace for each object in the world
 Vector3 cameraPos = Vector3(0, 0, -2);
 SimpleMath::Matrix* worldViewProj = nullptr;
+SimpleMath::Matrix* eyeSpace = nullptr;
+
 
 //void createPlane(int width, int length, Vector3 normal, vector<TriangleVertex>result)
 //{
@@ -79,22 +83,37 @@ void createWorldMatrices()
 	 worldSpace = new Matrix(XMMatrixTranslation(1.0f,2.0f,1.0f));
 
 	 worldViewProj = new Matrix((*worldSpace) * (*viewSpace) * (*projectionSpace));
+	 eyeSpace = new Matrix((*worldSpace) * (*viewSpace));
+	 eyeSpace = &eyeSpace->Transpose();
+
 	 worldViewProj = &worldViewProj->Transpose();
+
+
+	 struct worldMatrixBuffer
+	 {
+		 XMFLOAT4X4 worldViewProj;
+		 XMFLOAT4X4 eyeSpace;
+	 };
+
+	 worldMatrixBuffer buffer
+	 {
+		 *worldViewProj, *eyeSpace
+	 };
 
 	 //buffers
 	 D3D11_BUFFER_DESC viewSpaceDesc;
-	 memset(&viewSpaceDesc, 0, sizeof(viewSpace));
+	// memset(&viewSpaceDesc, 0, sizeof(worldMatrixBuffer));
 	 viewSpaceDesc.Usage					= D3D11_USAGE_DYNAMIC;
 	 viewSpaceDesc.BindFlags				= D3D11_BIND_CONSTANT_BUFFER;
-	 viewSpaceDesc.ByteWidth				= sizeof(Matrix);
+	 viewSpaceDesc.ByteWidth				= sizeof(worldMatrixBuffer);
 	 viewSpaceDesc.CPUAccessFlags			= D3D11_CPU_ACCESS_WRITE;
 	 viewSpaceDesc.MiscFlags				= 0;
 	 viewSpaceDesc.StructureByteStride		= 0;
 
 	 D3D11_SUBRESOURCE_DATA testa;
-	 testa.pSysMem = worldViewProj;
+	 testa.pSysMem = &buffer;
 
-	 gDevice->CreateBuffer(&viewSpaceDesc, &testa, &worldSpaceBuffer);
+	HRESULT test = gDevice->CreateBuffer(&viewSpaceDesc, &testa, &worldSpaceBuffer);
 	
 }
 
@@ -171,6 +190,7 @@ void createObjects()
 
 	Parser fromFile;
 	fromFile.progressFile("sphere1.txt");
+	fromFile.loadMaterial("sphere1.mtl");
 	int nrOfVert = 0;
 	int counter = 0;
 	vector<TriangleVertex> triangleVertices;
@@ -203,6 +223,8 @@ void createObjects()
 	worldObject = Object(triangleVertices, Vector3(0.0f, 2.0f, 0.0f), gDevice);
 
 #pragma endregion
+
+	
 }
 
 void SetViewport()
@@ -261,6 +283,9 @@ void Render()
 	gDeviceContext->IASetVertexBuffers(0, 1, &gVertexBuffer, &vertexSize, &offset);
 	//gDeviceContext->IASetVertexBuffers(0, 1, , &vertexSize, &offset);
 	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
+	ID3D11Buffer* lightBuff = pointLight.getCLightBuffer();
+
+	gDeviceContext->PSSetConstantBuffers(0, 1, &lightBuff);
 	//gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	gDeviceContext->IASetInputLayout(gVertexLayout);

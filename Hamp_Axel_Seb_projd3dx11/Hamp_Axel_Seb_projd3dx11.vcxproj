@@ -147,12 +147,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <Text Include="obj.txt" />
+    <Text Include="quadBrick.txt" />
     <Text Include="ReadMe.txt" />
     <Text Include="sphere1.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Hamp_Axel_Seb_projd3dx11.cpp" />
+    <ClCompile Include="LightHandler.cpp" />
+    <ClCompile Include="Material.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="Parser.cpp" />
   </ItemGroup>
@@ -179,8 +182,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="light.h" />
+    <ClInclude Include="LightHandler.h" />
+    <ClInclude Include="Material.h" />
     <ClInclude Include="Object.h" />
     <ClInclude Include="Parser.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="sphere1.mtl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
