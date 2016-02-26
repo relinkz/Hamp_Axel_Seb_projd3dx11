@@ -38,6 +38,7 @@ int nrOfVertexDrawn = 0;
 
 LightHandler pointLight = LightHandler();
 
+
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
@@ -223,6 +224,7 @@ void createObjects()
 	worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice, fromFile.getImageFile());
 	//worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice);
 
+	pointLight.sendToBuffer(gDevice);
 #pragma endregion
 
 	

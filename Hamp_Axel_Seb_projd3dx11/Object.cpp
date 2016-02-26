@@ -159,4 +159,5 @@ void Object::create2DTexture(ID3D11Device* gDevice, string fileName)
 	////result = gDevice->CreateShaderResourceView(this->diffuseMap, &imageSRV, &(this->diffuseMapSRV));
 
 }
+
 #pragma endregion
