@@ -81,5 +81,9 @@
     <None Include="sphere1.mtl">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="box.mtl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

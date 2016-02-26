@@ -36,12 +36,14 @@ public:
 	string getMtllib()						const;
 	string getGeometry()					const;
 	string getUseMtl()						const;
+	string getImageFile()					const;
 
 	Vector3 getVertex(const int &nr)		const;
 	void createList();
 	TriangleVertex popFirst();
 
 private:
+	string imageFile;
 	string mtllib;
 	string geometry;
 	string usemtl;

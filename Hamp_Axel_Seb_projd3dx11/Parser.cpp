@@ -186,12 +186,19 @@ void Parser::loadMaterial(const string& dest)
 
 				this->material.setDiffuse(temp);
 			}
+
+			else if (data == "map_Kd")
+			{
+				file >> data;
+				this->imageFile = data;
+			}
 			else
 			{
-				throw("Cannot find argument in the register!");
+				//throw("Cannot find argument in the register!");
 			}
 		}
 	}
+	file.close();
 
 }
 //getters
@@ -213,6 +220,11 @@ string Parser::getGeometry() const
 string Parser::getUseMtl() const
 {
 	return this->usemtl;
+}
+
+string Parser::getImageFile() const
+{
+	return this->imageFile;
 }
 
 Vector3 Parser::getVertex(const int &nr) const
@@ -293,6 +305,7 @@ void Parser::createList()
 
 		newVertex.u = this->UVtext.at(temp.txIndex-1).x;
 		newVertex.v = this->UVtext.at(temp.txIndex-1).y;
+		newVertex.v = 1.0f - newVertex.v;
 
 		newVertex.nx = this->vertexNormals.at(temp.vNormIndex - 1).x;
 		newVertex.ny = this->vertexNormals.at(temp.vNormIndex - 1).y;

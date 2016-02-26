@@ -65,8 +65,8 @@ void createWorldMatrices()
 
 	viewSpace = new Matrix(DirectX::XMMatrixLookAtLH
 		(
-			Vector3(2, 0, -2),	//Position
-			Vector3(0, 0, 0),	//lookAtTarget
+			Vector3(-2, 0, 0),	//Position
+			Vector3(1, 2, 1),	//lookAtTarget
 			Vector3(0, 1, 0)	//upVector
 			));
 
@@ -127,7 +127,7 @@ void CreateShaders()
 		nullptr,		// optional include files
 		"VS_main",		// entry point
 		"vs_4_0",		// shader model (target)
-		0,				// shader compile options
+		D3DCOMPILE_DEBUG,				// shader compile options
 		0,				// effect compile options
 		&pVS,			// double pointer to ID3DBlob		
 		nullptr			// pointer for Error Blob messages.
@@ -155,7 +155,7 @@ void CreateShaders()
 		nullptr,		// optional include files
 		"main",		// entry point
 		"ps_4_0",		// shader model (target)
-		0,				// shader compile options
+		D3DCOMPILE_DEBUG,				// shader compile options
 		0,				// effect compile options
 		&pPS,			// double pointer to ID3DBlob		
 		nullptr			// pointer for Error Blob messages.
@@ -171,7 +171,7 @@ void CreateShaders()
 		nullptr,
 		"main",
 		"gs_4_0",
-		0,
+		D3DCOMPILE_DEBUG,
 		0,
 		&pGS,
 		nullptr
@@ -189,8 +189,8 @@ void createObjects()
 #pragma region
 
 	Parser fromFile;
-	fromFile.progressFile("sphere1.txt");
-	fromFile.loadMaterial("sphere1.mtl");
+	fromFile.progressFile("obj.txt");
+	fromFile.loadMaterial("box.mtl");
 	int nrOfVert = 0;
 	int counter = 0;
 	vector<TriangleVertex> triangleVertices;
@@ -220,7 +220,8 @@ void createObjects()
 	}
 	//
 	nrOfVertexDrawn = triangleVertices.size();
-	worldObject = Object(triangleVertices, Vector3(0.0f, 2.0f, 0.0f), gDevice);
+	worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice, fromFile.getImageFile());
+	//worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice);
 
 #pragma endregion
 
@@ -259,7 +260,7 @@ void Render()
 	gDeviceContext->Unmap(worldSpaceBuffer, 0);
 
 
-	// gDeviceContext->Unmap(worldSpaceBuffer, 0);
+	 //gDeviceContext->Unmap(worldSpaceBuffer, 0);
 
 	// clear the back buffer to a deep blue
 
@@ -273,7 +274,10 @@ void Render()
 	gDeviceContext->DSSetShader(nullptr, nullptr, 0);
 	//gDeviceContext->GSSetShader(gGeometryShader, nullptr, 0);
 	//gDeviceContext->GSSetShader(nullptr, nullptr, 0);
+	
 	gDeviceContext->PSSetShader(gPixelShader, nullptr, 0);
+	ID3D11ShaderResourceView* diffuseSRV = worldObject.getDiffuseMapSRV();
+	gDeviceContext->PSSetShaderResources(0, 1, &diffuseSRV);
 
 	UINT32 vertexSize = sizeof(TriangleVertex);
 	//UINT32 vertexSize = sizeof(float) * 9;// får inte vara 8 av någon anledngin
