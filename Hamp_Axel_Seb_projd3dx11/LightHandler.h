@@ -19,7 +19,7 @@ public:
 
 	bool sendToBuffer(ID3D11Device* device);
 
-	void addPosLight(float x = 0, float y = 0, float z = 0);
+	void addPosLight(float x = 3, float y = 3, float z = 3);
 	
 	PosLight getPosLight(int index);
 	int getNrOfLights();

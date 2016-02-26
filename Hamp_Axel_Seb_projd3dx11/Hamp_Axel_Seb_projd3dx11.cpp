@@ -25,6 +25,7 @@ ID3D11Texture2D* pDepthStencil = nullptr;
 
 ID3D11Buffer* gVertexBuffer = nullptr;
 ID3D11Buffer* gIndexBuffer = nullptr;
+ID3D11Buffer* gGeometryBuffer = nullptr;
 
 ID3D11Buffer* worldSpaceBuffer = nullptr;
 
@@ -34,6 +35,10 @@ ID3D11VertexShader* gVertexShader = nullptr;
 ID3D11PixelShader* gPixelShader = nullptr;
 Camera WorldCamera;
 Object worldObject;
+
+vector<Object> objects;
+int nrOfObjects = 0;
+
 int nrOfVertexDrawn = 0;
 
 LightHandler pointLight = LightHandler();
@@ -222,6 +227,22 @@ void createObjects()
 	//
 	nrOfVertexDrawn = triangleVertices.size();
 	worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice, fromFile.getImageFile());
+
+	//many boxes many wow
+	for (int x = 0; x < 6; x++)
+	{
+		for (int y = 0; y < 6; y++)
+		{
+			for (int z = 0; z < 6; z++)
+			{
+				if (x == 0 || x == 5 || y == 0 || y == 5 || z == 0 || z == 5)
+				{
+					objects.push_back(Object(triangleVertices, Vector3((1.0f * x) - 3.0f, 1.0f * y, (1.0f* z) + 3.0f), gDevice, fromFile.getImageFile()));
+					nrOfObjects++;
+				}
+			}
+		}
+	}
 	//worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice);
 
 	pointLight.sendToBuffer(gDevice);
@@ -242,10 +263,10 @@ void SetViewport()
 	gDeviceContext->RSSetViewports(1, &vp);
 }
 
-void Render()
+void Render(Object object)
 {
 
-	*worldSpace = worldObject.getWorldMatrix();
+	*worldSpace = object.getWorldMatrix();
 
 	*viewSpace = WorldCamera.getViewMatrix();
 	*worldViewProj = Matrix((*worldSpace) * (*viewSpace) * (*projectionSpace));
@@ -266,11 +287,6 @@ void Render()
 
 	// clear the back buffer to a deep blue
 
-	float clearColor[] = { 0, 0, 0, 1 };
-	gDeviceContext->ClearRenderTargetView(gBackbufferRTV, clearColor);
-	//clear depthbuffer
-	gDeviceContext->ClearDepthStencilView(gDepthBuffer, D3D11_CLEAR_DEPTH, 1, 0);
-
 	gDeviceContext->VSSetShader(gVertexShader, nullptr, 0);
 	gDeviceContext->HSSetShader(nullptr, nullptr, 0);
 	gDeviceContext->DSSetShader(nullptr, nullptr, 0);
@@ -278,13 +294,13 @@ void Render()
 	//gDeviceContext->GSSetShader(nullptr, nullptr, 0);
 	
 	gDeviceContext->PSSetShader(gPixelShader, nullptr, 0);
-	ID3D11ShaderResourceView* diffuseSRV = worldObject.getDiffuseMapSRV();
+	ID3D11ShaderResourceView* diffuseSRV = object.getDiffuseMapSRV();
 	gDeviceContext->PSSetShaderResources(0, 1, &diffuseSRV);
 
 	UINT32 vertexSize = sizeof(TriangleVertex);
 	//UINT32 vertexSize = sizeof(float) * 9;// får inte vara 8 av någon anledngin
 	UINT32 offset = 0;
-	gVertexBuffer = worldObject.getVertexBufferPointer();
+	gVertexBuffer = object.getVertexBufferPointer();
 
 	gDeviceContext->IASetVertexBuffers(0, 1, &gVertexBuffer, &vertexSize, &offset);
 	//gDeviceContext->IASetVertexBuffers(0, 1, , &vertexSize, &offset);
@@ -336,7 +352,16 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 			}
 			else
 			{
-				Render(); //8. Rendera
+				float clearColor[] = { 0, 0, 0, 1 };
+				gDeviceContext->ClearRenderTargetView(gBackbufferRTV, clearColor);
+				//clear depthbuffer
+				gDeviceContext->ClearDepthStencilView(gDepthBuffer, D3D11_CLEAR_DEPTH, 1, 0);
+
+				for (int i = 0; i < nrOfObjects; i++)
+				{
+					Render(objects.at(i)); //8. Rendera
+				}
+				
 
 				gSwapChain->Present(0, 0); //9. Växla front- och back-buffer
 			}
@@ -462,15 +487,16 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		gDevice->CreateRenderTargetView(pBackBuffer, NULL, &gBackbufferRTV);
 		pBackBuffer->Release();
 
-		// set the render target as the back buffer
-		gDeviceContext->OMSetRenderTargets(1, &gBackbufferRTV, NULL);
+	
 
 		gDevice->CreateDepthStencilView
 			(
 				pDepthStencil, // Depth stencil texture
 				&descDSV, // Depth stencil desc
 				&gDepthBuffer
-				);		// [out] Depth stencil view
+			);		// [out] Depth stencil view
+						// set the render target as the back buffer
+		gDeviceContext->OMSetRenderTargets(1, &gBackbufferRTV, gDepthBuffer);
 
 	}
 	return hr;
