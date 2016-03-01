@@ -14,9 +14,6 @@ LightHandler::LightHandler()
 	this->lightDesc.StructureByteStride = 0;
 
 	memset(&this->lightData, 0, sizeof(this->lightData));
-	this->lightData.pSysMem = lights;
-
-
 }
 
 LightHandler::~LightHandler()
@@ -29,6 +26,7 @@ bool LightHandler::sendToBuffer(ID3D11Device* device)
 {
 	if (device != nullptr)
 	{
+		this->lightData.pSysMem = lights;
 		device->CreateBuffer(&lightDesc, &lightData, &this->cLightBuffer);
 
 		if (this->cLightBuffer != nullptr)

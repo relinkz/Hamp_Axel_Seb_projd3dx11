@@ -263,10 +263,10 @@ void SetViewport()
 	gDeviceContext->RSSetViewports(1, &vp);
 }
 
-void Render(Object object)
+void Render(Object object1)
 {
 
-	*worldSpace = object.getWorldMatrix();
+	*worldSpace = object1.getWorldMatrix();
 
 	*viewSpace = WorldCamera.getViewMatrix();
 	*worldViewProj = Matrix((*worldSpace) * (*viewSpace) * (*projectionSpace));
@@ -294,13 +294,13 @@ void Render(Object object)
 	//gDeviceContext->GSSetShader(nullptr, nullptr, 0);
 	
 	gDeviceContext->PSSetShader(gPixelShader, nullptr, 0);
-	ID3D11ShaderResourceView* diffuseSRV = object.getDiffuseMapSRV();
+	ID3D11ShaderResourceView* diffuseSRV = object1.getDiffuseMapSRV();
 	gDeviceContext->PSSetShaderResources(0, 1, &diffuseSRV);
 
 	UINT32 vertexSize = sizeof(TriangleVertex);
 	//UINT32 vertexSize = sizeof(float) * 9;// får inte vara 8 av någon anledngin
 	UINT32 offset = 0;
-	gVertexBuffer = object.getVertexBufferPointer();
+	gVertexBuffer = object1.getVertexBufferPointer();
 
 	gDeviceContext->IASetVertexBuffers(0, 1, &gVertexBuffer, &vertexSize, &offset);
 	//gDeviceContext->IASetVertexBuffers(0, 1, , &vertexSize, &offset);

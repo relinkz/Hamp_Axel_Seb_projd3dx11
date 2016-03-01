@@ -34,8 +34,9 @@ text = txDiffuse.Sample(sampAni, input.Tex).xyz;
 text.y *= ambient;
 text.z *= ambient;*/
 
-float4 pixToLight = lightPos - float4(input.Norm, 1.0f);
+float4 pixToLight = lightPos - input.Pos;
 float angle = dot(pixToLight, input.Norm);
+angle = normalize(angle);
 
 
 
