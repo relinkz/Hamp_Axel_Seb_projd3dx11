@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <Text Include="obj.txt" />
+    <Text Include="obj2.txt" />
     <Text Include="quadBrick.txt" />
     <Text Include="ReadMe.txt" />
     <Text Include="sphere1.txt" />

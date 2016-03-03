@@ -25,6 +25,9 @@
     <Text Include="quadBrick.txt">
       <Filter>Resource Files</Filter>
     </Text>
+    <Text Include="obj2.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Hamp_Axel_Seb_projd3dx11.cpp">

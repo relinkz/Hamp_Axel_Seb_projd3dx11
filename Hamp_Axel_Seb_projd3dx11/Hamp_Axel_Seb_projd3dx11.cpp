@@ -26,6 +26,7 @@ ID3D11Texture2D* pDepthStencil = nullptr;
 ID3D11Buffer* gVertexBuffer = nullptr;
 ID3D11Buffer* gIndexBuffer = nullptr;
 ID3D11Buffer* gGeometryBuffer = nullptr;
+ID3D11Buffer* testBuffer = nullptr;
 
 ID3D11Buffer* worldSpaceBuffer = nullptr;
 
@@ -35,6 +36,13 @@ ID3D11VertexShader* gVertexShader = nullptr;
 ID3D11PixelShader* gPixelShader = nullptr;
 Camera WorldCamera;
 Object worldObject;
+
+
+struct worldMatrixBuffer
+{
+	XMFLOAT4X4 worldViewProj;
+	XMFLOAT4X4 eyeSpace;
+};
 
 vector<Object> objects;
 int nrOfObjects = 0;
@@ -53,7 +61,7 @@ using namespace DirectX::SimpleMath;
 SimpleMath::Matrix* viewSpace = nullptr;
 SimpleMath::Matrix* projectionSpace = nullptr;
 SimpleMath::Matrix* worldSpace = nullptr; // need one worldSpace for each object in the world
-Vector3 cameraPos = Vector3(0, 0, -2);
+Vector3 cameraPos = Vector3(0, 0, 20);
 SimpleMath::Matrix* worldViewProj = nullptr;
 SimpleMath::Matrix* eyeSpace = nullptr;
 
@@ -86,20 +94,16 @@ void createWorldMatrices()
 			 20.0f				//far plane
 			 ));
 
-	 worldSpace = new Matrix(XMMatrixTranslation(1.0f,2.0f,1.0f));
+	 //worldSpace = new Matrix(XMMatrixTranslation(1.0f,2.0f,1.0f));
+	 worldSpace = new Matrix(XMMatrixTranslation(1.0f, 1.0f, 1.0f));
 
 	 worldViewProj = new Matrix((*worldSpace) * (*viewSpace) * (*projectionSpace));
-	 eyeSpace = new Matrix((*worldSpace) * (*viewSpace));
-	 eyeSpace = &eyeSpace->Transpose();
+	 eyeSpace = new Matrix((*worldSpace)); // * (*viewSpace));
+	 //eyeSpace = &eyeSpace->Transpose();
 
 	 worldViewProj = &worldViewProj->Transpose();
+	 eyeSpace = &eyeSpace->Transpose();
 
-
-	 struct worldMatrixBuffer
-	 {
-		 XMFLOAT4X4 worldViewProj;
-		 XMFLOAT4X4 eyeSpace;
-	 };
 
 	 worldMatrixBuffer buffer
 	 {
@@ -195,7 +199,7 @@ void createObjects()
 #pragma region
 
 	Parser fromFile;
-	fromFile.progressFile("obj.txt");
+	fromFile.progressFile("obj2.txt");
 	fromFile.loadMaterial("box.mtl");
 	int nrOfVert = 0;
 	int counter = 0;
@@ -224,9 +228,15 @@ void createObjects()
 			
 		counter++;
 	}
-	//
+	
 	nrOfVertexDrawn = triangleVertices.size();
-	worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice, fromFile.getImageFile());
+	//worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice, fromFile.getImageFile());
+
+	//objects.push_back(Object(triangleVertices, Vector3(0, 0, 0), gDevice,fromFile.getImageFile()));
+	//nrOfObjects++;
+
+	//objects.push_back(Object(triangleVertices, Vector3(3, 0, 0), gDevice, fromFile.getImageFile()));
+	//nrOfObjects++;
 
 	//many boxes many wow
 	for (int x = 0; x < 6; x++)
@@ -243,8 +253,7 @@ void createObjects()
 			}
 		}
 	}
-	//worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice);
-
+	worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice);
 	pointLight.sendToBuffer(gDevice);
 #pragma endregion
 
@@ -270,15 +279,30 @@ void Render(Object object1)
 
 	*viewSpace = WorldCamera.getViewMatrix();
 	*worldViewProj = Matrix((*worldSpace) * (*viewSpace) * (*projectionSpace));
+	//*eyeSpace = *worldViewProj * projectionSpace->Invert();
+	eyeSpace = &object1.getWorldMatrix();
+
 	worldViewProj = &worldViewProj->Transpose();
 
+	//Matrix eyeSpace = Matrix();
+	
 
+	//*eyeSpace = *worldViewProj * projectionSpace->Invert();
+	eyeSpace = &eyeSpace->Transpose();
+
+	worldMatrixBuffer updateWorldMatrices
+	{
+		*worldViewProj, *eyeSpace
+	};
 	Matrix* WVP_Ptr = nullptr;
 	D3D11_MAPPED_SUBRESOURCE viewSpaceData;
-	memset(&viewSpaceData, 0, sizeof(viewSpace));
+	memset(&viewSpaceData, 0, sizeof(viewSpaceData));
+
 
 	HRESULT test = gDeviceContext->Map(worldSpaceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &viewSpaceData);
-	memcpy(viewSpaceData.pData, worldViewProj->m, sizeof(*worldViewProj));
+
+	//test = gDeviceContext->Map(worldSpaceBuffer,0, D3D11_MAP_WRITE_DISCARD)
+	memcpy(viewSpaceData.pData, &updateWorldMatrices, sizeof(updateWorldMatrices));
 
 	gDeviceContext->Unmap(worldSpaceBuffer, 0);
 
@@ -305,9 +329,10 @@ void Render(Object object1)
 	gDeviceContext->IASetVertexBuffers(0, 1, &gVertexBuffer, &vertexSize, &offset);
 	//gDeviceContext->IASetVertexBuffers(0, 1, , &vertexSize, &offset);
 	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
-	ID3D11Buffer* lightBuff = pointLight.getCLightBuffer();
 
+	ID3D11Buffer* lightBuff = pointLight.getCLightBuffer();
 	gDeviceContext->PSSetConstantBuffers(0, 1, &lightBuff);
+
 	//gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	gDeviceContext->IASetInputLayout(gVertexLayout);

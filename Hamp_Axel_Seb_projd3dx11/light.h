@@ -17,7 +17,7 @@ struct PosLight
 		memset(this, 0, sizeof(this));
 		this->x = 0.0f;
 		this->y = 0.0f;
-		this->z = 0.0f;
+		this->z = -2.0f;
 		this->w = 1.0f;
 		this->pad = 0.0f;
 		this->ambient = 0.2f;

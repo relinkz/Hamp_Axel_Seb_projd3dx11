@@ -41,8 +41,8 @@ void Parser::progressFile(const string& dest) throw(...)
 			if (data == "v")
 			{
 				file >> vertex[0];
-				file >> vertex[2];
 				file >> vertex[1];
+				file >> vertex[2];
 
 				this->verticies.push_back(Vector3(vertex[0], vertex[1], vertex[2]));
 			}
@@ -309,7 +309,8 @@ void Parser::createList()
 
 		newVertex.nx = this->vertexNormals.at(temp.vNormIndex - 1).x;
 		newVertex.ny = this->vertexNormals.at(temp.vNormIndex - 1).y;
-		newVertex.nz = (-1) * this->vertexNormals.at(temp.vNormIndex - 1).z;
+		//newVertex.nz = (-1) * this->vertexNormals.at(temp.vNormIndex - 1).z;
+		newVertex.nz = this->vertexNormals.at(temp.vNormIndex - 1).z;
 
 		this->finalVertexes.push_back(newVertex);
 		this->triVertex.pop_front();
