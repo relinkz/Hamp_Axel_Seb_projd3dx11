@@ -162,6 +162,8 @@ void Camera::Update(HWND hWnd)
 	if (GetAsyncKeyState(0x52))
 	{
 		setDefaultValue();
+		this->viewFustrumPlanes.clear();
+		this->setUpViewFustrumPlanes();
 	}
 
 
