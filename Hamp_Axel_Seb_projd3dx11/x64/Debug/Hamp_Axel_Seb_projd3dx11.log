@@ -1,15 +1,11 @@
-﻿Build started 04/03/2016 11:08:34.
+﻿Build started 04/03/2016 15:27:11.
      1>Project "C:\Users\Sebastian\Documents\3d-prog\Directx11 project\Hamp_Axel_Seb_projd3dx11\Hamp_Axel_Seb_projd3dx11\Hamp_Axel_Seb_projd3dx11.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Users\Sebastian\Documents\3d-prog\Directx11 project\Hamp_Axel_Seb_projd3dx11\packages\directxtk_uwp.2016.2.23.1\build\native\../../build/native/include/" /ZI /nologo /W3 /WX- /Od /D HAS_DIRECTXTK /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"x64\Debug\\" /Fd"x64\Debug\vc140.pdb" /Gd /TP /errorReport:prompt Camera.cpp Hamp_Axel_Seb_projd3dx11.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Users\Sebastian\Documents\3d-prog\Directx11 project\Hamp_Axel_Seb_projd3dx11\packages\directxtk_uwp.2016.2.23.1\build\native\../../build/native/include/" /ZI /nologo /W3 /WX- /Od /D HAS_DIRECTXTK /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"x64\Debug\\" /Fd"x64\Debug\vc140.pdb" /Gd /TP /errorReport:prompt Hamp_Axel_Seb_projd3dx11.cpp
          Hamp_Axel_Seb_projd3dx11.cpp
-     1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11.cpp(269): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-     1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11.cpp(546): warning C4244: '=': conversion from 'float' to 'UINT', possible loss of data
-     1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11.cpp(547): warning C4244: '=': conversion from 'float' to 'UINT', possible loss of data
-         Camera.cpp
-     1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\camera.cpp(54): warning C4244: '=': conversion from 'LONG' to 'float', possible loss of data
-     1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\camera.cpp(55): warning C4244: '=': conversion from 'LONG' to 'float', possible loss of data
-         Generating Code...
+     1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11.cpp(275): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+     1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11.cpp(555): warning C4244: '=': conversion from 'float' to 'UINT', possible loss of data
+     1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11.cpp(556): warning C4244: '=': conversion from 'float' to 'UINT', possible loss of data
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Sebastian\Documents\3d-prog\Directx11 project\Hamp_Axel_Seb_projd3dx11\x64\Debug\Hamp_Axel_Seb_projd3dx11.exe" /INCREMENTAL:NO /NOLOGO "C:\Users\Sebastian\Documents\3d-prog\Directx11 project\Hamp_Axel_Seb_projd3dx11\packages\directxtk_uwp.2016.2.23.1\build\native\../../build/native/lib/x64/Debug/DirectXTK.lib" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /Debug /PDB:"C:\Users\Sebastian\Documents\3d-prog\Directx11 project\Hamp_Axel_Seb_projd3dx11\x64\Debug\Hamp_Axel_Seb_projd3dx11.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG:incremental /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Sebastian\Documents\3d-prog\Directx11 project\Hamp_Axel_Seb_projd3dx11\x64\Debug\Hamp_Axel_Seb_projd3dx11.lib" /MACHINE:X64 /SAFESEH:NO x64\Debug\Camera.obj
          x64\Debug\Hamp_Axel_Seb_projd3dx11.obj
@@ -18,6 +14,7 @@
          x64\Debug\Object.obj
          x64\Debug\Parser.obj
          x64\Debug\QuadTree.obj
+         x64\Debug\shadowMap.obj
      1>Camera.obj : warning LNK4075: ignoring '/EDITANDCONTINUE' due to '/OPT:ICF' specification
          LINK : /LTCG specified but no code generation required; remove /LTCG from the link command line to improve linker performance
          Hamp_Axel_Seb_projd3dx11.vcxproj -> C:\Users\Sebastian\Documents\3d-prog\Directx11 project\Hamp_Axel_Seb_projd3dx11\x64\Debug\Hamp_Axel_Seb_projd3dx11.exe
@@ -25,4 +22,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:04.28
+Time Elapsed 00:00:02.46

@@ -7,6 +7,7 @@
 #include "Camera.h"
 #include "LightHandler.h"
 #include "QuadTree.h"
+#include "shadowMap.h"
 
 
 HWND InitWindow(HINSTANCE hInstance);
@@ -40,10 +41,12 @@ Camera WorldCamera;
 Object worldObject;
 
 
+
 struct worldMatrixBuffer
 {
 	XMFLOAT4X4 worldViewProj;
 	XMFLOAT4X4 eyeSpace;
+	XMFLOAT4X4 worldViewProjL;
 };
 
 vector<Object> objects;
@@ -84,19 +87,20 @@ SimpleMath::Matrix* projectionSpace = nullptr;
 SimpleMath::Matrix* worldSpace = nullptr; // need one worldSpace for each object in the world
 Vector3 cameraPos = Vector3(0, 0, 20);
 SimpleMath::Matrix* worldViewProj = nullptr;
+SimpleMath::Matrix* worldViewProjLight = nullptr;
 SimpleMath::Matrix* eyeSpace = nullptr;
+SimpleMath::Matrix* orthograficProjection = nullptr;
 
-
-//void createPlane(int width, int length, Vector3 normal, vector<TriangleVertex>result)
-//{
-//	int stride = result.size();
-//}
 
 void createWorldMatrices()
 {
 	Matrix* WVP_Ptr = nullptr;
 	//ViewSpace
 	//viewSpace = &WorldCamera.getViewMatrix();
+
+	ShadowMap shadowMap = ShadowMap(gDevice, 5, 5);
+
+	orthograficProjection = new Matrix(shadowMap.getOrtographProj());
 
 	viewSpace = new Matrix(DirectX::XMMatrixLookAtLH
 		(
@@ -119,6 +123,8 @@ void createWorldMatrices()
 	 worldSpace = new Matrix(XMMatrixTranslation(1.0f, 1.0f, 1.0f));
 
 	 worldViewProj = new Matrix((*worldSpace) * (*viewSpace) * (*projectionSpace));
+	 worldViewProjLight = new Matrix(pointLight.getWorldMatrix() * (*viewSpace) * (*orthograficProjection));
+	 
 	 eyeSpace = new Matrix((*worldSpace)); // * (*viewSpace));
 	 //eyeSpace = &eyeSpace->Transpose();
 
@@ -128,7 +134,7 @@ void createWorldMatrices()
 
 	 worldMatrixBuffer buffer
 	 {
-		 *worldViewProj, *eyeSpace
+		 *worldViewProj, *eyeSpace, *worldViewProjLight
 	 };
 
 
@@ -146,7 +152,7 @@ void createWorldMatrices()
 	 testa.pSysMem = &buffer;
 
 	HRESULT test = gDevice->CreateBuffer(&viewSpaceDesc, &testa, &worldSpaceBuffer);
-	
+	//
 	//light buffer
 	/*D3D11_BUFFER_DESC lightBufferDesc;
 	// memset(&viewSpaceDesc, 0, sizeof(worldMatrixBuffer));
@@ -334,7 +340,7 @@ void Render(Object object1)
 
 	worldMatrixBuffer updateWorldMatrices
 	{
-		*worldViewProj, *eyeSpace
+		*worldViewProj, *eyeSpace, *worldViewProjLight
 	};
 	Matrix* WVP_Ptr = nullptr;
 	D3D11_MAPPED_SUBRESOURCE viewSpaceData;
@@ -375,6 +381,9 @@ void Render(Object object1)
 	gDeviceContext->IASetVertexBuffers(0, 1, &gVertexBuffer, &vertexSize, &offset);
 	//gDeviceContext->IASetVertexBuffers(0, 1, , &vertexSize, &offset);
 	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
+	//gDeviceContext->VSSetConstantBuffers(1, 2, &lightBuff);
+	//på något sätt vill inte constant buffern skapas
+
 
 
 

@@ -23,6 +23,7 @@ struct PS_OUT
 	float3 Norm : NORMAL;
 	float2 Tex	: TEXCOORD;
 	float4 PosView : POSITION;
+	//float4 ProjTex : TEXCOORD1;
 };
 
 float4 main(PS_OUT input) : SV_TARGET
