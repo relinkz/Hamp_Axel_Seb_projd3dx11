@@ -69,6 +69,7 @@ void Camera::Update(HWND hWnd)
 		for (int i = 0; i < this->viewFustrumPlanes.size(); i++)
 		{
 			rotatePoint(this->viewFustrumPlanes.at(i).pos, rotation);
+			rotatePoint(this->viewFustrumPlanes.at(i).normal, rotation);
 		}
 	}
 	else if (GetAsyncKeyState(VK_RIGHT))
@@ -81,6 +82,7 @@ void Camera::Update(HWND hWnd)
 		for (int i = 0; i < this->viewFustrumPlanes.size(); i++)
 		{
 			rotatePoint(this->viewFustrumPlanes.at(i).pos, rotation);
+			rotatePoint(this->viewFustrumPlanes.at(i).normal, rotation);
 		}
 	}
 
@@ -101,6 +103,7 @@ void Camera::Update(HWND hWnd)
 		for (int i = 0; i < this->viewFustrumPlanes.size(); i++)
 		{
 			rotatePoint(this->viewFustrumPlanes.at(i).pos, rotation);
+			rotatePoint(this->viewFustrumPlanes.at(i).normal, rotation);
 		}
 	}
 	else if (this->yRotation < 3.14f / 3 && (GetAsyncKeyState(VK_DOWN)))
@@ -114,6 +117,7 @@ void Camera::Update(HWND hWnd)
 		for (int i = 0; i < this->viewFustrumPlanes.size(); i++)
 		{
 			rotatePoint(this->viewFustrumPlanes.at(i).pos, rotation);
+			rotatePoint(this->viewFustrumPlanes.at(i).normal, rotation);
 		}
 	}
 
