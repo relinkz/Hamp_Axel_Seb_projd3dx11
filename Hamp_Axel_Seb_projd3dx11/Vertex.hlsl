@@ -26,10 +26,10 @@ VS_OUT VS_main(VS_IN input)
 	VS_OUT output = (VS_OUT)0;
 
 	output.Pos = mul(float4(input.Pos, 1.0f), homoClipSpace);
-	output.PosView = mul(input.Pos, worldSpace);
+	output.PosView = mul(float4(input.Pos,1.0f), worldSpace);
 	//output.Norm = mul(float4(input.Norm, 0.0f), superTest);
 	output.Norm = input.Norm;
-	output.Norm = normalize(output.Norm);
+	//output.Norm = normalize(output.Norm);
 
 	output.Tex = input.Tex;
 

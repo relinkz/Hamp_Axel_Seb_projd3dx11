@@ -31,6 +31,7 @@ public:
 	Matrix getWorldMatrix()							const;
 	ID3D11Buffer* getVertexBufferPointer()			const;
 	ID3D11ShaderResourceView* getDiffuseMapSRV()	const;
+	Vector3 getPosition()							const;
 };
 
 #endif

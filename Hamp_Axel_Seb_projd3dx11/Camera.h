@@ -1,6 +1,8 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+#include <vector>
+#include "Object.h"
 #include <windows.h>
 #include <Windows.h>
 
@@ -15,7 +17,11 @@
 
 using namespace DirectX;
 using namespace SimpleMath;
-
+struct plane
+{
+	Vector3 pos;
+	Vector3 normal;
+};
 class Camera
 {
 private:
@@ -30,7 +36,10 @@ private:
 	POINT mousePoint;
 	POINT mousePointOld;
 
+	std::vector<plane> viewFustrumPlanes;
+
 	void setDefaultValue();
+	void rotatePoint(Vector3 &point, XMMATRIX rotation);
 
 public:
 	Camera();
@@ -42,7 +51,10 @@ public:
 
 	Matrix getViewMatrix();
 	Vector3 getCameraPos();
+	Vector3 getLookAtPoint();
 	POINT GetMousePos(HWND hWnd);
+	void setUpViewFustrumPlanes();
+	std::vector<Object*> doFustrumCulling(std::vector<Object*> objects);
 
 };
 

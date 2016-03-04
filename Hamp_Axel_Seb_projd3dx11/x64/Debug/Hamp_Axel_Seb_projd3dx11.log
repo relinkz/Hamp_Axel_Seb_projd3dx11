@@ -1,0 +1,23 @@
+﻿Build started 2016-03-04 10:52:13.
+     1>Project "D:\3D\Hamp_Axel_Seb_projd3dx11-master\Hamp_Axel_Seb_projd3dx11\Hamp_Axel_Seb_projd3dx11.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /I"D:\3D\Hamp_Axel_Seb_projd3dx11-master\packages\directxtk_uwp.2016.2.23.1\build\native\../../build/native/include/" /ZI /nologo /W3 /WX- /Od /D HAS_DIRECTXTK /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"x64\Debug\\" /Fd"x64\Debug\vc140.pdb" /Gd /TP /errorReport:prompt Camera.cpp
+         Camera.cpp
+     1>d:\3d\hamp_axel_seb_projd3dx11-master\hamp_axel_seb_projd3dx11\camera.cpp(54): warning C4244: '=': conversion from 'LONG' to 'float', possible loss of data
+     1>d:\3d\hamp_axel_seb_projd3dx11-master\hamp_axel_seb_projd3dx11\camera.cpp(55): warning C4244: '=': conversion from 'LONG' to 'float', possible loss of data
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"D:\3D\Hamp_Axel_Seb_projd3dx11-master\x64\Debug\Hamp_Axel_Seb_projd3dx11.exe" /INCREMENTAL:NO /NOLOGO "D:\3D\Hamp_Axel_Seb_projd3dx11-master\packages\directxtk_uwp.2016.2.23.1\build\native\../../build/native/lib/x64/Debug/DirectXTK.lib" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /Debug /PDB:"D:\3D\Hamp_Axel_Seb_projd3dx11-master\x64\Debug\Hamp_Axel_Seb_projd3dx11.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG:incremental /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\3D\Hamp_Axel_Seb_projd3dx11-master\x64\Debug\Hamp_Axel_Seb_projd3dx11.lib" /MACHINE:X64 /SAFESEH:NO x64\Debug\Camera.obj
+         x64\Debug\Hamp_Axel_Seb_projd3dx11.obj
+         x64\Debug\LightHandler.obj
+         x64\Debug\Material.obj
+         x64\Debug\Object.obj
+         x64\Debug\Parser.obj
+         x64\Debug\QuadTree.obj
+     1>Camera.obj : warning LNK4075: ignoring '/EDITANDCONTINUE' due to '/OPT:ICF' specification
+         LINK : /LTCG specified but no code generation required; remove /LTCG from the link command line to improve linker performance
+         Hamp_Axel_Seb_projd3dx11.vcxproj -> D:\3D\Hamp_Axel_Seb_projd3dx11-master\x64\Debug\Hamp_Axel_Seb_projd3dx11.exe
+     1>Done Building Project "D:\3D\Hamp_Axel_Seb_projd3dx11-master\Hamp_Axel_Seb_projd3dx11\Hamp_Axel_Seb_projd3dx11.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:05.17

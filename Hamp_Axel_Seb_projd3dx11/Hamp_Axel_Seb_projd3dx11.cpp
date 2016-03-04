@@ -6,6 +6,7 @@
 #include "Object.h"
 #include "Camera.h"
 #include "LightHandler.h"
+#include "QuadTree.h"
 
 
 HWND InitWindow(HINSTANCE hInstance);
@@ -27,6 +28,7 @@ ID3D11Buffer* gVertexBuffer = nullptr;
 ID3D11Buffer* gIndexBuffer = nullptr;
 ID3D11Buffer* gGeometryBuffer = nullptr;
 ID3D11Buffer* testBuffer = nullptr;
+ID3D11Buffer* lightBuffer = nullptr;
 
 ID3D11Buffer* worldSpaceBuffer = nullptr;
 
@@ -45,7 +47,10 @@ struct worldMatrixBuffer
 };
 
 vector<Object> objects;
+vector<Object*> objectsToDraw;
 int nrOfObjects = 0;
+
+QuadTree quadTree(Vector3(0, 0, 0), Vector3(10, 0, 10), 2, 10, 0, 10, 0);
 
 int nrOfVertexDrawn = 0;
 
@@ -55,7 +60,23 @@ LightHandler pointLight = LightHandler();
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 
+struct newPosLight
+{
+	Vector3 pos;
+	float pad;
+	float ambient;
+	float diffuse;
+	float strength;
+};
 
+newPosLight light
+{
+	Vector3(0,0,-2),
+	0.0f,
+	0.2f,
+	0.8f,
+	5.0f
+};
 
 //Matrices
 SimpleMath::Matrix* viewSpace = nullptr;
@@ -110,6 +131,7 @@ void createWorldMatrices()
 		 *worldViewProj, *eyeSpace
 	 };
 
+
 	 //buffers
 	 D3D11_BUFFER_DESC viewSpaceDesc;
 	// memset(&viewSpaceDesc, 0, sizeof(worldMatrixBuffer));
@@ -125,6 +147,21 @@ void createWorldMatrices()
 
 	HRESULT test = gDevice->CreateBuffer(&viewSpaceDesc, &testa, &worldSpaceBuffer);
 	
+	//light buffer
+	/*D3D11_BUFFER_DESC lightBufferDesc;
+	// memset(&viewSpaceDesc, 0, sizeof(worldMatrixBuffer));
+	lightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	lightBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	lightBufferDesc.ByteWidth = sizeof(PosLight);
+	lightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	lightBufferDesc.MiscFlags = 0;
+	lightBufferDesc.StructureByteStride = 0;
+
+	D3D11_SUBRESOURCE_DATA lightData;
+	lightData.pSysMem = &light;
+
+	test = gDevice->CreateBuffer(&lightBufferDesc, &lightData, &lightBuffer);*/
+
 }
 
 void CreateShaders()
@@ -239,15 +276,19 @@ void createObjects()
 	//nrOfObjects++;
 
 	//many boxes many wow
-	for (int x = 0; x < 6; x++)
+	int xMax = 6;
+	int yMax = 6;
+	int zMax = 6;
+
+	for (int x = 0; x < xMax; x++)
 	{
-		for (int y = 0; y < 6; y++)
+		for (int y = 0; y < yMax; y++)
 		{
-			for (int z = 0; z < 6; z++)
+			for (int z = 0; z < zMax; z++)
 			{
 				if (x == 0 || x == 5 || y == 0 || y == 5 || z == 0 || z == 5)
 				{
-					objects.push_back(Object(triangleVertices, Vector3((1.0f * x) - 3.0f, 1.0f * y, (1.0f* z) + 3.0f), gDevice, fromFile.getImageFile()));
+					objects.push_back(Object(triangleVertices, Vector3((2.0f * x), (2.0f * y), (2.0f* z)), gDevice, fromFile.getImageFile()));
 					nrOfObjects++;
 				}
 			}
@@ -255,6 +296,7 @@ void createObjects()
 	}
 	worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice);
 	pointLight.sendToBuffer(gDevice);
+	quadTree.setTreeData(objects);
 #pragma endregion
 
 	
@@ -280,7 +322,7 @@ void Render(Object object1)
 	*viewSpace = WorldCamera.getViewMatrix();
 	*worldViewProj = Matrix((*worldSpace) * (*viewSpace) * (*projectionSpace));
 	//*eyeSpace = *worldViewProj * projectionSpace->Invert();
-	eyeSpace = &object1.getWorldMatrix();
+	*eyeSpace = object1.getWorldMatrix();
 
 	worldViewProj = &worldViewProj->Transpose();
 
@@ -302,6 +344,7 @@ void Render(Object object1)
 	HRESULT test = gDeviceContext->Map(worldSpaceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &viewSpaceData);
 
 	//test = gDeviceContext->Map(worldSpaceBuffer,0, D3D11_MAP_WRITE_DISCARD)
+	
 	memcpy(viewSpaceData.pData, &updateWorldMatrices, sizeof(updateWorldMatrices));
 
 	gDeviceContext->Unmap(worldSpaceBuffer, 0);
@@ -321,6 +364,9 @@ void Render(Object object1)
 	ID3D11ShaderResourceView* diffuseSRV = object1.getDiffuseMapSRV();
 	gDeviceContext->PSSetShaderResources(0, 1, &diffuseSRV);
 
+	ID3D11Buffer* lightBuff = pointLight.getCLightBuffer();
+	gDeviceContext->PSSetConstantBuffers(0, 1, &lightBuff);
+
 	UINT32 vertexSize = sizeof(TriangleVertex);
 	//UINT32 vertexSize = sizeof(float) * 9;// får inte vara 8 av någon anledngin
 	UINT32 offset = 0;
@@ -330,8 +376,7 @@ void Render(Object object1)
 	//gDeviceContext->IASetVertexBuffers(0, 1, , &vertexSize, &offset);
 	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 
-	ID3D11Buffer* lightBuff = pointLight.getCLightBuffer();
-	gDeviceContext->PSSetConstantBuffers(0, 1, &lightBuff);
+
 
 	//gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -382,10 +427,20 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 				//clear depthbuffer
 				gDeviceContext->ClearDepthStencilView(gDepthBuffer, D3D11_CLEAR_DEPTH, 1, 0);
 
-				for (int i = 0; i < nrOfObjects; i++)
+				objectsToDraw = quadTree.getObjectsToDraw(WorldCamera.getCameraPos());
+				objectsToDraw = WorldCamera.doFustrumCulling(objectsToDraw);
+				for (int i = 0; i < objectsToDraw.size(); i++)
+				{
+					if (objectsToDraw.at(i) != nullptr)
+					{
+						Render(*objectsToDraw.at(i));
+					}
+				}
+
+				/*for (int i = 0; i < nrOfObjects; i++)
 				{
 					Render(objects.at(i)); //8. Rendera
-				}
+				}*/
 				
 
 				gSwapChain->Present(0, 0); //9. Växla front- och back-buffer

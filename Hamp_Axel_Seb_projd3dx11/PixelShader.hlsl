@@ -41,24 +41,31 @@ float4 main(PS_OUT input) : SV_TARGET
 
 	//float4 pixToLight = lightPos - input.PosView;
 	float angle = dot(lightVector, (input.Norm));
-	angle = saturate(angle);
+	//angle = saturate(angle);
 
-	//text.x = diffuse * text.x * angle + text.x * ambient;
-	//text.y = diffuse * text.y * angle + text.y * ambient;
-	//text.z = diffuse * text.z * angle + text.z * ambient;
-
-	if (angle >= 0) //there is a way for the light to hit the surface
+	if (angle < 0)
 	{
-		text.x = diffuse * text.x * angle + text.x * ambient;
-		text.y = diffuse * text.y *angle + text.y * ambient;
-		text.z = diffuse * text.z *angle + text.z * ambient;
+		angle = 0;
+	}
+
+	text.x = diffuse * text.x * angle + text.x * ambient;
+	text.y = diffuse * text.y * angle + text.y * ambient;
+	text.z = diffuse * text.z * angle + text.z * ambient;
+
+
+
+	/*if (angle >= 0) //there is a way for the light to hit the surface
+	{
+	    text.x = diffuse1 * text.x * angle + text.x * ambient1;
+		text.y = diffuse1 * text.y * angle + text.y * ambient1;
+		text.z = diffuse1 * text.z * angle + text.z * ambient1;
 	}
 	else //so that ambient just applies
 	{
-		text.x = text.x * ambient;
-		text.y = text.y * ambient;
-		text.z = text.z * ambient;
-	}
+		text.x = text.x * ambient1;
+		text.y = text.y * ambient1;
+		text.z = text.z * ambient1;
+	}*/
 
 	/*
 	if (angle >= 0)
