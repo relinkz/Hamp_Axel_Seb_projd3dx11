@@ -168,7 +168,7 @@ Vector3 Camera::getCameraPos()
 
 void Camera::setDefaultValue()
 {
-	this->Pos = Vector3(0, 0, -2.0f);
+	this->Pos = Vector3(2, 0, -2.0f);
 	this->lookAtPoint = Vector3(0, 0, 1);
 	this->lookUpPoint = Vector3(0, 1, 0);
 	this->lookRightPoint = Vector3(1, 0, 0);

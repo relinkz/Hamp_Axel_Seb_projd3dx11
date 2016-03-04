@@ -230,12 +230,12 @@ void createObjects()
 	}
 	
 	nrOfVertexDrawn = triangleVertices.size();
-	//worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice, fromFile.getImageFile());
-
+	worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice, fromFile.getImageFile());
+	
 	//objects.push_back(Object(triangleVertices, Vector3(0, 0, 0), gDevice,fromFile.getImageFile()));
 	//nrOfObjects++;
 
-	//objects.push_back(Object(triangleVertices, Vector3(3, 0, 0), gDevice, fromFile.getImageFile()));
+	//objects.push_back(Object(triangleVertices, Vector3(5, 0, 0), gDevice, fromFile.getImageFile()));
 	//nrOfObjects++;
 
 	//many boxes many wow

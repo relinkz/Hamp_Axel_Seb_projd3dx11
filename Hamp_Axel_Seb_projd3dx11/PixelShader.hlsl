@@ -46,19 +46,25 @@ float4 main(PS_OUT input) : SV_TARGET
 	//text.x = diffuse * text.x * angle + text.x * ambient;
 	//text.y = diffuse * text.y * angle + text.y * ambient;
 	//text.z = diffuse * text.z * angle + text.z * ambient;
+	if (angle < 0)
+		angle = 0;
 
-	if (angle >= 0) //there is a way for the light to hit the surface
-	{
-		text.x = diffuse * text.x * angle + text.x * ambient;
-		text.y = diffuse * text.y *angle + text.y * ambient;
-		text.z = diffuse * text.z *angle + text.z * ambient;
-	}
-	else //so that ambient just applies
-	{
-		text.x = text.x * ambient;
-		text.y = text.y * ambient;
-		text.z = text.z * ambient;
-	}
+	text.x = diffuse * text.x * angle + text.x * ambient;
+	text.y = diffuse * text.y *angle + text.y * ambient;
+	text.z = diffuse * text.z *angle + text.z * ambient;
+
+	//if (angle >= 0) //there is a way for the light to hit the surface
+	//{
+	//	text.x = diffuse * text.x * angle + text.x * ambient;
+	//	text.y = diffuse * text.y *angle + text.y * ambient;
+	//	text.z = diffuse * text.z *angle + text.z * ambient;
+	//}
+	//else //so that ambient just applies
+	//{
+	//	text.x = text.x * ambient;
+	//	text.y = text.y * ambient;
+	//	text.z = text.z * ambient;
+	//}
 
 	/*
 	if (angle >= 0)
