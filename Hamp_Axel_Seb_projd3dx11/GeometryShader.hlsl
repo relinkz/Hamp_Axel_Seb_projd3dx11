@@ -28,7 +28,7 @@ void main(triangle VS_OUT input[3], inout TriangleStream< VS_OUT > data)
 	normal = normalize(normal);
 
 	float4 rotNorm = mul(normal, worldViewMatrix);
-	rotNorm = normalize(rotNorm);
+		rotNorm = normalize(rotNorm);
 
 	VS_OUT output[3];
 	for (uint i = 0; i < 3; i++)

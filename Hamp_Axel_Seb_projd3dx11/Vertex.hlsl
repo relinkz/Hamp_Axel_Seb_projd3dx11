@@ -18,8 +18,6 @@ struct VS_OUT
 	float3 Norm : NORMAL;
 	float2 Tex	: TEXCOORD;
 	float4 PosView : POSITION;
-	float3 Tangentview : Tangent;
-	float4 ProjTex : TEXCOORD1;
 };
 //-----------------------------------------------------------------------------------------
 // VertexShader: VSScene
@@ -30,7 +28,6 @@ VS_OUT VS_main(VS_IN input)
 
 	output.Pos = mul(float4(input.Pos, 1.0f), homoClipSpace);
 	output.PosView = mul(float4(input.Pos, 1.0f), worldSpace);
-	output.ProjTex = mul(float4(input.Pos, 1.0f), gLightWorldProj);
 	//output.Norm = mul(float4(input.Norm, 0.0f), superTest);
 	output.Norm = input.Norm;
 	//output.Norm = normalize(output.Norm);
