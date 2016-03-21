@@ -172,6 +172,8 @@ void createWorldMatrices()
 
 void CreateShaders()
 {
+	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
+	ID3DBlob* errorBlob = nullptr;
 	//create vertex shader
 	ID3DBlob* pVS = nullptr;
 	D3DCompileFromFile(
@@ -227,8 +229,15 @@ void CreateShaders()
 		D3DCOMPILE_DEBUG,
 		0,
 		&pGS,
-		nullptr
+		&errorBlob
 		);
+	string error;
+
+	if (errorBlob)
+	{
+		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+		error = (char*)errorBlob->GetBufferPointer();
+	}
 
 	gDevice->CreateGeometryShader(pGS->GetBufferPointer(), pGS->GetBufferSize(), nullptr, &gGeometryShader);
 

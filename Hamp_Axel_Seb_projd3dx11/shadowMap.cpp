@@ -69,7 +69,7 @@ ShadowMap::ShadowMap(ID3D11Device* device, UINT width, UINT height)
 
 	result = device->CreateShaderResourceView(depthMap, &srvDesc, &this->DepthMapSRV);
 
-	//ReleaseCOM(depthMap);
+	depthMap->Release();
 }
 
 ShadowMap::~ShadowMap()
@@ -101,4 +101,9 @@ void ShadowMap::bindDsvandSetNullRenderTarget(ID3D11DeviceContext* deviceContect
 	ID3D11RenderTargetView* renderTarget[1] = { 0 };
 	deviceContect->OMSetRenderTargets(1, renderTarget, this->DepthMapDSV);
 	deviceContect->ClearDepthStencilView(this->DepthMapDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+	/*
+	En bättre design när man jobbar med flera render targets skulle vara att implemetera en stack, 
+	push and pop render rarget.
+	*/
 }
