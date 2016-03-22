@@ -162,6 +162,7 @@
     <ClCompile Include="Parser.cpp" />
     <ClCompile Include="QuadTree.cpp" />
     <ClCompile Include="shadowMap.cpp" />
+    <ClCompile Include="ShadowShaderClass.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="GeometryShader.hlsl">
@@ -215,6 +216,7 @@
     <ClInclude Include="Parser.h" />
     <ClInclude Include="QuadTree.h" />
     <ClInclude Include="shadowMap.h" />
+    <ClInclude Include="ShadowShaderClass.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="box.mtl" />
