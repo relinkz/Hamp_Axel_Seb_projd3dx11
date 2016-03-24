@@ -28,8 +28,9 @@ struct PixelInputType
 	float3 LightPos : TEXCOORD2;
 };
 
-PixelInputType ShadowVertexShader(VertexInputType input)
+float4 ShadowVertexShader(VertexInputType input) : SV_POSITION
 {
+	/*
 	PixelInputType output;
 	float4 worldPosition;
 
@@ -43,7 +44,7 @@ PixelInputType ShadowVertexShader(VertexInputType input)
 
 	/*
 	Transform vertex based on the lights perspective
-	*/
+	
 	output.LightViewPosition = mul(input.Position, lightViewMatrix);
 	output.Position = mul(output.LightViewPosition, lightProjectionMatrix);
 
@@ -60,6 +61,7 @@ PixelInputType ShadowVertexShader(VertexInputType input)
 	output.LightPos = lightPosition.xyz - worldPosition.xyz;
 
 	output.LightPos = normalize(output.LightPos);
-
-	return output;
+	*/
+	//render from the lights perspective
+	return mul(float4(lightPosition, 1.0f), lightProjectionMatrix);
 }

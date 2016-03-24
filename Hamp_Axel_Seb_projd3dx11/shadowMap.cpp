@@ -37,6 +37,7 @@ ShadowMap::ShadowMap(ID3D11Device* device, UINT width, UINT height)
 	"DXGI_FORMAT_D24_UNORM_X8_TYPELESS"
 	*/
 
+
 	D3D11_TEXTURE2D_DESC texDesc;
 	texDesc.Width				= this->width;
 	texDesc.Height				= this->height;

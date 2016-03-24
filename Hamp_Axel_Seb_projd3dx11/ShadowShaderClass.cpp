@@ -91,6 +91,8 @@ bool ShadowShaderClass::initializeShader(ID3D11Device* gDevice, HWND hWind, WCHA
 	******************
 	*/
 
+	
+
 	result = D3DCompileFromFile(
 		vsFileName, //filename
 		NULL,
@@ -106,19 +108,16 @@ bool ShadowShaderClass::initializeShader(ID3D11Device* gDevice, HWND hWind, WCHA
 		if(FAILED(result))
 		{
 			this->outputShaderErrorMessage(errorMessage, hWind, vsFileName);
-		}
-		// If there was nothing in the error message then it simply could not find the file itself.
-		else
-		{
 			MessageBox(hWind, vsFileName, L"Missing Shader File", MB_OK);
 		}
+		// If there was nothing in the error message then it simply could not find the file itself.
 
-
+/*
 		/*
 		******************
 		*	PixelShader  *
 		******************
-		*/
+		
 
 		result = D3DCompileFromFile(
 			vsFileName, //filename
@@ -141,6 +140,8 @@ bool ShadowShaderClass::initializeShader(ID3D11Device* gDevice, HWND hWind, WCHA
 			MessageBox(hWind, psFileName, L"Missing Shader File", MB_OK);
 		}
 
+		*/
+
 		//creating the vertex shader from buffer
 		result = gDevice->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &(this->shadow_vertexShader));
 
@@ -149,12 +150,12 @@ bool ShadowShaderClass::initializeShader(ID3D11Device* gDevice, HWND hWind, WCHA
 			//das crash
 		}
 
-		result = gDevice->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), NULL, &(this->shadow_pixelShader));
+		//result = gDevice->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), NULL, &(this->shadow_pixelShader));
 
-		if (FAILED(result))
-		{
-			//das crash
-		}
+		//if (FAILED(result))
+		//{
+		//	//das crash
+		//}
 
 		// Create the vertex input layout description
 		polygonLayout[0].SemanticName = "POSITION";
@@ -187,17 +188,13 @@ bool ShadowShaderClass::initializeShader(ID3D11Device* gDevice, HWND hWind, WCHA
 		// Create the vertex input layout.
 		result = gDevice->CreateInputLayout(polygonLayout, numElements, vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(),
 			&(this->shadow_layout));
-		if (FAILED(result))
-		{
-			return false;
-		}
 
 		// Release the vertex shader buffer and pixel shader buffer since they are no longer needed.
 		vertexShaderBuffer->Release();
 		vertexShaderBuffer = 0;
 
-		pixelShaderBuffer->Release();
-		pixelShaderBuffer = 0;
+		//pixelShaderBuffer->Release();
+		//pixelShaderBuffer = 0;
 
 		// Create a wrap texture sampler state description.
 		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -391,13 +388,7 @@ bool ShadowShaderClass::setShaderParameters(
 	LightBufferType* dataPtr2;
 	LightBufferType2* dataPtr3;
 
-
-	// Transpose the matrices to prepare them for the shader.
-	worldMatrix = DirectX::XMMatrixTranspose(worldMatrix);
-	viewMatrix = DirectX::XMMatrixTranspose(viewMatrix);
-	projectionMatrix = DirectX::XMMatrixTranspose(projectionMatrix);
-	lightViewMatrix = DirectX::XMMatrixTranspose(lightViewMatrix);
-	lightProjectionMatrix = DirectX::XMMatrixTranspose(lightProjectionMatrix);
+	dataPtr = new MatrixBufferType;
 
 	dataPtr->lightView = lightViewMatrix;
 	dataPtr->lightProjection = lightProjectionMatrix;
