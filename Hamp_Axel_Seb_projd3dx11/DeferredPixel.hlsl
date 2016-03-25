@@ -1,3 +1,11 @@
+cbuffer world
+{
+	float4x4 worldViewProj;
+	float4x4 eyeSpace;
+	float4x4 lightViewMatrix;
+	float4x4 lightProjectionMatrix;
+};
+
 
 Texture2D txDiffuse : register(t0);
 SamplerState sampAni;
@@ -32,6 +40,8 @@ defPixelOutput main(in defPixelInput input) : SV_TARGET
 	//output.Normal = float4(in, 0.0f);
 	output.Pos = input.PosView;
 	output.Depth.xyz = input.PosWVP.z;
+	//output.Depth.xyz = mul(output.Depth.xyz, lightProjectionMatrix);
+
 
 	return output;
 }

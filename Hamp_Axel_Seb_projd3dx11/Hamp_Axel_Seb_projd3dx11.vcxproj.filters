@@ -68,9 +68,6 @@
     <FxCompile Include="PixelShader.hlsl">
       <Filter>Source Files\HLSL Files</Filter>
     </FxCompile>
-    <FxCompile Include="Vertex.hlsl">
-      <Filter>Source Files\HLSL Files</Filter>
-    </FxCompile>
     <FxCompile Include="shadowVS.hlsl">
       <Filter>Source Files\HLSL Files</Filter>
     </FxCompile>
@@ -78,6 +75,12 @@
       <Filter>Source Files\HLSL Files</Filter>
     </FxCompile>
     <FxCompile Include="DeferredPixel.hlsl">
+      <Filter>Source Files\HLSL Files</Filter>
+    </FxCompile>
+    <FxCompile Include="DeferredVertex.hlsl">
+      <Filter>Source Files\HLSL Files</Filter>
+    </FxCompile>
+    <FxCompile Include="Vertex.hlsl">
       <Filter>Source Files\HLSL Files</Filter>
     </FxCompile>
   </ItemGroup>

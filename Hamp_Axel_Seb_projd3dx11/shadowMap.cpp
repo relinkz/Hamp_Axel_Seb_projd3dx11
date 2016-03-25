@@ -93,15 +93,16 @@ SimpleMath::Matrix ShadowMap::getOrtographProj() const
 
 void ShadowMap::bindDsvandSetNullRenderTarget(ID3D11DeviceContext* deviceContect)
 {
-	deviceContect->RSSetViewports(1, &this->viewPort);
+	//deviceContect->RSSetViewports(1, &this->viewPort);
 
 	/*
 	*sätter null på render target render target eftersom vi endast kommer att måla till depth buffer.
 	Om vi sätter null render target så kommer vi ta bort färg skrivningar.
 	*/
-	ID3D11RenderTargetView* renderTarget[1] = { 0 };
-	deviceContect->OMSetRenderTargets(1, renderTarget, this->DepthMapDSV);
-	deviceContect->ClearDepthStencilView(this->DepthMapDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+	//ID3D11RenderTargetView* renderTarget[1] = { 0 };
+	//deviceContect->OMSetRenderTargets(1, renderTarget, this->DepthMapDSV);
+	//deviceContect->ClearDepthStencilView(this->DepthMapDSV, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	/*
 	En bättre design när man jobbar med flera render targets skulle vara att implemetera en stack, 

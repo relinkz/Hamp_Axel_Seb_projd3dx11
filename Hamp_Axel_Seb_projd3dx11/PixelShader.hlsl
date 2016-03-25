@@ -30,14 +30,14 @@ struct PS_OUT
 	float4 PosView : POSITION;
 };
 
-float4 main(in float4 screenPos : SV_POSITION) : SV_TARGET0
+float4 main(in float4 screenPos : SV_POSITION) : SV_TARGET
 {
-	float3 text;
+	//float3 text;
+    //int3 sampleIndices = int3(screenPos.xy, 0);
 
+	//text = colorMap.Load(sampleIndices).xyz;
 
-	text = positionMap.Load(screenPos).xyz;
-
-	return float4(1.0f, 1.0f, 1.0f, 0.0f);
+	return float4(1.0f,1.0f,1.0f, 0.0f);
 //float3 pixelPos = float3(input.PosView.xyz);
 //float3 posLight = lightPos.xyz;
 //
@@ -90,7 +90,7 @@ text.z = text.z * ambient;
 */
 
 //return float4(text, lights[5]);
-return float4(text, 0.0f);
+//return float4(text, 0.0f);
 //return float4(1.0f, 0.0f, 0.0f, 1.0f); //för planet
 //return float4(input.Norm,1);
 }

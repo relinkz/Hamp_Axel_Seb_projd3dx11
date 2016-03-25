@@ -7,7 +7,7 @@
 #include "Camera.h"
 #include "LightHandler.h"
 #include "QuadTree.h"
-//#include "shadowMap.h"
+#include "shadowMap.h"
 
 
 
@@ -25,6 +25,9 @@ ID3D11RenderTargetView *deferredViews[4];
 ID3D11RenderTargetView* gBackbufferRTV = nullptr;
 TriangleVertex* triangleVertices = nullptr;
 
+TriangleVertex* quadTiangle;
+Vector3 finalShit[6];
+
 //dephbuffer
 ID3D11DepthStencilView* gDepthBuffer = nullptr;
 ID3D11Texture2D* pDepthStencil = nullptr;
@@ -38,7 +41,11 @@ ID3D11RenderTargetView* ColorRTV = nullptr;
 ID3D11Texture2D* PositionStencil = nullptr;
 ID3D11RenderTargetView* PositionRTV = nullptr;
 
+ID3D11Texture2D* LightDepthStencil = nullptr;
+ID3D11RenderTargetView* LightDepthRTV = nullptr;
+
 ID3D11Buffer* gVertexBuffer = nullptr;
+ID3D11Buffer* quadVertexBuffer = nullptr;
 ID3D11Buffer* gIndexBuffer = nullptr;
 ID3D11Buffer* gGeometryBuffer = nullptr;
 ID3D11Buffer* testBuffer = nullptr;
@@ -48,7 +55,10 @@ ID3D11Buffer* worldSpaceBuffer = nullptr;
 
 ID3D11GeometryShader *gGeometryShader = nullptr;
 ID3D11InputLayout* gVertexLayout = nullptr;
+ID3D11InputLayout* quadLayout = nullptr;
+
 ID3D11VertexShader* gVertexShader = nullptr;
+ID3D11VertexShader* quadVertexShader = nullptr;
 ID3D11PixelShader* gPixelShader = nullptr;
 ID3D11PixelShader* gDeferredShader = nullptr;
 
@@ -59,8 +69,14 @@ const int SHADOWMAP_HEIGHT = 1024;
 Camera WorldCamera;
 Object worldObject;
 
-//ShadowMap shadowMap;
+ShadowMap shadowMap;
 
+struct quadPos
+{
+	float x;
+	float y;
+	float z;
+};
 
 struct worldMatrixBuffer
 {
@@ -72,6 +88,7 @@ struct worldMatrixBuffer
 
 vector<Object> objects;
 vector<Object*> objectsToDraw;
+
 int nrOfObjects = 0;
 
 QuadTree quadTree(Vector3(0, 0, 0), Vector3(10, 0, 10), 2, 10, 0, 10, 0);
@@ -180,12 +197,13 @@ void createWorldMatrices()
 
 void CreateShaders()
 {
+	HRESULT hr;
 	UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
 	ID3DBlob* errorBlob = nullptr;
 	//create vertex shader
 	ID3DBlob* pVS = nullptr;
 	D3DCompileFromFile(
-		L"Vertex.hlsl", // filename
+		L"DeferredVertex.hlsl", // filename
 		nullptr,		// optional macros
 		nullptr,		// optional include files
 		"VS_main",		// entry point
@@ -208,8 +226,34 @@ void CreateShaders()
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 	gDevice->CreateInputLayout(inputDesc, ARRAYSIZE(inputDesc), pVS->GetBufferPointer(), pVS->GetBufferSize(), &gVertexLayout);
+
+	/*
+	Createing the next vertexShader for quad
+	*/
+
+	ID3DBlob* pVS2 = nullptr;
+	D3DCompileFromFile(
+		L"Vertex.hlsl", // filename
+		nullptr,		// optional macros
+		nullptr,		// optional include files
+		"main",		// entry point
+		"vs_4_0",		// shader model (target)
+		D3DCOMPILE_DEBUG,				// shader compile options
+		0,				// effect compile options
+		&pVS2,			// double pointer to ID3DBlob		
+		nullptr			// pointer for Error Blob messages.
+						// how to use the Error blob, see here
+						// https://msdn.microsoft.com/en-us/library/windows/desktop/hh968107(v=vs.85).aspx
+		);
+	hr = gDevice->CreateVertexShader(pVS2->GetBufferPointer(), pVS2->GetBufferSize(), nullptr, &quadVertexShader);
+
+	D3D11_INPUT_ELEMENT_DESC inputDescQuad[] = {
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+	hr = gDevice->CreateInputLayout(inputDescQuad, ARRAYSIZE(inputDescQuad), pVS2->GetBufferPointer(), pVS2->GetBufferSize(), &quadLayout);
 	// we do not need anymore this COM object, so we release it.
 	pVS->Release();
+	pVS2->Release();
 
 	//create pixel shader
 	ID3DBlob* pPS = nullptr;
@@ -308,7 +352,7 @@ void createObjects()
 			
 		counter++;
 	}
-	
+
 	nrOfVertexDrawn = triangleVertices.size();
 	//worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice, fromFile.getImageFile());
 
@@ -319,9 +363,69 @@ void createObjects()
 	//nrOfObjects++;
 
 	//many boxes many wow
+	Vector3 quadPosition =  WorldCamera.getCameraPos();
+	Vector3 center = Vector3(0.0f, 0.0f, 0.5f);
+	Vector3 rightVector = WorldCamera.getLookRight();
+	Vector3 upVector = WorldCamera.getLookUp();
+
+	//Vector3 finalShit[6];
+
+
+	center = quadPosition + center;
+
+	/*
+	|   |
+	| D | 
+	|   |
+	.
+	*/
+	
+	finalShit[0] = (center - rightVector) - upVector;
+    finalShit[1] = (center - rightVector) + upVector;
+	finalShit[2] = (center + rightVector) + upVector;
+
+	/*
+	.     
+
+
+	.    .
+	
+	.
+
+
+	.		.
+	
+	*/
+
+
+
+	finalShit[3] = (center + rightVector) + upVector;
+	finalShit[4] = (center + rightVector) - upVector;
+	finalShit[5] = (center - rightVector) - upVector;
+
+	D3D11_BUFFER_DESC bufferDesc;
+	memset(&bufferDesc, 0, sizeof(bufferDesc));
+	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	//bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	//bufferDesc.ByteWidth = sizeof(*triangleVertices.data()) * nrOfVertexDrawn;  //triangleVertices
+	bufferDesc.ByteWidth = sizeof(finalShit);
+	
+
+	D3D11_SUBRESOURCE_DATA data;
+	memset(&data, 0, sizeof(data));
+	data.pSysMem = finalShit;
+
+	HRESULT hr = gDevice->CreateBuffer(&bufferDesc, &data, &quadVertexBuffer);
+
+
+	
 	int xMax = 6;
 	int yMax = 6;
 	int zMax = 6;
+
+
 
 	for (int x = 0; x < xMax; x++)
 	{
@@ -407,9 +511,7 @@ void Render(Object object1)
 	ID3D11ShaderResourceView* diffuseSRV = object1.getDiffuseMapSRV();
 	gDeviceContext->PSSetShaderResources(0, 1, &diffuseSRV);
 
-
-	//ID3D11Buffer* lightBuff = pointLight.getCLightBuffer();
-	//gDeviceContext->PSSetConstantBuffers(0, 1, &lightBuff);
+	
 
 	UINT32 vertexSize = sizeof(TriangleVertex);
 	//UINT32 vertexSize = sizeof(float) * 9;// får inte vara 8 av någon anledngin
@@ -419,6 +521,7 @@ void Render(Object object1)
 	gDeviceContext->IASetVertexBuffers(0, 1, &gVertexBuffer, &vertexSize, &offset);
 	//gDeviceContext->IASetVertexBuffers(0, 1, , &vertexSize, &offset);
 	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
+	//gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 	//gDeviceContext->VSSetConstantBuffers(1, 2, &lightBuff);
 	//på något sätt vill inte constant buffern skapas
 
@@ -440,6 +543,7 @@ void Render(Object object1)
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
+	HRESULT hr;
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	MSG msg = { 0 };
 	HWND wndHandle = InitWindow(hInstance); //1. Skapa fönster
@@ -469,8 +573,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 			}
 			else
 			{
-				//shadowMap.bindDsvandSetNullRenderTarget(gDeviceContext);
-
+					
 				float clearColor[] = { 0, 0, 0, 1 };
 				float whiteColor[] = { 1, 1, 1, 1 };
 				float grayColor[] = { 0.5, 0.5, 0.5 , 1 };
@@ -485,6 +588,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 				objectsToDraw = quadTree.getObjectsToDraw(WorldCamera.getCameraPos());
 				objectsToDraw = WorldCamera.doFustrumCulling(objectsToDraw);
 
+
 				for (int i = 0; i < objectsToDraw.size(); i++)
 				{
 					if (objectsToDraw.at(i) != nullptr)
@@ -492,18 +596,31 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 						Render(*objectsToDraw.at(i));
 					}
 				}
-				gDeviceContext->PSSetShader(gPixelShader, nullptr, 0);
+				gDeviceContext->VSSetShader(quadVertexShader, nullptr, 0);
 
-				gDeviceContext->VSSetShader(nullptr, nullptr, 0);
+				gDeviceContext->PSSetShader(gPixelShader, nullptr, 0);
+				ID3D11Buffer* shit = nullptr;
+				gDeviceContext->PSGetConstantBuffers(0, 1, &shit);
+
 				gDeviceContext->GSSetShader(nullptr, nullptr, 0);
 
 				D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
-				ID3D11ShaderResourceView* teset = nullptr;
+				ID3D11ShaderResourceView* ColorSRVDesc = nullptr;
 
-				HRESULT hr = gDevice->CreateShaderResourceView(ColorStencil, NULL, &teset);
-				gDeviceContext->PSSetShaderResources(0, 1, &teset);
+				HRESULT hr = gDevice->CreateShaderResourceView(NormalStencil, NULL, &ColorSRVDesc);
+				gDeviceContext->PSSetShaderResources(0, 1, &ColorSRVDesc);
 
-				gDeviceContext->Draw(0,0);
+				UINT32 vertexSize = sizeof(float) * 3;
+				UINT32 offset = 0;
+
+				//vertexSize = 16; //lösningen
+
+				gDeviceContext->IASetVertexBuffers(0, 1, &quadVertexBuffer, &vertexSize, &offset);
+				
+				gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				gDeviceContext->IASetInputLayout(quadLayout);
+				gDeviceContext->Draw(6,0);
+				
 				//gDeviceContext->PSSetShaderResources(0, 1, &deferredViews);
 				//gDeviceContext->PSSetShaderResources(0, 1, &deferredViews);
 
@@ -642,6 +759,7 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		hr = gDevice->CreateTexture2D(&descDepth2, NULL, &PositionStencil);
 		hr = gDevice->CreateTexture2D(&descDepth2, NULL, &NormalStencil);
 		hr = gDevice->CreateTexture2D(&descDepth2, NULL, &ColorStencil);
+		//hr = gDevice->CreateTexture2D(&descDepth2, NULL, &LightDepthStencil); //shadowMap
 
 
 		D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
@@ -657,6 +775,7 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		hr = gDevice->CreateRenderTargetView(NormalStencil, NULL, &deferredViews[2]);
 		hr = gDevice->CreateRenderTargetView(ColorStencil, NULL, &deferredViews[3]);
 
+		hr = gDevice->CreateRenderTargetView(LightDepthStencil, NULL, &LightDepthRTV);
 
 		pBackBuffer->Release();
 
@@ -668,9 +787,11 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 			);		// [out] Depth stencil view
 						// set the render target as the back buffer
 		
-		
+		//hr = gDevice->CreateDepthStencilView(LightDepthStencil, &descDSV, &shadowDepthStencil);
 
+		//gDeviceContext->OMSetRenderTargets(1, &LightDepthRTV, shadowDepthStencil);
 		gDeviceContext->OMSetRenderTargets(4, deferredViews, gDepthBuffer);
+		
 	}
 
 	//shadow Map section
