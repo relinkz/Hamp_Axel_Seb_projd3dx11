@@ -1,15 +1,14 @@
-﻿Build started 29/03/2016 09:34:30.
+﻿Build started 29/03/2016 12:46:34.
      1>Project "C:\Users\Sebastian\Documents\3d-prog\Directx11 project\Hamp_Axel_Seb_projd3dx11\Hamp_Axel_Seb_projd3dx11\Hamp_Axel_Seb_projd3dx11.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Users\Sebastian\Documents\3d-prog\Directx11 project\Hamp_Axel_Seb_projd3dx11\packages\directxtk_uwp.2016.2.23.1\build\native\../../build/native/include/" /ZI /nologo /W3 /WX- /Od /D HAS_DIRECTXTK /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"x64\Debug\\" /Fd"x64\Debug\vc140.pdb" /Gd /TP /errorReport:prompt Hamp_Axel_Seb_projd3dx11.cpp
          Hamp_Axel_Seb_projd3dx11.cpp
      1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11.cpp(352): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
-     1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11.cpp(542): warning C4101: 'hr': unreferenced local variable
-     1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11.cpp(640): warning C4101: 'SRVDesc': unreferenced local variable
-     1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11.cpp(762): warning C4244: '=': conversion from 'float' to 'UINT', possible loss of data
-     1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11.cpp(763): warning C4244: '=': conversion from 'float' to 'UINT', possible loss of data
-     1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11.cpp(776): warning C4244: '=': conversion from 'float' to 'UINT', possible loss of data
-     1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11.cpp(777): warning C4244: '=': conversion from 'float' to 'UINT', possible loss of data
+     1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11.cpp(550): warning C4101: 'hr': unreferenced local variable
+     1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11.cpp(786): warning C4244: '=': conversion from 'float' to 'UINT', possible loss of data
+     1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11.cpp(787): warning C4244: '=': conversion from 'float' to 'UINT', possible loss of data
+     1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11.cpp(800): warning C4244: '=': conversion from 'float' to 'UINT', possible loss of data
+     1>c:\users\sebastian\documents\3d-prog\directx11 project\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11\hamp_axel_seb_projd3dx11.cpp(801): warning C4244: '=': conversion from 'float' to 'UINT', possible loss of data
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Sebastian\Documents\3d-prog\Directx11 project\Hamp_Axel_Seb_projd3dx11\x64\Debug\Hamp_Axel_Seb_projd3dx11.exe" /INCREMENTAL:NO /NOLOGO "C:\Users\Sebastian\Documents\3d-prog\Directx11 project\Hamp_Axel_Seb_projd3dx11\packages\directxtk_uwp.2016.2.23.1\build\native\../../build/native/lib/x64/Debug/DirectXTK.lib" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /Debug /PDB:"C:\Users\Sebastian\Documents\3d-prog\Directx11 project\Hamp_Axel_Seb_projd3dx11\x64\Debug\Hamp_Axel_Seb_projd3dx11.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG:incremental /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Sebastian\Documents\3d-prog\Directx11 project\Hamp_Axel_Seb_projd3dx11\x64\Debug\Hamp_Axel_Seb_projd3dx11.lib" /MACHINE:X64 /SAFESEH:NO x64\Debug\Camera.obj
          x64\Debug\Hamp_Axel_Seb_projd3dx11.obj
@@ -27,4 +26,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:03.34
+Time Elapsed 00:00:02.44

@@ -27,7 +27,7 @@ ID3D11RenderTargetView* gBackbufferRTV = nullptr;
 TriangleVertex* triangleVertices = nullptr;
 
 TriangleVertex* quadTiangle;
-Vector3 finalShit[6];
+Vector4 finalShit[6];
 
 //dephbuffer
 ID3D11DepthStencilView* gDepthBuffer = nullptr;
@@ -58,10 +58,10 @@ ID3D11GeometryShader *gGeometryShader = nullptr;
 ID3D11InputLayout* gVertexLayout = nullptr;
 ID3D11InputLayout* quadLayout = nullptr;
 
-ID3D11VertexShader* gVertexShader = nullptr;
 ID3D11VertexShader* quadVertexShader = nullptr;
+ID3D11VertexShader* vDeferredShader = nullptr;
 ID3D11PixelShader* gPixelShader = nullptr;
-ID3D11PixelShader* gDeferredShader = nullptr;
+ID3D11PixelShader* pDeferredShader = nullptr;
 
 Camera WorldCamera;
 Object worldObject;
@@ -212,7 +212,7 @@ void CreateShaders()
 						// https://msdn.microsoft.com/en-us/library/windows/desktop/hh968107(v=vs.85).aspx
 		);
 
-	gDevice->CreateVertexShader(pVS->GetBufferPointer(), pVS->GetBufferSize(), nullptr, &gVertexShader);
+	gDevice->CreateVertexShader(pVS->GetBufferPointer(), pVS->GetBufferSize(), nullptr, &vDeferredShader);
 	
 
 	//create input layout (verified using vertex shader)
@@ -308,7 +308,7 @@ void CreateShaders()
 
 	gDevice->CreateGeometryShader(pGS->GetBufferPointer(), pGS->GetBufferSize(), nullptr, &gGeometryShader);
 
-	gDevice->CreatePixelShader(pPS->GetBufferPointer(), pPS->GetBufferSize(), nullptr, &gDeferredShader);
+	gDevice->CreatePixelShader(pPS->GetBufferPointer(), pPS->GetBufferSize(), nullptr, &pDeferredShader);
 	gDevice->CreatePixelShader(pPS2->GetBufferPointer(), pPS2->GetBufferSize(), nullptr, &gPixelShader);
 	// we do not need anymore this COM object, so we release it.
 	pPS->Release();
@@ -376,9 +376,17 @@ void createObjects()
 	.
 	*/
 	
-	finalShit[0] = (center - rightVector) - upVector;
-    finalShit[1] = (center - rightVector) + upVector;
-	finalShit[2] = (center + rightVector) + upVector;
+	//finalShit[0] = (center - rightVector) - upVector;
+    //finalShit[1] = (center - rightVector) + upVector;
+	//finalShit[2] = (center + rightVector) + upVector;
+
+	finalShit[0] = Vector4(-0.5f,  0.5f, 0.5f, 0.0f);
+	finalShit[1] = Vector4( 0.5f,  -0.5f, 0.5f, 0.0f);
+	finalShit[2] = Vector4(-0.5f, -0.5f, 0.5f, 0.0f);
+
+	finalShit[3] = Vector4(-0.5f,  0.5f, 0.5f, 0.0f);
+	finalShit[4] = Vector4( 0.5f,   0.5f, 0.5f, 0.0f);
+	finalShit[5] = Vector4( 0.5f,  -0.5f, 0.5f, 0.0f);
 
 	/*
 	.     
@@ -395,9 +403,9 @@ void createObjects()
 
 
 
-	finalShit[3] = (center + rightVector) + upVector;
-	finalShit[4] = (center + rightVector) - upVector;
-	finalShit[5] = (center - rightVector) - upVector;
+	//finalShit[3] = (center + rightVector) + upVector;
+	//finalShit[4] = (center + rightVector) - upVector;
+	//finalShit[5] = (center - rightVector) - upVector;
 
 	D3D11_BUFFER_DESC bufferDesc;
 	memset(&bufferDesc, 0, sizeof(bufferDesc));
@@ -589,37 +597,41 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 				objectsToDraw = WorldCamera.doFustrumCulling(objectsToDraw);
 
 				//allow this buffer to be used as a depth buffer and also sampled from a pixelshader
-				gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				//gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 				//gDeviceContext->IASetInputLayout(shadowMap.getInputLayout());
 				//gDeviceContext->VSSetShader(shadowMap.getShadowVS(), NULL, 0);
-				gDeviceContext->IASetInputLayout(quadLayout);
-				gDeviceContext->VSSetShader(quadVertexShader, NULL, 0);
+				//gDeviceContext->IASetInputLayout(quadLayout);
+				//gDeviceContext->VSSetShader(quadVertexShader, NULL, 0);
 
 
 				//DISABLE pixel shader
 				//gDeviceContext->PSSetShader(NULL, NULL, 0);
-				gDeviceContext->PSSetShader(gDeferredShader, NULL, 0);
+				//gDeviceContext->PSSetShader(gPixelShader, NULL, 0);
 				//render Scene only with a Vertex shader, and use lightWorldViewProjection for each vertex
-				for (int i = 0; i < objectsToDraw.size(); i++)
+				/*for (int i = 0; i < objectsToDraw.size(); i++)
 				{
 					if (objectsToDraw.at(i) != nullptr)
 					{
 						Render(*objectsToDraw.at(i));
 					}
 				}
+				*/
 				//populate depth buffer
 				
 				
 				
 				//restore old values
 				gDeviceContext->OMSetRenderTargets(4, deferredViews, gDepthBuffer);
-				gDeviceContext->IASetInputLayout(gVertexLayout);
-				gDeviceContext->VSSetShader(gVertexShader, NULL, 0);
-				gDeviceContext->PSSetShader(gDeferredShader, NULL, 0);
+				gDeviceContext->VSSetShader(vDeferredShader, NULL, 0);
+				gDeviceContext->PSSetShader(pDeferredShader, NULL, 0);
 
 				gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
+				gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				gDeviceContext->IASetInputLayout(gVertexLayout);
+
 				//gDeviceContext->VSSetConstantBuffers(1, 2, &lightBuff);
 
+				
 				for (int i = 0; i < objectsToDraw.size(); i++)
 				{
 					if (objectsToDraw.at(i) != nullptr)
@@ -627,23 +639,35 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 						Render(*objectsToDraw.at(i));
 					}
 				}
-
 				
 
 				//gDeviceContext->VSSetShader(quadVertexShader, nullptr, 0);
 
-				ID3D11Buffer* shit = nullptr;
-				gDeviceContext->PSGetConstantBuffers(0, 1, &shit);
-
+				gDeviceContext->VSSetShader(quadVertexShader, NULL, 0);
+				gDeviceContext->PSSetShader(gPixelShader, NULL, 0);
 				gDeviceContext->GSSetShader(nullptr, nullptr, 0);
 
+				ID3D11ShaderResourceView* Position = nullptr;
+				ID3D11ShaderResourceView* Normal = nullptr;
+				ID3D11ShaderResourceView* Color = nullptr;
+
 				D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
-				ID3D11ShaderResourceView* ColorSRVDesc = nullptr;
+				memset(&SRVDesc, 0, sizeof(SRVDesc));
+				SRVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+				SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
+				SRVDesc.Texture2D.MipLevels = 0;
+				SRVDesc.Texture2D.MostDetailedMip = 0;
 
-				HRESULT hr = gDevice->CreateShaderResourceView(NormalStencil, NULL, &ColorSRVDesc);
-				gDeviceContext->PSSetShaderResources(0, 1, &ColorSRVDesc);
+				HRESULT hr = gDevice->CreateShaderResourceView(PositionStencil, NULL, &Position);
+				gDeviceContext->PSSetShaderResources(0, 1, &Position);
 
-				UINT32 vertexSize = sizeof(float) * 3;
+				hr = gDevice->CreateShaderResourceView(NormalStencil, NULL, &Normal);
+				gDeviceContext->PSSetShaderResources(1, 1, &Normal);
+
+				hr = gDevice->CreateShaderResourceView(ColorStencil, NULL, &Color);
+				gDeviceContext->PSSetShaderResources(2, 1, &Color);
+
+				UINT32 vertexSize = sizeof(float) * 4;
 				UINT32 offset = 0;
 
 				//vertexSize = 16; //lösningen
@@ -664,7 +688,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		gVertexBuffer->Release();
 
 		gVertexLayout->Release();
-		gVertexShader->Release();
+		vDeferredShader->Release();
 		gPixelShader->Release();
 
 		//gBackbufferRTV->Release();
