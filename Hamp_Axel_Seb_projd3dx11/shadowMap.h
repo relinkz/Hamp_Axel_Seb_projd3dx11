@@ -15,13 +15,13 @@ public:
 	SimpleMath::Matrix getOrtographProj() const;
 
 	void bindDsvandSetNullRenderTarget(ID3D11DeviceContext* deviceContext);
-
 private:
 	UINT width;
 	UINT height;
 
 	ID3D11ShaderResourceView* DepthMapSRV;
 	ID3D11DepthStencilView* DepthMapDSV;
+	
 
 	D3D11_VIEWPORT viewPort;
 };

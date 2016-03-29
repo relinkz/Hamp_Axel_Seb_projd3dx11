@@ -6,6 +6,7 @@
 #include <d3dcompiler.h>
 #include "SimpleMath.h"
 #include <fstream>
+#include "Object.h"
 
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dcompiler.lib")
@@ -37,9 +38,13 @@ private:
 		float padding;
 	};
 
+	ID3D11Texture2D* shadowmapDepthtexture;
+	ID3D11DepthStencilView* shadowDepthStencilView;
+
 	ID3D11VertexShader* shadow_vertexShader;
 	ID3D11PixelShader* shadow_pixelShader;
 	ID3D11InputLayout* shadow_layout;
+
 	ID3D11SamplerState* shadow_sampleStateWrap;
 	ID3D11SamplerState* shadow_sampleStateClamp;
 
@@ -48,6 +53,7 @@ private:
 	ID3D11Buffer* shadow_lightBuffer2;
 
 	bool initializeShader(ID3D11Device*, HWND hWind, WCHAR* vsfileName, WCHAR* psFileName);
+	bool initializeDepthStencil(ID3D11Device* gDevice);
 	void shutdownShader();
 	void outputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, WCHAR* shaderFilename);
 	bool setShaderParameters(
@@ -63,7 +69,7 @@ private:
 		Vector4 ambientColor,
 		Vector4 diffuseColor
 		);
-	void renderShader(ID3D11DeviceContext* gDeviceContext, int indexCount);
+	void renderShader(ID3D11DeviceContext* gDeviceContext, Object toDraw);
 	
 public:
 	ShadowShaderClass();
@@ -84,6 +90,13 @@ public:
 		Vector3 lightPos,
 		Vector4 ambientColor,
 		Vector4 diffuseColor);
+	//void renderShadowMap(Object toRender);
+	ID3D11VertexShader* getShadowVS() const;
+	ID3D11DepthStencilView* getDepthStencilView() const;
+	ID3D11Texture2D* getDepthStencilRTV() const;
+	ID3D11InputLayout* getInputLayout() const;
+
+
 
 
 };

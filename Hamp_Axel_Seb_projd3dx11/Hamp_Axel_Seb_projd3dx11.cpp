@@ -7,7 +7,8 @@
 #include "Camera.h"
 #include "LightHandler.h"
 #include "QuadTree.h"
-#include "shadowMap.h"
+#include "shadowShaderClass.h"
+
 
 
 
@@ -62,14 +63,9 @@ ID3D11VertexShader* quadVertexShader = nullptr;
 ID3D11PixelShader* gPixelShader = nullptr;
 ID3D11PixelShader* gDeferredShader = nullptr;
 
-
-const int SHADOWMAP_WIDTH = 1024;
-const int SHADOWMAP_HEIGHT = 1024;
-
 Camera WorldCamera;
 Object worldObject;
-
-ShadowMap shadowMap;
+ShadowShaderClass shadowMap;
 
 struct quadPos
 {
@@ -501,13 +497,13 @@ void Render(Object object1)
 
 	// clear the back buffer to a deep blue
 
-	gDeviceContext->VSSetShader(gVertexShader, nullptr, 0);
-	gDeviceContext->HSSetShader(nullptr, nullptr, 0);
-	gDeviceContext->DSSetShader(nullptr, nullptr, 0);
+	//gDeviceContext->VSSetShader(gVertexShader, nullptr, 0);
+	//gDeviceContext->HSSetShader(nullptr, nullptr, 0);
+	//gDeviceContext->DSSetShader(nullptr, nullptr, 0);
 	//gDeviceContext->GSSetShader(gGeometryShader, nullptr, 0);
 	//gDeviceContext->GSSetShader(nullptr, nullptr, 0);
 	
-	gDeviceContext->PSSetShader(gDeferredShader, nullptr, 0);
+	//gDeviceContext->PSSetShader(gDeferredShader, nullptr, 0);
 	ID3D11ShaderResourceView* diffuseSRV = object1.getDiffuseMapSRV();
 	gDeviceContext->PSSetShaderResources(0, 1, &diffuseSRV);
 
@@ -529,8 +525,8 @@ void Render(Object object1)
 
 
 	//gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	gDeviceContext->IASetInputLayout(gVertexLayout);
+	//gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//gDeviceContext->IASetInputLayout(gVertexLayout);
 
 
 	//update constantbuffers
@@ -552,6 +548,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	{
 		CreateDirect3DContext(wndHandle); //2. Skapa och koppla SwapChain, Device och Device Context
 
+
 		SetViewport(); //3. Sätt viewport
 
 		CreateShaders(); //4. Skapa vertex- och pixel-shaders
@@ -562,6 +559,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 		ShowWindow(wndHandle, nCmdShow);
 
+		shadowMap.initialize(gDevice, wndHandle);
 
 		while (WM_QUIT != msg.message)
 		{
@@ -578,6 +576,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 				float whiteColor[] = { 1, 1, 1, 1 };
 				float grayColor[] = { 0.5, 0.5, 0.5 , 1 };
 				
+				gDeviceContext->OMSetRenderTargets(1, &deferredViews[0], shadowMap.getDepthStencilView());
+
 				gDeviceContext->ClearRenderTargetView(deferredViews[0], whiteColor);
 				gDeviceContext->ClearRenderTargetView(deferredViews[1], clearColor);
 				gDeviceContext->ClearRenderTargetView(deferredViews[2], grayColor);
@@ -588,6 +588,37 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 				objectsToDraw = quadTree.getObjectsToDraw(WorldCamera.getCameraPos());
 				objectsToDraw = WorldCamera.doFustrumCulling(objectsToDraw);
 
+				//allow this buffer to be used as a depth buffer and also sampled from a pixelshader
+				gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				//gDeviceContext->IASetInputLayout(shadowMap.getInputLayout());
+				//gDeviceContext->VSSetShader(shadowMap.getShadowVS(), NULL, 0);
+				gDeviceContext->IASetInputLayout(quadLayout);
+				gDeviceContext->VSSetShader(quadVertexShader, NULL, 0);
+
+
+				//DISABLE pixel shader
+				//gDeviceContext->PSSetShader(NULL, NULL, 0);
+				gDeviceContext->PSSetShader(gDeferredShader, NULL, 0);
+				//render Scene only with a Vertex shader, and use lightWorldViewProjection for each vertex
+				for (int i = 0; i < objectsToDraw.size(); i++)
+				{
+					if (objectsToDraw.at(i) != nullptr)
+					{
+						Render(*objectsToDraw.at(i));
+					}
+				}
+				//populate depth buffer
+				
+				
+				
+				//restore old values
+				gDeviceContext->OMSetRenderTargets(4, deferredViews, gDepthBuffer);
+				gDeviceContext->IASetInputLayout(gVertexLayout);
+				gDeviceContext->VSSetShader(gVertexShader, NULL, 0);
+				gDeviceContext->PSSetShader(gDeferredShader, NULL, 0);
+
+				gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
+				//gDeviceContext->VSSetConstantBuffers(1, 2, &lightBuff);
 
 				for (int i = 0; i < objectsToDraw.size(); i++)
 				{
@@ -596,9 +627,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 						Render(*objectsToDraw.at(i));
 					}
 				}
-				gDeviceContext->VSSetShader(quadVertexShader, nullptr, 0);
 
-				gDeviceContext->PSSetShader(gPixelShader, nullptr, 0);
+				
+
+				//gDeviceContext->VSSetShader(quadVertexShader, nullptr, 0);
+
 				ID3D11Buffer* shit = nullptr;
 				gDeviceContext->PSGetConstantBuffers(0, 1, &shit);
 
@@ -755,7 +788,6 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		//ZeroMemory(&descDepth2, sizeof(descDepth2));
 
 		hr = gDevice->CreateTexture2D(&descDepth, NULL, &pDepthStencil);
-		
 		hr = gDevice->CreateTexture2D(&descDepth2, NULL, &PositionStencil);
 		hr = gDevice->CreateTexture2D(&descDepth2, NULL, &NormalStencil);
 		hr = gDevice->CreateTexture2D(&descDepth2, NULL, &ColorStencil);
@@ -769,6 +801,7 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		descDSV.Texture2D.MipSlice = 0;
 
 		// use the back buffer address to create the render target
+		//hr = gDevice->CreateRenderTargetView(pBackBuffer, NULL, &deferredViews[0]);
 		hr = gDevice->CreateRenderTargetView(pBackBuffer, NULL, &deferredViews[0]);
 
 		hr = gDevice->CreateRenderTargetView(PositionStencil, NULL, &deferredViews[1]);
@@ -788,9 +821,9 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 						// set the render target as the back buffer
 		
 		//hr = gDevice->CreateDepthStencilView(LightDepthStencil, &descDSV, &shadowDepthStencil);
+		gDeviceContext->OMSetRenderTargets(1, &deferredViews[0], shadowMap.getDepthStencilView());
+		//gDeviceContext->OMSetRenderTargets(4, deferredViews, gDepthBuffer);
 
-		//gDeviceContext->OMSetRenderTargets(1, &LightDepthRTV, shadowDepthStencil);
-		gDeviceContext->OMSetRenderTargets(4, deferredViews, gDepthBuffer);
 		
 	}
 

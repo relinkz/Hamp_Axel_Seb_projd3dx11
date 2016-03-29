@@ -4,13 +4,17 @@ ShadowShaderClass::ShadowShaderClass()
 {
 	this->shadow_vertexShader		= nullptr;
 	this->shadow_pixelShader		= nullptr;
+
 	this->shadow_layout				= nullptr;
 	this->shadow_sampleStateWrap	= nullptr;
+
 	this->shadow_matrixBuffer		= nullptr;
 	this->shadow_lightBuffer		= nullptr;
 	this->shadow_lightBuffer2		= nullptr;
-}
 
+	this->shadowDepthStencilView = nullptr;
+	this->shadowmapDepthtexture = nullptr;
+}
 
 ShadowShaderClass::~ShadowShaderClass()
 {
@@ -61,15 +65,40 @@ bool ShadowShaderClass::Render(
 
 	if (result == true)
 	{
-		renderShader(gContextDevice, indexCount);
+		//renderShader(gContextDevice, indexCount);
 	}
 
 	return result;
 }
 
+ID3D11VertexShader* ShadowShaderClass::getShadowVS() const
+{
+	return this->shadow_vertexShader;
+}
+
+ID3D11DepthStencilView* ShadowShaderClass::getDepthStencilView() const
+{
+	return this->shadowDepthStencilView;
+}
+
+ID3D11Texture2D* ShadowShaderClass::getDepthStencilRTV() const
+{
+	return this->shadowmapDepthtexture;
+}
+
+ID3D11InputLayout* ShadowShaderClass::getInputLayout() const
+{
+	return this->shadow_layout;
+}
+
+/*
+Private functions
+*/
+
 bool ShadowShaderClass::initializeShader(ID3D11Device* gDevice, HWND hWind, WCHAR* vsFileName, WCHAR* psFileName)
 {
 	HRESULT result;
+	bool resultBool;
 	ID3D10Blob* errorMessage		= nullptr;
 	ID3D10Blob* vertexShaderBuffer	= nullptr;
 	ID3D10Blob* pixelShaderBuffer	= nullptr;
@@ -270,10 +299,61 @@ bool ShadowShaderClass::initializeShader(ID3D11Device* gDevice, HWND hWind, WCHA
 
 		// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
 		result = gDevice->CreateBuffer(&lightBufferDesc2, NULL, &(this->shadow_lightBuffer2));
+
+		if(this->initializeDepthStencil(gDevice) == false);
+		{
+			//error depthStencil
+			return false;
+		}
+
 		if (FAILED(result))
 		{
 			return false;
 		}
+
+		return true;
+}
+
+bool ShadowShaderClass::initializeDepthStencil(ID3D11Device* gDevice)
+{
+	HRESULT resultHandler;
+	bool result = false;
+
+	D3D11_TEXTURE2D_DESC depthDesc;
+	depthDesc.Width = 640.0f;
+	depthDesc.Height = 480.0f;
+	depthDesc.MipLevels = 1;
+	depthDesc.ArraySize = 1;
+	depthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+
+	depthDesc.SampleDesc.Count = 4;  //must match the swap chain
+	depthDesc.SampleDesc.Quality = 0;
+
+	depthDesc.Usage = D3D11_USAGE_DEFAULT;
+	depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	depthDesc.CPUAccessFlags = 0;
+	depthDesc.MiscFlags = 0;
+
+	//create the texture
+	resultHandler = gDevice->CreateTexture2D(
+		&depthDesc,
+		0,
+		&(this->shadowmapDepthtexture)
+		);
+
+	//create depthStencilView
+	resultHandler = gDevice->CreateDepthStencilView(
+		this->shadowmapDepthtexture,   //resorse we want to create a view to
+		0,
+		&(this->shadowDepthStencilView)  //the depthStencilView
+		);
+
+	if (!FAILED(resultHandler))
+	{
+		result = true;
+	}
+
+	return result;
 }
 
 void ShadowShaderClass::shutdownShader()
@@ -454,20 +534,23 @@ bool ShadowShaderClass::setShaderParameters(
 	gDeviceContext->VSSetConstantBuffers(bufferNumber, 1, &(this->shadow_lightBuffer2));
 }
 
-void ShadowShaderClass::renderShader(ID3D11DeviceContext* gDeviceContext, int indexCount)
+void ShadowShaderClass::renderShader(ID3D11DeviceContext* gDeviceContext, Object toDraw)
 {
 	// Set the vertex input layout.
 	gDeviceContext->IASetInputLayout(this->shadow_layout);
 
 	// Set the vertex and pixel shaders that will be used to render this triangle.
 	gDeviceContext->VSSetShader(this->shadow_vertexShader, NULL, 0);
-	gDeviceContext->PSSetShader(this->shadow_pixelShader, NULL, 0);
+	//gDeviceContext->PSSetShader(this->shadow_pixelShader, NULL, 0);
 
 	// Set the sampler states in the pixel shader.
-	gDeviceContext->PSSetSamplers(0, 1, &(this->shadow_sampleStateClamp));
-	gDeviceContext->PSSetSamplers(1, 1, &(this->shadow_sampleStateWrap));
+	//gDeviceContext->PSSetSamplers(0, 1, &(this->shadow_sampleStateClamp));
+	//gDeviceContext->PSSetSamplers(1, 1, &(this->shadow_sampleStateWrap));
+
+	//gDeviceContext->OMSetRenderTargets(1, &deferredViews[0], shadowMap.getDepthStencilView());
 
 	// Render the triangle.
-	gDeviceContext->DrawIndexed(indexCount, 0, 0);
+	//Render
+	//gDeviceContext->Draw();
 
 }
