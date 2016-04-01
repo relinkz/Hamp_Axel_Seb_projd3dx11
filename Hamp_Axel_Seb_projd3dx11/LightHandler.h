@@ -20,6 +20,7 @@ public:
 	bool sendToBuffer(ID3D11Device* device);
 
 	void addPosLight(float x = 3, float y = 3, float z = 3);
+	Vector3 getLightPos() const;
 	
 	PosLight getPosLight(int index);
 	int getNrOfLights();

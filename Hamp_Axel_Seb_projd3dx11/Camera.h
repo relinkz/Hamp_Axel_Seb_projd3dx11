@@ -55,6 +55,8 @@ public:
 	Vector3 getLookRight() const;
 	Vector3 getLookUp() const;
 
+	void setCameraPos(const Vector3 &newPos); //for shadowMapping
+
 	POINT GetMousePos(HWND hWnd);
 	void setUpViewFustrumPlanes();
 	std::vector<Object*> doFustrumCulling(std::vector<Object*> objects);

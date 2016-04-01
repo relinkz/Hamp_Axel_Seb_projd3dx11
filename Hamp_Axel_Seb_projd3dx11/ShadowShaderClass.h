@@ -17,15 +17,6 @@ using namespace DirectX::SimpleMath;
 class ShadowShaderClass
 {
 private:
-	struct MatrixBufferType
-	{
-		 Matrix world;
-		 Matrix view;
-		 Matrix proj;
-		 Matrix lightView;
-		 Matrix lightProjection;
-	};
-
 	struct LightBufferType
 	{
 		Vector4 ambientColor;
@@ -39,37 +30,26 @@ private:
 	};
 
 	ID3D11Texture2D* shadowmapDepthtexture;
+	ID3D11Texture2D* shadowmapRenderTargetViewTexture;
 	ID3D11DepthStencilView* shadowDepthStencilView;
 
 	ID3D11VertexShader* shadow_vertexShader;
 	ID3D11PixelShader* shadow_pixelShader;
 	ID3D11InputLayout* shadow_layout;
 
-	ID3D11SamplerState* shadow_sampleStateWrap;
-	ID3D11SamplerState* shadow_sampleStateClamp;
+	//render target view
+	ID3D11RenderTargetView* shadowMapRTV;
+	ID3D11ShaderResourceView* shaderResourceView;
 
 	ID3D11Buffer* shadow_matrixBuffer;
-	ID3D11Buffer* shadow_lightBuffer;
-	ID3D11Buffer* shadow_lightBuffer2;
 
 	bool initializeShader(ID3D11Device*, HWND hWind, WCHAR* vsfileName, WCHAR* psFileName);
 	bool initializeDepthStencil(ID3D11Device* gDevice);
 	void shutdownShader();
 	void outputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hwnd, WCHAR* shaderFilename);
-	bool setShaderParameters(
-		ID3D11DeviceContext* gDeviceContext,
-		Matrix worldMatrix,
-		Matrix viewMatrix,
-		Matrix projectionMatrix,
-		Matrix lightViewMatrix,
-		Matrix lightProjectionMatrix,
-		ID3D11ShaderResourceView* texture,
-		ID3D11ShaderResourceView* depthMapTexture,
-		Vector3 lightPos,
-		Vector4 ambientColor,
-		Vector4 diffuseColor
-		);
-	void renderShader(ID3D11DeviceContext* gDeviceContext, Object toDraw);
+
+	bool createVertexShader(ID3D11Device* gDevice, HWND hWind, WCHAR* vsFileName);
+	bool createPixelShader(ID3D11Device* gDevixe, HWND hWind,WCHAR* psFileName); //helpshader
 	
 public:
 	ShadowShaderClass();
@@ -77,28 +57,22 @@ public:
 
 	bool initialize(ID3D11Device*, HWND hWind);
 	void shutdown();
-	bool Render(
-		ID3D11DeviceContext* gContextDevice, 
-		int indexCount, 
-		Matrix worldMatrix,
-		Matrix viewMatrix,
-		Matrix projectionMatrix,
-		Matrix lightViewMatrix,
-		Matrix lightProjectionMatrix,
-		ID3D11ShaderResourceView* texture,
-		ID3D11ShaderResourceView* depthMapTexture, 
-		Vector3 lightPos,
-		Vector4 ambientColor,
-		Vector4 diffuseColor);
 	//void renderShadowMap(Object toRender);
 	ID3D11VertexShader* getShadowVS() const;
+	ID3D11PixelShader* getShadowPS() const;
+
+	//getters
 	ID3D11DepthStencilView* getDepthStencilView() const;
 	ID3D11Texture2D* getDepthStencilRTV() const;
 	ID3D11InputLayout* getInputLayout() const;
+	ID3D11ShaderResourceView* getShaderResourceView() const;
+	ID3D11RenderTargetView* getRenderTargetView() const;
+
+	//setters
 
 
-
-
+	void clearRenderTargetView(ID3D11DeviceContext* gDeviceContext);
+	void clearDepthBuffer(ID3D11DeviceContext* gDeviceContext);
 };
 
 

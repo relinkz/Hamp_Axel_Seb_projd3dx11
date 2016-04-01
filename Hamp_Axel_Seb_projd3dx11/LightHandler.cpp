@@ -44,6 +44,14 @@ void LightHandler::addPosLight(float x, float y, float z)
 	this->lightDesc.ByteWidth = sizeof(*lights)*this->nrOfLights;
 }
 
+Vector3 LightHandler::getLightPos() const
+{
+	Vector3 toReturn;
+
+	toReturn = Vector3(this->lights[0].x, this->lights[0].y, this->lights[0].z);
+	return toReturn;
+}
+
 PosLight LightHandler::getPosLight(int index)
 {
 	return this->lights[index];

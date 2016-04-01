@@ -9,6 +9,7 @@ Camera::Camera()
 	setDefaultValue();
 	setUpViewFustrumPlanes();
 }
+
 Camera::Camera(int width, int height)
 {
 	this->screenHeight = height;
@@ -16,6 +17,7 @@ Camera::Camera(int width, int height)
 	setDefaultValue();
 	setUpViewFustrumPlanes();
 }
+
 Camera::Camera(int width, int height, float x, float y, float z)
 {
 	this->screenHeight = height;
@@ -33,10 +35,12 @@ Camera::Camera(int width, int height, float x, float y, float z)
 	this->yRotation = 0;
 	setUpViewFustrumPlanes();
 }
+
 Camera::~Camera()
 {
 
 }
+
 void Camera::Update(HWND hWnd)
 {
 	XMMATRIX rotation;
@@ -195,6 +199,7 @@ Matrix Camera::getViewMatrix()
 
 	return viewMatrix;
 }
+
 Vector3 Camera::getCameraPos()
 {
 	return this->Pos;
@@ -214,6 +219,12 @@ Vector3 Camera::getLookUp() const
 {
 	return this->lookUpPoint;
 }
+
+void Camera::setCameraPos(const Vector3 &newPos)
+{
+	this->Pos = newPos;
+}
+
 void Camera::setDefaultValue()
 {
 	this->Pos = Vector3(0, 0, 0);
@@ -227,10 +238,12 @@ void Camera::setDefaultValue()
 	this->mousePointOld.y = 0;
 	this->yRotation = 0;
 }
+
 void Camera::rotatePoint(Vector3 &point, XMMATRIX rotation)
 {
 	point = DirectX::XMVector3Transform(point, rotation);
 }
+
 POINT Camera::GetMousePos(HWND hWnd)
 {
 	//returns the position of the mouse relative to the screen

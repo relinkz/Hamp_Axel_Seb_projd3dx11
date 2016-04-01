@@ -13,6 +13,7 @@
 
 
 
+
 HWND InitWindow(HINSTANCE hInstance);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
@@ -24,6 +25,8 @@ ID3D11DeviceContext* gDeviceContext = nullptr;
 ID3D11RenderTargetView *deferredViews[4];
 
 ID3D11RenderTargetView* gBackbufferRTV = nullptr;
+ID3D11RenderTargetView* shadowBufferRTV = nullptr;
+
 TriangleVertex* triangleVertices = nullptr;
 
 TriangleVertex* quadTiangle;
@@ -31,6 +34,8 @@ Vector4 finalShit[6];
 
 //dephbuffer
 ID3D11DepthStencilView* gDepthBuffer = nullptr;
+ID3D11DepthStencilView* ShadowDepthBuffer = nullptr;
+
 ID3D11Texture2D* pDepthStencil = nullptr;
 
 ID3D11Texture2D* NormalStencil = nullptr;
@@ -46,6 +51,7 @@ ID3D11Texture2D* LightDepthStencil = nullptr;
 ID3D11RenderTargetView* LightDepthRTV = nullptr;
 
 ID3D11Buffer* gVertexBuffer = nullptr;
+ID3D11Buffer* gShadowBuffer = nullptr;
 ID3D11Buffer* quadVertexBuffer = nullptr;
 ID3D11Buffer* gIndexBuffer = nullptr;
 ID3D11Buffer* gGeometryBuffer = nullptr;
@@ -430,7 +436,7 @@ void createObjects()
 	int zMax = 6;
 
 
-
+	/*
 	for (int x = 0; x < xMax; x++)
 	{
 		for (int y = 0; y < yMax; y++)
@@ -445,12 +451,23 @@ void createObjects()
 			}
 		}
 	}
-	worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice);
+
+	*/
+	objects.push_back(Object(triangleVertices, Vector3((0.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile()));
+	//objects.push_back(Object(triangleVertices, Vector3(0.0f, 0.0f, 1.0f), gDevice, fromFile.getImageFile()));
+	//worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice);
 	pointLight.sendToBuffer(gDevice);
 	quadTree.setTreeData(objects);
 #pragma endregion
 
 	
+}
+
+void shadowMapRender(LightHandler lightSource)
+{
+	//sätt först constant buffer
+
+	//utför render i ljus perspektiv
 }
 
 void SetViewport()
@@ -465,28 +482,24 @@ void SetViewport()
 	gDeviceContext->RSSetViewports(1, &vp);
 }
 
-void Render(Object object1)
+void updateBuffers(Object* object1)
 {
+	cameraPos = WorldCamera.getCameraPos();
 
-	*worldSpace = object1.getWorldMatrix();
-
+	*worldSpace = object1->getWorldMatrix();
 	*viewSpace = WorldCamera.getViewMatrix();
 	*worldViewProj = Matrix((*worldSpace) * (*viewSpace) * (*projectionSpace));
-	//*eyeSpace = *worldViewProj * projectionSpace->Invert();
-	*eyeSpace = object1.getWorldMatrix();
+
+	*eyeSpace = object1->getWorldMatrix();
 
 	worldViewProj = &worldViewProj->Transpose();
-
-	//Matrix eyeSpace = Matrix();
-	
-
-	//*eyeSpace = *worldViewProj * projectionSpace->Invert();
 	eyeSpace = &eyeSpace->Transpose();
 
 	worldMatrixBuffer updateWorldMatrices
 	{
 		*worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix
 	};
+
 	Matrix* WVP_Ptr = nullptr;
 	D3D11_MAPPED_SUBRESOURCE viewSpaceData;
 	memset(&viewSpaceData, 0, sizeof(viewSpaceData));
@@ -495,41 +508,111 @@ void Render(Object object1)
 	HRESULT test = gDeviceContext->Map(worldSpaceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &viewSpaceData);
 
 	//test = gDeviceContext->Map(worldSpaceBuffer,0, D3D11_MAP_WRITE_DISCARD)
-	
+
 	memcpy(viewSpaceData.pData, &updateWorldMatrices, sizeof(updateWorldMatrices));
 
 	gDeviceContext->Unmap(worldSpaceBuffer, 0);
+}
+
+void updateBuffers(const LightHandler &light, const Object &obj)
+{
+	cameraPos = WorldCamera.getCameraPos();
+	//WorldCamera.setCameraPos(light.getLightPos());
+
+	*worldSpace = obj.getWorldMatrix();
+	*viewSpace = XMMatrixLookAtLH(light.getLightPos(), Vector3(0, 0, 0), Vector3(0.0f, 1.0f, 0.0f));
+	//*viewSpace = WorldCamera.getViewMatrix();
+	*worldViewProj = Matrix((*worldSpace) * (*viewSpace) * (*projectionSpace));
+	*eyeSpace = light.getWorldMatrix();
+
+	worldViewProj = &worldViewProj->Transpose();
+	eyeSpace = &eyeSpace->Transpose();
+
+	worldMatrixBuffer updateWorldMatrices
+	{
+		*worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix
+	};
+
+	Matrix* WVP_Ptr = nullptr;
+	D3D11_MAPPED_SUBRESOURCE viewSpaceData;
+	memset(&viewSpaceData, 0, sizeof(viewSpaceData));
 
 
-	 //gDeviceContext->Unmap(worldSpaceBuffer, 0);
+	HRESULT test = gDeviceContext->Map(worldSpaceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &viewSpaceData);
 
-	// clear the back buffer to a deep blue
+	//test = gDeviceContext->Map(worldSpaceBuffer,0, D3D11_MAP_WRITE_DISCARD)
 
-	//gDeviceContext->VSSetShader(gVertexShader, nullptr, 0);
-	//gDeviceContext->HSSetShader(nullptr, nullptr, 0);
-	//gDeviceContext->DSSetShader(nullptr, nullptr, 0);
-	//gDeviceContext->GSSetShader(gGeometryShader, nullptr, 0);
-	//gDeviceContext->GSSetShader(nullptr, nullptr, 0);
+	memcpy(viewSpaceData.pData, &updateWorldMatrices, sizeof(updateWorldMatrices));
+
+	gDeviceContext->Unmap(worldSpaceBuffer, 0);
+}
+
+void RenderShadowMap(const Object &object1)
+{
+	//ID3D11ShaderResourceView* diffuseSRV = object1.getDiffuseMapSRV();
+	//gDeviceContext->PSSetShaderResources(0, 1, &diffuseSRV);
+
+	//UINT32 vertexSize = sizeof(TriangleVertex);
+	UINT32 vertexSize = sizeof(shadowtriVertex);
+	//UINT32 vertexSize = sizeof(float) * 9;// får inte vara 8 av någon anledngin
+	UINT32 offset = 0;
+
+	ID3D11InputLayout* shadowLayout = nullptr;
+	shadowLayout = shadowMap.getInputLayout();
+
+	gShadowBuffer = object1.getShadowVertexBufferPointer();
+
+	gDeviceContext->OMSetRenderTargets(1, &shadowBufferRTV, ShadowDepthBuffer);
+
+	//OMSetRenderTargets(1, &RenderTargetView, DepthStencilView);
 	
-	//gDeviceContext->PSSetShader(gDeferredShader, nullptr, 0);
+
+	gDeviceContext->IASetInputLayout(shadowLayout);
+	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	gDeviceContext->VSSetShader(shadowMap.getShadowVS(), NULL, 0);
+	gDeviceContext->PSSetShader(shadowMap.getShadowPS(), NULL, 0);
+
+	gDeviceContext->IASetVertexBuffers(0, 1, &gShadowBuffer, &vertexSize, &offset);
+
+	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
+	gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
+
+	shadowMap.getDepthStencilView();
+
+	gDeviceContext->Draw(nrOfVertexDrawn, 0);
+
+	//save the shadow renderTargetView
+}
+
+void Render(const Object &object1)
+{
 	ID3D11ShaderResourceView* diffuseSRV = object1.getDiffuseMapSRV();
 	gDeviceContext->PSSetShaderResources(0, 1, &diffuseSRV);
-
-	
 
 	UINT32 vertexSize = sizeof(TriangleVertex);
 	//UINT32 vertexSize = sizeof(float) * 9;// får inte vara 8 av någon anledngin
 	UINT32 offset = 0;
 	gVertexBuffer = object1.getVertexBufferPointer();
 
+	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	gDeviceContext->IASetInputLayout(gVertexLayout);
 	gDeviceContext->IASetVertexBuffers(0, 1, &gVertexBuffer, &vertexSize, &offset);
-	//gDeviceContext->IASetVertexBuffers(0, 1, , &vertexSize, &offset);
+
+	gDeviceContext->OMSetRenderTargets(1, &deferredViews[0], gDepthBuffer);
+
+	gDeviceContext->VSSetShader(vDeferredShader, NULL, 0);
+	gDeviceContext->PSSetShader(pDeferredShader, NULL, 0);
+
 	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
-	//gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
+	gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
+
 	//gDeviceContext->VSSetConstantBuffers(1, 2, &lightBuff);
 	//på något sätt vill inte constant buffern skapas
 
+	gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 
+	//gDeviceContext->VSSetConstantBuffers(1, 2, &lightBuff);
 
 
 	//gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -554,8 +637,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 	if (wndHandle)
 	{
-		CreateDirect3DContext(wndHandle); //2. Skapa och koppla SwapChain, Device och Device Context
 
+		CreateDirect3DContext(wndHandle); //2. Skapa och koppla SwapChain, Device och Device Context
 
 		SetViewport(); //3. Sätt viewport
 
@@ -566,8 +649,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		createObjects(); //5. Definiera triangelvertiser, 6. Skapa vertex buffer, 7. Skapa input layout
 
 		ShowWindow(wndHandle, nCmdShow);
-
-		shadowMap.initialize(gDevice, wndHandle);
 
 		while (WM_QUIT != msg.message)
 		{
@@ -584,43 +665,34 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 				float whiteColor[] = { 1, 1, 1, 1 };
 				float grayColor[] = { 0.5, 0.5, 0.5 , 1 };
 				
-				gDeviceContext->OMSetRenderTargets(1, &deferredViews[0], shadowMap.getDepthStencilView());
-
 				gDeviceContext->ClearRenderTargetView(deferredViews[0], whiteColor);
 				gDeviceContext->ClearRenderTargetView(deferredViews[1], clearColor);
 				gDeviceContext->ClearRenderTargetView(deferredViews[2], grayColor);
 				gDeviceContext->ClearRenderTargetView(deferredViews[3], clearColor);
-				//clear depthbuffer
 				gDeviceContext->ClearDepthStencilView(gDepthBuffer, D3D11_CLEAR_DEPTH, 1, 0);
 
 				objectsToDraw = quadTree.getObjectsToDraw(WorldCamera.getCameraPos());
 				objectsToDraw = WorldCamera.doFustrumCulling(objectsToDraw);
 
-				//allow this buffer to be used as a depth buffer and also sampled from a pixelshader
-				//gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-				//gDeviceContext->IASetInputLayout(shadowMap.getInputLayout());
-				//gDeviceContext->VSSetShader(shadowMap.getShadowVS(), NULL, 0);
-				//gDeviceContext->IASetInputLayout(quadLayout);
-				//gDeviceContext->VSSetShader(quadVertexShader, NULL, 0);
-
-
-				//DISABLE pixel shader
-				//gDeviceContext->PSSetShader(NULL, NULL, 0);
-				//gDeviceContext->PSSetShader(gPixelShader, NULL, 0);
-				//render Scene only with a Vertex shader, and use lightWorldViewProjection for each vertex
-				/*for (int i = 0; i < objectsToDraw.size(); i++)
+				WorldCamera.Update(wndHandle); //update worldcamera
+		
+				for (int i = 0; i < objectsToDraw.size(); i++)
 				{
 					if (objectsToDraw.at(i) != nullptr)
 					{
-						Render(*objectsToDraw.at(i));
+						//updateBuffers(pointLight, *objectsToDraw.at(i));
+						updateBuffers(objectsToDraw.at(i));
+						RenderShadowMap(*objectsToDraw.at(i));
+						//Render(*objectsToDraw.at(i));
 					}
 				}
-				*/
 				//populate depth buffer
 				
 				
 				
 				//restore old values
+				/*
+				//gDeviceContext->OMSetRenderTargets(1, &deferredViews[0], gDepthBuffer);
 				gDeviceContext->OMSetRenderTargets(4, deferredViews, gDepthBuffer);
 				gDeviceContext->VSSetShader(vDeferredShader, NULL, 0);
 				gDeviceContext->PSSetShader(pDeferredShader, NULL, 0);
@@ -631,16 +703,17 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 				//gDeviceContext->VSSetConstantBuffers(1, 2, &lightBuff);
 
-				
+				*/
 				for (int i = 0; i < objectsToDraw.size(); i++)
 				{
 					if (objectsToDraw.at(i) != nullptr)
 					{
+						updateBuffers(objectsToDraw.at(i));
 						Render(*objectsToDraw.at(i));
 					}
 				}
+			
 				
-
 				//gDeviceContext->VSSetShader(quadVertexShader, nullptr, 0);
 
 				gDeviceContext->VSSetShader(quadVertexShader, NULL, 0);
@@ -672,15 +745,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 				//vertexSize = 16; //lösningen
 
-				gDeviceContext->IASetVertexBuffers(0, 1, &quadVertexBuffer, &vertexSize, &offset);
+				//gDeviceContext->IASetVertexBuffers(0, 1, &quadVertexBuffer, &vertexSize, &offset);
 				
-				gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-				gDeviceContext->IASetInputLayout(quadLayout);
-				gDeviceContext->Draw(6,0);
+				//gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+				//gDeviceContext->IASetInputLayout(quadLayout);
+				//gDeviceContext->Draw(6,0);
 				
 				//gDeviceContext->PSSetShaderResources(0, 1, &deferredViews);
 				//gDeviceContext->PSSetShaderResources(0, 1, &deferredViews);
-
+				
 				gSwapChain->Present(0, 0); //9. Växla front- och back-buffer
 			}
 		}
@@ -717,7 +790,7 @@ HWND InitWindow(HINSTANCE hInstance)
 
 	HWND handle = CreateWindow(
 		L"BTH_D3D_DEMO",
-		L"BTH Direct3D Demo",
+		L"3D project",
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
@@ -832,7 +905,7 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		hr = gDevice->CreateRenderTargetView(NormalStencil, NULL, &deferredViews[2]);
 		hr = gDevice->CreateRenderTargetView(ColorStencil, NULL, &deferredViews[3]);
 
-		hr = gDevice->CreateRenderTargetView(LightDepthStencil, NULL, &LightDepthRTV);
+		//hr = gDevice->CreateRenderTargetView(LightDepthStencil, NULL, &LightDepthRTV);
 
 		pBackBuffer->Release();
 
@@ -845,14 +918,19 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 						// set the render target as the back buffer
 		
 		//hr = gDevice->CreateDepthStencilView(LightDepthStencil, &descDSV, &shadowDepthStencil);
-		gDeviceContext->OMSetRenderTargets(1, &deferredViews[0], shadowMap.getDepthStencilView());
+
+		shadowMap.initialize(gDevice, wndHandle);
+
+		shadowBufferRTV = shadowMap.getRenderTargetView();
+		ShadowDepthBuffer = shadowMap.getDepthStencilView();
+
+
+		//gDeviceContext->OMSetRenderTargets(1, &deferredViews[0], shadowMap.getDepthStencilView());
 		//gDeviceContext->OMSetRenderTargets(4, deferredViews, gDepthBuffer);
 
 		
 	}
-
-	//shadow Map section
-	//shadowMap = ShadowMap(gDevice, 640.0f, 480.0f);
+	
 
 	return hr;
 }

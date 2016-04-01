@@ -2,14 +2,23 @@
 #define OBJECT_H
 #include "Parser.h"
 
+struct shadowtriVertex
+{
+	float x, y, z;
+};
 
 class Object
 {
 private:
 	Vector3					position;
 	Vector2					UV_Coord;
+	
 	vector<TriangleVertex>	vertexData;
+	vector<shadowtriVertex> shadowVertexData;
+
 	ID3D11Buffer*			vertexBuffer;
+	ID3D11Buffer*			shadowVertexBuffer;
+
 
 	/*
 	Variables for the texture
@@ -20,6 +29,7 @@ private:
 
 	short int vertexSize;
 	void createVertexBuffer(ID3D11Device* gDevice);
+	void createShadowVertexBuffer(ID3D11Device* gDevice);
 	void create2DTexture(ID3D11Device* gDevice, string srcImage);
 public:
 	Object();
@@ -29,7 +39,10 @@ public:
 
 	//getters setters
 	Matrix getWorldMatrix()							const;
+
 	ID3D11Buffer* getVertexBufferPointer()			const;
+	ID3D11Buffer* getShadowVertexBufferPointer()	const;
+
 	ID3D11ShaderResourceView* getDiffuseMapSRV()	const;
 	Vector3 getPosition()							const;
 };
