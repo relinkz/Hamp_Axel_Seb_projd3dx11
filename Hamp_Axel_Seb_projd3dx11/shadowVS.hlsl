@@ -6,10 +6,9 @@ cbuffer MatrixBuffer: register(b0)
 	float4x4 lightProjectionMatrix;
 }
 
-cbuffer LightBuffer2
+cbuffer LightBuffer2 : register(b1)
 {
-	float3 lightPosition;
-	float padding;
+	float4x4 lightHomoClipSpace;
 };
 
 struct VertexInputType
@@ -30,7 +29,7 @@ struct PixelInputType
 
 float4 ShadowVertexShader(float3 inPosition : SHADOW_POSITION) : SV_POSITION
 {
-	return  mul (float4(inPosition, 1.0f), homoClipSpace);
+	return  mul (float4(inPosition, 1.0f), lightHomoClipSpace);
 
 	//return mul(float4(posL, 1.0f), homoClipSpace);
 }

@@ -6,6 +6,7 @@ ShadowShaderClass::ShadowShaderClass()
 	this->shadow_pixelShader		= nullptr;
 	this->shadow_layout				= nullptr;
 	this->shadow_matrixBuffer		= nullptr;
+	this->shadow_constantBuffer		= nullptr;
 
 	this->shadowDepthStencilView	= nullptr;
 	this->shadowmapDepthtexture		= nullptr;
@@ -18,12 +19,12 @@ ShadowShaderClass::~ShadowShaderClass()
 	this->shutdown();
 }
 
-bool ShadowShaderClass::initialize(ID3D11Device* gDevice, HWND hWind)
+bool ShadowShaderClass::initialize(ID3D11Device* gDevice, HWND hWind, Matrix toConstantBuffer)
 {
 	bool result;
 	//högst sannoligt fel här
 	result = this->initializeShader(gDevice, hWind, L"shadowVS.hlsl", L"shadowPS.hlsl"); //restertek.com
-	
+
 	return result;
 }
 
