@@ -6,6 +6,7 @@
 #include "Object.h"
 #include "Camera.h"
 #include "LightHandler.h"
+#include "terrain.h"
 
 
 HWND InitWindow(HINSTANCE hInstance);
@@ -38,6 +39,7 @@ Object worldObject;
 
 vector<Object> objects;
 int nrOfObjects = 0;
+Terrain* terrain = nullptr;
 
 int nrOfVertexDrawn = 0;
 
@@ -69,10 +71,16 @@ void createWorldMatrices()
 	//ViewSpace
 	//viewSpace = &WorldCamera.getViewMatrix();
 
+	//viewSpace = new Matrix(DirectX::XMMatrixLookAtLH
+	//	(
+	//		Vector3(-2, 0, 0),	//Position
+	//		Vector3(1, 2, 1),	//lookAtTarget
+	//		Vector3(0, 1, 0)	//upVector
+	//		));
 	viewSpace = new Matrix(DirectX::XMMatrixLookAtLH
 		(
-			Vector3(-2, 0, 0),	//Position
-			Vector3(1, 2, 1),	//lookAtTarget
+			Vector3(0, 0, 0),	//Position
+			Vector3(0, 0, 1),	//lookAtTarget
 			Vector3(0, 1, 0)	//upVector
 			));
 
@@ -224,12 +232,18 @@ void createObjects()
 			
 		counter++;
 	}
-	//
-	nrOfVertexDrawn = triangleVertices.size();
+
+	//create terrain
+	terrain = new Terrain();
+	nrOfVertexDrawn += terrain->getVertecies().size();
+	objects.push_back(Object(terrain->getVertecies(), Vector3(0, 0, 0), gDevice, "grassTexture.png"));
+	nrOfObjects++;
+	
+	//nrOfVertexDrawn = triangleVertices.size();
 	worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice, fromFile.getImageFile());
 
 	//many boxes many wow
-	for (int x = 0; x < 6; x++)
+	/*for (int x = 0; x < 6; x++)
 	{
 		for (int y = 0; y < 6; y++)
 		{
@@ -242,7 +256,16 @@ void createObjects()
 				}
 			}
 		}
-	}
+	}*/
+	/*objects.push_back(Object(triangleVertices, Vector3(3,0,3), gDevice, fromFile.getImageFile()));
+	nrOfObjects++;
+	for (int i = 1; i < objects.size(); i++)
+	{
+		objects[i]
+	}*/
+
+	
+
 	//worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice);
 
 	pointLight.sendToBuffer(gDevice);
@@ -344,7 +367,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 		while (WM_QUIT != msg.message)
 		{
-			WorldCamera.Update(wndHandle); //update worldcamera
+			WorldCamera.Update(wndHandle, terrain); //update worldcamera
 			if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 			{
 				TranslateMessage(&msg);
@@ -372,6 +395,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		gVertexLayout->Release();
 		gVertexShader->Release();
 		gPixelShader->Release();
+
+		delete terrain;
 
 		gBackbufferRTV->Release();
 		gSwapChain->Release();
