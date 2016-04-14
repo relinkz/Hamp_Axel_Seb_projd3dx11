@@ -54,9 +54,6 @@
     <ClCompile Include="QuadTree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="shadowMap.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ShadowShaderClass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -104,9 +101,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="QuadTree.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="shadowMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ShadowShaderClass.h">

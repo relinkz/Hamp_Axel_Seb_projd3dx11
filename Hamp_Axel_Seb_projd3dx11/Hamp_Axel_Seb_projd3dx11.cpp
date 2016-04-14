@@ -10,10 +10,6 @@
 #include "shadowShaderClass.h"
 
 
-
-
-
-
 HWND InitWindow(HINSTANCE hInstance);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
@@ -532,7 +528,7 @@ void updateBuffers(Object* object1)
 
 	*worldSpace = object1->getWorldMatrix();
 
-	lightCamera.setCameraPos(Vector3(0, 0, 0));
+	lightCamera.setCameraPos(Vector3(0, 0, -2));
 	*viewSpace = WorldCamera.getViewMatrix();
 	*lightViewMatrix = lightCamera.getViewMatrix();
 	//*lightViewMatrix = Matrix(XMMatrixLookAtLH(pointLight.getLightPos(), Vector3(0, 0, 0), Vector3(0.0f, 1.0f, 0.0f)));
@@ -582,17 +578,13 @@ void updateBuffers(Object* object1)
 
 void RenderShadowMap(const Object &object1)
 {
-	//ID3D11ShaderResourceView* diffuseSRV = object1.getDiffuseMapSRV();
-	//gDeviceContext->PSSetShaderResources(0, 1, &diffuseSRV);
-
-	//UINT32 vertexSize = sizeof(TriangleVertex);
 	UINT32 vertexSize = sizeof(shadowtriVertex);
-	//UINT32 vertexSize = sizeof(float) * 9;// får inte vara 8 av någon anledngin
 	UINT32 offset = 0;
 
 	ID3D11InputLayout* shadowLayout = nullptr;
 	shadowLayout = shadowMap.getInputLayout();
 
+	//behövs denna?
 	gDeviceContext->OMSetRenderTargets(1, &shadowBufferRTV, ShadowDepthBuffer);
 
 	//OMSetRenderTargets(1, &RenderTargetView, DepthStencilView);
@@ -602,25 +594,19 @@ void RenderShadowMap(const Object &object1)
 	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	gDeviceContext->VSSetShader(shadowMap.getShadowVS(), NULL, 0);
-	//gDeviceContext->PSSetShader(shadowMap.getShadowPS(), NULL, 0);
-	//gDeviceContext->PSSetShader(pDeferredShader, NULL, 0);
 
 	UINT startslot = 0;
 	UINT nrOfBuffers = 2;
 
-
 	gShadowBuffer = object1.getShadowVertexBufferPointer();
 	gDeviceContext->IASetVertexBuffers(startslot, nrOfBuffers, &gShadowBuffer, &vertexSize, &offset);
 	gDeviceContext->VSSetConstantBuffers(startslot, nrOfBuffers, &worldSpaceBuffer);
-	//gDeviceContext->VSSetConstantBuffers(1, 2, &lightWorldSpaceBuffer);
-	gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
+	//gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 
 	//clearing the depth stencil
 	gDeviceContext->ClearDepthStencilView(ShadowDepthBuffer, D3D11_CLEAR_DEPTH, 1.0f, 0);
-
 	gDeviceContext->Draw(nrOfVertexDrawn, 0);
 
-	//save the shadow renderTargetView
 }
 
 void Render(const Object &object1)
@@ -680,24 +666,6 @@ void Render(const Object &object1)
 
 	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 	gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
-
-
-
-	//gDeviceContext->VSSetConstantBuffers(1, 2, &lightBuff);
-	//på något sätt vill inte constant buffern skapas
-
-	//gDeviceContext->VSSetConstantBuffers(1, 2, &lightBuff);
-
-
-	//gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	//gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	//gDeviceContext->IASetInputLayout(gVertexLayout);
-
-
-	//update constantbuffers
-
-	//gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
-	//gDeviceContext->GSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 
 	gDeviceContext->Draw(nrOfVertexDrawn,0);
 }
