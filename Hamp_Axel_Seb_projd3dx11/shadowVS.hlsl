@@ -29,7 +29,9 @@ struct PixelInputType
 
 float4 ShadowVertexShader(float3 inPosition : SHADOW_POSITION) : SV_POSITION
 {
-	return  mul (float4(inPosition, 1.0f), lightHomoClipSpace);
+	float4 result = mul(float4(inPosition, 1.0f), lightHomoClipSpace);
+
+	return  result;
 
 	//return mul(float4(posL, 1.0f), homoClipSpace);
 }

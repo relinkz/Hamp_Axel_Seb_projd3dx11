@@ -585,7 +585,10 @@ void RenderShadowMap(const Object &object1)
 	shadowLayout = shadowMap.getInputLayout();
 
 	//behövs denna?
-	gDeviceContext->OMSetRenderTargets(1, &shadowBufferRTV, ShadowDepthBuffer);
+	ID3D11RenderTargetView* renderTargets[1] = { 0 };
+
+	gDeviceContext->OMSetRenderTargets(1, renderTargets, ShadowDepthBuffer);
+	//gDeviceContext->OMSetRenderTargets(1, &shadowBufferRTV, ShadowDepthBuffer);
 
 	//OMSetRenderTargets(1, &RenderTargetView, DepthStencilView);
 	
@@ -619,31 +622,42 @@ void Render(const Object &object1)
 	//if shadowmap rescourses not set, set it
 	if (shadowMapSRV == nullptr)
 	{
+		D3D11_TEXTURE2D_DESC texDesc;
+		ZeroMemory(&texDesc, sizeof(texDesc));
+		texDesc.Width = 640.0f;
+		texDesc.Height = 480.0f;
+		texDesc.MipLevels = 1;
+		texDesc.ArraySize = 1;
+		texDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
+		texDesc.SampleDesc.Count = 1;  //asså VA?!
+		texDesc.SampleDesc.Quality = 0;
+		texDesc.Usage = D3D11_USAGE_DEFAULT;
+		texDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+		texDesc.CPUAccessFlags = 0;
+		texDesc.MiscFlags = 0;
+
+		//create the 2D texture
+		HRESULT hr = gDevice->CreateTexture2D(&texDesc, NULL, &shadowMapTexture2D);
+
+		D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc;
+		ZeroMemory(&dsvDesc, sizeof(dsvDesc));
+		dsvDesc.Flags = 0;
+		dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+		dsvDesc.Texture2D.MipSlice = 0;
+
+		hr = gDevice->CreateDepthStencilView(shadowMapTexture2D, &dsvDesc, &ShadowDepthBuffer);
+
 		D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
-		memset(&SRVDesc, 0, sizeof(SRVDesc));
-		SRVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-		SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
-		SRVDesc.Texture2D.MipLevels = 0;
+		ZeroMemory(&SRVDesc, sizeof(SRVDesc));
+		SRVDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+		SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+		SRVDesc.Texture2D.MipLevels = texDesc.MipLevels;
 		SRVDesc.Texture2D.MostDetailedMip = 0;
 
-		D3D11_TEXTURE2D_DESC descDepth2;
-		descDepth2.Width = 640.0f;
-		descDepth2.Height = 480.0f;
-		descDepth2.MipLevels = 1;
-		descDepth2.ArraySize = 1;
-		descDepth2.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-		descDepth2.SampleDesc.Count = 4;
-		descDepth2.SampleDesc.Quality = 0;
-		descDepth2.Usage = D3D11_USAGE_DEFAULT;
-		descDepth2.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-		descDepth2.CPUAccessFlags = 0;
-		descDepth2.MiscFlags = 0;
+		hr = gDevice->CreateShaderResourceView(shadowMapTexture2D, &SRVDesc, &shadowMapSRV);
 
-		ZeroMemory(&descDepth2, sizeof(descDepth2));
-
-		HRESULT hr = gDevice->CreateTexture2D(&descDepth2, NULL, &shadowMapTexture2D);
-		hr = gDevice->CreateRenderTargetView(shadowMapTexture2D, NULL, &shadowBufferRTV);
-		hr = gDevice->CreateShaderResourceView(shadowMapTexture2D, NULL, &shadowMapSRV);
+		shadowMapTexture2D->Release();
 	}
 	
 
@@ -663,6 +677,9 @@ void Render(const Object &object1)
 
 	gDeviceContext->VSSetShader(vDeferredShader, NULL, 0);
 	gDeviceContext->PSSetShader(pDeferredShader, NULL, 0);
+
+	//dumping the shadowmap to the pipeline
+	gDeviceContext->PSSetShaderResources(0, 1, &shadowMapSRV);
 
 	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 	gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
