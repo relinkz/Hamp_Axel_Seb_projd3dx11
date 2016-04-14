@@ -501,6 +501,8 @@ void createObjects()
 
 	*/
 	objects.push_back(Object(triangleVertices, Vector3((0.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile()));
+	objects.push_back(Object(triangleVertices, Vector3((0.0f), (0.0f), (3.0f)), gDevice, fromFile.getImageFile()));
+
 	//objects.push_back(Object(triangleVertices, Vector3(0.0f, 0.0f, 1.0f), gDevice, fromFile.getImageFile()));
 	//worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice);
 	pointLight.sendToBuffer(gDevice);
@@ -679,7 +681,7 @@ void Render(const Object &object1)
 	gDeviceContext->PSSetShader(pDeferredShader, NULL, 0);
 
 	//dumping the shadowmap to the pipeline
-	gDeviceContext->PSSetShaderResources(0, 1, &shadowMapSRV);
+	gDeviceContext->PSSetShaderResources(1, 1, &shadowMapSRV);
 
 	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 	gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
