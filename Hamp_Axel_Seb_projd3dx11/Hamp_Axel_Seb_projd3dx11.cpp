@@ -26,6 +26,10 @@ ID3D11RenderTargetView *deferredViews[4];
 
 ID3D11RenderTargetView* gBackbufferRTV = nullptr;
 ID3D11RenderTargetView* shadowBufferRTV = nullptr;
+ID3D11ShaderResourceView* shadowMapSRV = nullptr;
+ID3D11Texture2D* shadowMapTexture2D = nullptr;
+
+
 
 TriangleVertex* triangleVertices = nullptr;
 
@@ -528,6 +532,7 @@ void updateBuffers(Object* object1)
 
 	*worldSpace = object1->getWorldMatrix();
 
+	lightCamera.setCameraPos(Vector3(0, 0, -2));
 	*viewSpace = WorldCamera.getViewMatrix();
 	*lightViewMatrix = lightCamera.getViewMatrix();
 	//*lightViewMatrix = Matrix(XMMatrixLookAtLH(pointLight.getLightPos(), Vector3(0, 0, 0), Vector3(0.0f, 1.0f, 0.0f)));
@@ -623,6 +628,42 @@ void Render(const Object &object1)
 	ID3D11ShaderResourceView* diffuseSRV = object1.getDiffuseMapSRV();
 	gDeviceContext->PSSetShaderResources(0, 1, &diffuseSRV);
 
+	//new shit
+	
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
+	memset(&SRVDesc, 0, sizeof(SRVDesc));
+	SRVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
+	SRVDesc.Texture2D.MipLevels = 0;
+	SRVDesc.Texture2D.MostDetailedMip = 0;
+
+	D3D11_TEXTURE2D_DESC descDepth2;
+	descDepth2.Width = 640.0f;
+	descDepth2.Height = 480.0f;
+	descDepth2.MipLevels = 1;
+	descDepth2.ArraySize = 1;
+	descDepth2.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	descDepth2.SampleDesc.Count = 4;
+	descDepth2.SampleDesc.Quality = 0;
+	descDepth2.Usage = D3D11_USAGE_DEFAULT;
+	descDepth2.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	descDepth2.CPUAccessFlags = 0;
+	descDepth2.MiscFlags = 0;
+
+	//ZeroMemory(&descDepth2, sizeof(descDepth2));
+
+	HRESULT hr = gDevice->CreateTexture2D(&descDepth2, NULL, &shadowMapTexture2D);
+	hr = gDevice->CreateRenderTargetView(shadowMapTexture2D, NULL, &shadowBufferRTV);
+
+	if (shadowMapSRV == nullptr)
+	{
+
+		hr = gDevice->CreateShaderResourceView(shadowMapTexture2D, NULL, &shadowMapSRV);
+	}
+	
+
+	gDeviceContext->PSSetShaderResources(0, 1, &shadowMapSRV);
 	UINT32 vertexSize = sizeof(TriangleVertex);
 	//UINT32 vertexSize = sizeof(float) * 9;// får inte vara 8 av någon anledngin
 	UINT32 offset = 0;
@@ -633,12 +674,16 @@ void Render(const Object &object1)
 	
 	gDeviceContext->IASetVertexBuffers(0, 1, &gVertexBuffer, &vertexSize, &offset);
 	gDeviceContext->OMSetRenderTargets(1, &deferredViews[0], gDepthBuffer);
+	//gDeviceContext->OMSetRenderTargets(2, &shadowBufferRTV, gDepthBuffer);
+
 
 	gDeviceContext->VSSetShader(vDeferredShader, NULL, 0);
 	gDeviceContext->PSSetShader(pDeferredShader, NULL, 0);
 
 	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 	gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
+
+
 
 	//gDeviceContext->VSSetConstantBuffers(1, 2, &lightBuff);
 	//på något sätt vill inte constant buffern skapas

@@ -19,7 +19,6 @@ private:
 	ID3D11Buffer*			vertexBuffer;
 	ID3D11Buffer*			shadowVertexBuffer;
 
-
 	/*
 	Variables for the texture
 	*/
@@ -45,6 +44,8 @@ public:
 
 	ID3D11ShaderResourceView* getDiffuseMapSRV()	const;
 	Vector3 getPosition()							const;
+
+	void createFloor();
 };
 
 #endif
