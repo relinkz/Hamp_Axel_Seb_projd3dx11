@@ -22,10 +22,10 @@ ID3D11RenderTargetView *deferredViews[4];
 
 ID3D11RenderTargetView* gBackbufferRTV = nullptr;
 ID3D11RenderTargetView* shadowBufferRTV = nullptr;
+
+
 ID3D11ShaderResourceView* shadowMapSRV = nullptr;
 ID3D11Texture2D* shadowMapTexture2D = nullptr;
-
-
 
 TriangleVertex* triangleVertices = nullptr;
 
@@ -441,19 +441,6 @@ void createObjects()
 	finalShit[4] = Vector4( 0.5f,   0.5f, 0.5f, 0.0f);
 	finalShit[5] = Vector4( 0.5f,  -0.5f, 0.5f, 0.0f);
 
-	/*
-	.     
-
-
-	.    .
-	
-	.
-
-
-	.		.
-	
-	*/
-
 
 
 	//finalShit[3] = (center + rightVector) + upVector;
@@ -679,6 +666,10 @@ void Render(const Object &object1)
 
 	gDeviceContext->VSSetShader(vDeferredShader, NULL, 0);
 	gDeviceContext->PSSetShader(pDeferredShader, NULL, 0);
+
+	/*
+	Making the render targets 
+	*/
 
 	//dumping the shadowmap to the pipeline
 	gDeviceContext->PSSetShaderResources(1, 1, &shadowMapSRV);

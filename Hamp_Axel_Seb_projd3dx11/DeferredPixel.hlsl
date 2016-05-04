@@ -30,45 +30,77 @@ struct defPixelOutput
 
 defPixelOutput main(in defPixelInput input) : SV_TARGET
 {
+	float4 camPos = float4(0,0,0,0);
+	float4 diffColor = float4(0, 0, 0, 0);
+	float2 shadowUV = float2(0, 0);
+
+	float4 lightPos = float4(0, 2, -2, 0);
+	float lightIntensity = 0.0f;
+	float lightDepthValue = 0.0f;
+	float depthValue = 0.0f;
+	float bias = 0.00005f;
+
+
 	defPixelOutput output;
-	float3 posLight = float3(0.0f, 0.0f, -2.0f);
-	posLight.xy /= 1.0f;
-
-	float2 smTex = float2(0.5f * posLight.x + 0.5f, -0.5*posLight.y + 0.5f);
-	float depth = posLight.z / 1;
-
-	float dx = 1.0f / 4;
-
-	float s0 = (shadowMap.Sample(sampAni, smTex).r + 0.00005 < depth) ? 0.0f : 1.0f;
-	float s1 = (shadowMap.Sample(sampAni, smTex + float2(dx, 0.0f)).r + 0.00005 < depth) ? 0.0f : 1.0f;
-	float s2 = (shadowMap.Sample(sampAni, smTex + float2(0.0f, dx)).r + 0.00005 < depth) ? 0.0f : 1.0f;
-	float s3 = (shadowMap.Sample(sampAni, smTex + float2(dx, dx)).r + 0.00005 < depth) ? 0.0f : 1.0f;
-
-	//sampleSize
-	float2 texelPos = smTex * 4;
-
-	float2 lerps = frac(texelPos);
-
-	//i'd like to lerp'it lerp'it
-	float iHaveNoClueWhatIAmDoing = lerp(lerp(s0, s1, lerps.x), lerp(s2, s3, lerps.x), lerps.y); //i got it lepin' they hatin'
-
 	
-	float test;
-	output.Color = float4(txDiffuse.Sample(sampAni, input.Tex).xyz, 0.0f);
-	//depth = float4(shadowMap.Sample(sampAni, input.Tex).xyz, 0.0f);
-	
+	diffColor = txDiffuse.Sample(sampAni, input.Tex);
 
-	output.Color *= iHaveNoClueWhatIAmDoing;
+	output.Color = diffColor;
+	//move the position to projection space for the light
+	lightPos = mul(lightPos, lightProjectionMatrix);
 
-	float3 normalWS = normalize(input.Normal);
+	//create the normalized vector from position to light source
+	float3 outVec = normalize(lightPos.xyz - (input.PosView).xyz);
 
-	output.Normal = float4(normalWS, 0.0f);
-	output.Normal = saturate(output.Normal);
+	//Create the normalized reflection vector
+	float3 refVec = normalize(reflect(-outVec, input.Normal));
 
-	//output.Normal = float4(in, 0.0f);
-	output.Pos = input.PosView;
-	//output.Depth.xyz = mul(output.Depth.xyz, lightProjectionMatrix);
+	//create the normalized vector form positon to camera
+	float3 viewDir = normalize(camPos - input.PosView).xyz;
+
+	float specIntesity = saturate(dot(refVec, viewDir));
+	float shineFactor = 5.0f;
+	float lightSpecular = 0.65f;
+
+	//calculate the specular part
+	//float4 specular = float4(specColor.rgb * lightSpecular * max(pow(specIntesity, shineFactor), 0.0f), 1.0f);
+
+	lightIntensity = dot(input.Normal, outVec);
+	if (lightIntensity < 0)
+	{
+		lightIntensity = 0;
+	}
+
+	//calculate the projected texture coordinate
+	shadowUV.x = (lightPos.x / lightPos.w) * 0.5f + 0.5f;
+	shadowUV.y = (lightPos.y / lightPos.w) * -0.5f + 0.5f;
+
+	//If point outside shadowMap
+	if (saturate(shadowUV.x) != shadowUV.x || saturate(shadowUV.y) != shadowUV.y)
+	{
+		lightIntensity = saturate(dot(input.Normal.xyz, outVec.xyz));
+	}
+	else
+	{
+		//pixel is in shadow
+		lightIntensity = 0;
+
+		//calculate the depth of the light
+		lightDepthValue = lightPos.z / lightPos.w;
+
+		//sample the shadowmap
+		depthValue = shadowUV = shadowMap.Sample(sampAni, shadowUV).r;
+
+		// Subtract the bias from the lightDepthValue.
+		lightDepthValue = lightDepthValue - bias;
 
 
+		if (lightDepthValue < depthValue)
+		{
+			lightIntensity = saturate(dot(input.Normal.xyz, outVec.xyz));
+		}
+		
+	}
+	output.Color = saturate((diffColor.rgba * lightIntensity * 0.8f) + 0.2f);
 	return output;
 }
