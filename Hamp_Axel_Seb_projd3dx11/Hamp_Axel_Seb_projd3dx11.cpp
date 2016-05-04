@@ -517,7 +517,7 @@ void updateBuffers(Object* object1)
 
 	*worldSpace = object1->getWorldMatrix();
 
-	lightCamera.setCameraPos(Vector3(0, 0, -2));
+	lightCamera.setCameraPos(Vector3(0, 2, -2));
 	*viewSpace = WorldCamera.getViewMatrix();
 	*lightViewMatrix = lightCamera.getViewMatrix();
 	//*lightViewMatrix = Matrix(XMMatrixLookAtLH(pointLight.getLightPos(), Vector3(0, 0, 0), Vector3(0.0f, 1.0f, 0.0f)));
@@ -596,9 +596,7 @@ void RenderShadowMap(const Object &object1)
 	//gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 
 	//clearing the depth stencil
-	gDeviceContext->ClearDepthStencilView(ShadowDepthBuffer, D3D11_CLEAR_DEPTH, 1.0f, 0);
 	gDeviceContext->Draw(nrOfVertexDrawn, 0);
-
 }
 
 void Render(const Object &object1)
@@ -721,6 +719,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 				gDeviceContext->ClearRenderTargetView(deferredViews[1], clearColor);
 				gDeviceContext->ClearRenderTargetView(deferredViews[2], grayColor);
 				gDeviceContext->ClearRenderTargetView(deferredViews[3], clearColor);
+
 				gDeviceContext->ClearDepthStencilView(gDepthBuffer, D3D11_CLEAR_DEPTH, 1, 0);
 
 				objectsToDraw = quadTree.getObjectsToDraw(WorldCamera.getCameraPos());
@@ -734,9 +733,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 					{
 						updateBuffers(objectsToDraw.at(i));
 						RenderShadowMap(*objectsToDraw.at(i));
-
 					}
 				}
+				//gDeviceContext->ClearDepthStencilView(ShadowDepthBuffer, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 				for (int i = 0; i < objectsToDraw.size(); i++)
 				{
