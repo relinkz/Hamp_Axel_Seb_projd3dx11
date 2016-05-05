@@ -86,49 +86,49 @@ void createWorldMatrices()
 
 	//viewSpace = &WorldCamera.getViewMatrix();
 	//ProjectionMatrix
-	 projectionSpace = new Matrix(XMMatrixPerspectiveFovLH
-		 (
-			 3.14f*0.45f,		// FOV
-			 640.0f / 480.0f,	//Aspect Ratio
-			 0.5f,				//near plane
-			 20.0f				//far plane
-			 ));
+	projectionSpace = new Matrix(XMMatrixPerspectiveFovLH
+		(
+			3.14f*0.45f,		// FOV
+			640.0f / 480.0f,	//Aspect Ratio
+			0.5f,				//near plane
+			20.0f				//far plane
+			));
 
-	 worldSpace = new Matrix(XMMatrixTranslation(1.0f,2.0f,1.0f));
+	worldSpace = new Matrix(XMMatrixTranslation(1.0f, 2.0f, 1.0f));
 
-	 worldViewProj = new Matrix((*worldSpace) * (*viewSpace) * (*projectionSpace));
-	 eyeSpace = new Matrix((*worldSpace) * (*viewSpace));
-	 eyeSpace = &eyeSpace->Transpose();
+	worldViewProj = new Matrix((*worldSpace) * (*viewSpace) * (*projectionSpace));
+	eyeSpace = new Matrix((*worldSpace) * (*viewSpace));
+	eyeSpace = &eyeSpace->Transpose();
 
-	 worldViewProj = &worldViewProj->Transpose();
+	worldViewProj = &worldViewProj->Transpose();
 
 
-	 struct worldMatrixBuffer
-	 {
-		 XMFLOAT4X4 worldViewProj;
-		 XMFLOAT4X4 eyeSpace;
-	 };
+	struct worldMatrixBuffer
+	{
+		XMFLOAT4X4 worldViewProj;
+		XMFLOAT4X4 eyeSpace;
+	};
 
-	 worldMatrixBuffer buffer
-	 {
-		 *worldViewProj, *eyeSpace
-	 };
+	worldMatrixBuffer buffer
+	{
+		*worldViewProj, *eyeSpace
+	};
 
-	 //buffers
-	 D3D11_BUFFER_DESC viewSpaceDesc;
+	//buffers
+	D3D11_BUFFER_DESC viewSpaceDesc;
 	// memset(&viewSpaceDesc, 0, sizeof(worldMatrixBuffer));
-	 viewSpaceDesc.Usage					= D3D11_USAGE_DYNAMIC;
-	 viewSpaceDesc.BindFlags				= D3D11_BIND_CONSTANT_BUFFER;
-	 viewSpaceDesc.ByteWidth				= sizeof(worldMatrixBuffer);
-	 viewSpaceDesc.CPUAccessFlags			= D3D11_CPU_ACCESS_WRITE;
-	 viewSpaceDesc.MiscFlags				= 0;
-	 viewSpaceDesc.StructureByteStride		= 0;
+	viewSpaceDesc.Usage = D3D11_USAGE_DYNAMIC;
+	viewSpaceDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	viewSpaceDesc.ByteWidth = sizeof(worldMatrixBuffer);
+	viewSpaceDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	viewSpaceDesc.MiscFlags = 0;
+	viewSpaceDesc.StructureByteStride = 0;
 
-	 D3D11_SUBRESOURCE_DATA testa;
-	 testa.pSysMem = &buffer;
+	D3D11_SUBRESOURCE_DATA testa;
+	testa.pSysMem = &buffer;
 
 	HRESULT test = gDevice->CreateBuffer(&viewSpaceDesc, &testa, &worldSpaceBuffer);
-	
+
 }
 
 void CreateShaders()
@@ -201,7 +201,7 @@ void CreateShaders()
 void createObjects()
 {
 #pragma region
-
+	srand(1000);
 	Parser fromFile;
 	fromFile.progressFile("obj.txt");
 	fromFile.loadMaterial("box.mtl");
@@ -224,21 +224,21 @@ void createObjects()
 		{
 			TriangleVertex temp = triangleVertices[i];
 
-			triangleVertices[i] = triangleVertices[i+1];
-			triangleVertices[i+1] = temp;
+			triangleVertices[i] = triangleVertices[i + 1];
+			triangleVertices[i + 1] = temp;
 		}
 		else if (counter == 2)
 			counter = -1;
-			
+
 		counter++;
 	}
 
 	//create terrain
 	terrain = new Terrain();
 	nrOfVertexDrawn += terrain->getVertecies().size();
-	objects.push_back(Object(terrain->getVertecies(), Vector3(0, 0, 0), gDevice, "grassTexture.png"));
+	objects.push_back(Object(terrain->getVertecies(), Vector3(0, 0, 0), gDevice, "grassTexture.png")); //måste vara på första pos i vektorn
 	nrOfObjects++;
-	
+
 	//nrOfVertexDrawn = triangleVertices.size();
 	worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice, fromFile.getImageFile());
 
@@ -257,21 +257,41 @@ void createObjects()
 			}
 		}
 	}*/
-	/*objects.push_back(Object(triangleVertices, Vector3(3,0,3), gDevice, fromFile.getImageFile()));
-	nrOfObjects++;
+	int maxZ = terrain->getLength();
+	int maxX = terrain->getWidth();
+
+	for (int i = 0; i < 5; i++)
+	{
+		objects.push_back(Object(triangleVertices, Vector3(rand() % 6, 0, 6), gDevice, fromFile.getImageFile()));
+		nrOfObjects++;
+	}
+	
 	for (int i = 1; i < objects.size(); i++)
 	{
-		objects[i]
-	}*/
+		float highest = 0;
+		for (int j = 0; j < 4; j++)//selecting the highest pos in the square
+		{
+			float compare = terrain->getY(
+				(int)floorf(objects[i].getPosition().x + j),
+				(int)floorf(objects[i].getPosition().z + j));
 
-	
+			if (highest < compare)
+			{
+				highest = compare;
+			}
+		}
+		objects[i].setPosY(highest);
+
+	}
+
+
 
 	//worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice);
 
 	pointLight.sendToBuffer(gDevice);
 #pragma endregion
 
-	
+
 }
 
 void SetViewport()
@@ -306,16 +326,16 @@ void Render(Object object1)
 	gDeviceContext->Unmap(worldSpaceBuffer, 0);
 
 
-	 //gDeviceContext->Unmap(worldSpaceBuffer, 0);
+	//gDeviceContext->Unmap(worldSpaceBuffer, 0);
 
-	// clear the back buffer to a deep blue
+   // clear the back buffer to a deep blue
 
 	gDeviceContext->VSSetShader(gVertexShader, nullptr, 0);
 	gDeviceContext->HSSetShader(nullptr, nullptr, 0);
 	gDeviceContext->DSSetShader(nullptr, nullptr, 0);
 	//gDeviceContext->GSSetShader(gGeometryShader, nullptr, 0);
 	//gDeviceContext->GSSetShader(nullptr, nullptr, 0);
-	
+
 	gDeviceContext->PSSetShader(gPixelShader, nullptr, 0);
 	ID3D11ShaderResourceView* diffuseSRV = object1.getDiffuseMapSRV();
 	gDeviceContext->PSSetShaderResources(0, 1, &diffuseSRV);
@@ -341,7 +361,27 @@ void Render(Object object1)
 	//gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 	//gDeviceContext->GSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 
-	gDeviceContext->Draw(nrOfVertexDrawn,0);
+	gDeviceContext->Draw(nrOfVertexDrawn, 0);
+}
+
+void gameLogic()
+{
+	for (int i = 1; i < nrOfObjects; i++)
+	{
+
+		if (WorldCamera.getCameraPos().x >= objects[i].getPosition().x - 1 && WorldCamera.getCameraPos().x <= objects[i].getPosition().x + 1
+			&& WorldCamera.getCameraPos().z >= objects[i].getPosition().z - 1 && WorldCamera.getCameraPos().z <= objects[i].getPosition().z + 1
+			&& WorldCamera.getCameraPos().y >= objects[i].getPosition().y && WorldCamera.getCameraPos().y - 1<= objects[i].getPosition().y)
+		{
+			objects.erase(objects.begin() + i);
+			nrOfObjects--;
+			if (objects.size() == 1)
+			{
+				//win message popup
+				MessageBox(NULL, L"You won", L"You won", MB_OK);
+			}
+		}
+	}
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
@@ -375,6 +415,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 			}
 			else
 			{
+				gameLogic();
 				float clearColor[] = { 0, 0, 0, 1 };
 				gDeviceContext->ClearRenderTargetView(gBackbufferRTV, clearColor);
 				//clear depthbuffer
@@ -384,7 +425,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 				{
 					Render(objects.at(i)); //8. Rendera
 				}
-				
+
 
 				gSwapChain->Present(0, 0); //9. Växla front- och back-buffer
 			}
@@ -512,15 +553,15 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		gDevice->CreateRenderTargetView(pBackBuffer, NULL, &gBackbufferRTV);
 		pBackBuffer->Release();
 
-	
+
 
 		gDevice->CreateDepthStencilView
 			(
 				pDepthStencil, // Depth stencil texture
 				&descDSV, // Depth stencil desc
 				&gDepthBuffer
-			);		// [out] Depth stencil view
-						// set the render target as the back buffer
+				);		// [out] Depth stencil view
+							// set the render target as the back buffer
 		gDeviceContext->OMSetRenderTargets(1, &gBackbufferRTV, gDepthBuffer);
 
 	}

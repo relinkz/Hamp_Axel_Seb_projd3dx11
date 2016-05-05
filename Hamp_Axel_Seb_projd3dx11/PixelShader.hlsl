@@ -43,8 +43,8 @@ angle = normalize(angle);
 if (angle >= 0)
 {
 	text.x = diffuse * text.x * angle + text.x * ambient;
-	text.y = diffuse * text.y *angle + text.y * ambient;
-	text.z = diffuse * text.z *angle + text.z * ambient;
+	text.y = diffuse * text.y * angle + text.y * ambient;
+	text.z = diffuse * text.z * angle + text.z * ambient;
 }
 else
 {
@@ -55,7 +55,7 @@ else
 
 
 //return float4(text, lights[5]);
+return float4(input.Norm,1);
 return float4(text, 0.0f);
 //return float4(1.0f, 0.0f, 0.0f, 1.0f); //för planet
-//return float4(input.Norm,1);
 }

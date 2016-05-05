@@ -76,6 +76,16 @@ ID3D11ShaderResourceView* Object::getDiffuseMapSRV() const
 	return this->diffuseMapSRV;
 }
 
+Vector3 Object::getPosition() const
+{
+	return this->position;
+}
+
+void Object::setPosY(float newY)
+{
+	this->position.y = newY;
+}
+
 #pragma region
 /*
 * Help and utility functions
