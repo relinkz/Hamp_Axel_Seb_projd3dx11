@@ -5,8 +5,8 @@ cbuffer world
 	float4x4 lightViewMatrix;
 	float4x4 lightProjectionMatrix;
 
-	//camera Position
-	//lightPosition
+	float4 camPos;
+	float4 lightPosition;  //if not directx will scream at me :(
 };
 
 
@@ -34,11 +34,11 @@ struct defPixelOutput
 
 defPixelOutput main(in defPixelInput input) : SV_TARGET
 {
-	float4 camPos = float4(1,1,-1,0);
+	//float4 camPos1 = float4(1,1,-1,0);
 	float4 diffColor = float4(0, 0, 0, 0);
 	float2 shadowUV = float2(0, 0);
 
-	float4 lightPos = float4(0, 2, -2, 0);
+	float4 lightPos = lightPosition;
 	float lightIntensity = 0.0f;
 	float lightDepthValue = 0.0f;
 	float depthValue = 0.0f;

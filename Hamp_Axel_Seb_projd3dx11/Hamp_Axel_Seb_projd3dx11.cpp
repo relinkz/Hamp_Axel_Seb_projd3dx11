@@ -92,6 +92,9 @@ struct worldMatrixBuffer
 	XMFLOAT4X4 eyeSpace;
 	XMFLOAT4X4 lightViewMatrix;
 	XMFLOAT4X4 lightProjectionMatrix;
+	
+	XMFLOAT4 cameraPos;
+	XMFLOAT4 lightPos;
 };
 
 struct shadowMapMatrtixBuff
@@ -138,7 +141,8 @@ SimpleMath::Matrix* viewSpace = nullptr;
 SimpleMath::Matrix* lightViewSpace = nullptr;
 SimpleMath::Matrix* projectionSpace = nullptr;
 SimpleMath::Matrix* worldSpace = nullptr; // need one worldSpace for each object in the world
-Vector3 cameraPos = Vector3(0, 0, 20);
+Vector4 cameraPos;
+Vector4 lightPos;
 SimpleMath::Matrix* worldViewProj = nullptr;
 SimpleMath::Matrix* lightWorldViewProj = nullptr;
 Matrix* lightViewMatrix = nullptr;
@@ -160,15 +164,6 @@ void createWorldMatrices()
 			Vector3(0, 1, 0)	//upVector
 			));
 
-/*	lightViewSpace = new Matrix(DirectX::XMMatrixLookAtLH
-		(
-			pointLight.getLightPos(),	//Position
-			Vector3(1, 2, 1),	//lookAtTarget
-			Vector3(0, 1, 0)	//upVector
-			));
-			*/
-
-	//viewSpace = &WorldCamera.getViewMatrix();
 	//ProjectionMatrix
 	lightViewSpace = &lightCamera.getViewMatrix();
 
@@ -206,9 +201,15 @@ void createWorldMatrices()
 	 lightViewMatrix = new Matrix();
 	 lightProjectionMatrix = new Matrix();
 
+	 Vector3 tempo = WorldCamera.getCameraPos();
+	 cameraPos = Vector4(tempo.x,tempo.y,tempo.z, 0);
+
+	 tempo = lightCamera.getCameraPos();
+	 lightPos = Vector4(tempo.x, tempo.y, tempo.z, 0);
+
 	 worldMatrixBuffer buffer
 	 {
-		 *worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix
+		 *worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix, cameraPos, lightPos
 	 };
 
 	 //buffers
@@ -544,11 +545,17 @@ void SetViewport()
 
 void updateBuffers(Object* object1)
 {
-	cameraPos = WorldCamera.getCameraPos();
+	Vector3 tempo = WorldCamera.getCameraPos();
+	cameraPos = Vector4(tempo.x, tempo.y, tempo.z, 0);
+
+	tempo = lightCamera.getCameraPos();
+	lightPos = Vector4(tempo.x, tempo.y, tempo.z, 0);
+
 
 	*worldSpace = object1->getWorldMatrix();
-
-	lightCamera.setCameraPos(Vector3(0, 2, -2));
+	
+	//for good codestadards we set the light pos here, contact hampus if you have any complains
+	lightCamera.setCameraPos(Vector3(0, 0, -2));
 
 	*viewSpace = WorldCamera.getViewMatrix();
 	*lightViewMatrix = lightCamera.getViewMatrix();
@@ -572,7 +579,7 @@ void updateBuffers(Object* object1)
 
 	worldMatrixBuffer updateWorldMatrices
 	{
-		*worldViewProj, *eyeSpace, *lightViewMatrix , *orthograficProjection
+		*worldViewProj, *eyeSpace, *lightViewMatrix , *orthograficProjection, cameraPos, lightPos
 	};
 
 	shadowMapMatrtixBuff shadowUpdate
