@@ -4,6 +4,9 @@ cbuffer world
 	float4x4 eyeSpace;
 	float4x4 lightViewMatrix;
 	float4x4 lightProjectionMatrix;
+
+	//camera Position
+	//lightPosition
 };
 
 
@@ -55,13 +58,14 @@ defPixelOutput main(in defPixelInput input) : SV_TARGET
 	lightPos = mul(lightPos, lightProjectionMatrix);
 
 	//create the normalized vector from position to light source
-	float3 outVec = normalize(lightPos.xyz - (input.PosView).xyz);
+	//float3 outVec = normalize(lightPos - input.PosView).xyz;
+	float3 outVec = normalize(input.PosView - lightPos).xyz;
 
 	//Create the normalized reflection vector
 	//float3 refVec = normalize(reflect(-outVec, input.Normal));
 
 	//create the normalized vector form positon to camera
-	float3 viewDir = normalize(camPos - input.PosView).xyz;//kanske fel .xyz
+	float3 viewDir = normalize(camPos - input.PosView).xyz;
 
 	//float specIntesity = saturate(dot(refVec, viewDir));
 	float shineFactor = 5.0f;
@@ -85,7 +89,6 @@ defPixelOutput main(in defPixelInput input) : SV_TARGET
 	if (saturate(shadowUV.x) != shadowUV.x || saturate(shadowUV.y) != shadowUV.y)
 	{
 		lightIntensity = saturate(dot(input.Normal.xyz, outVec.xyz));
-		output.Color = float4(1, 0, 0, 1);
 	}
 	else
 	{
@@ -110,7 +113,10 @@ defPixelOutput main(in defPixelInput input) : SV_TARGET
 		}
 		//output.Color = float4(0, 1, 0, 0);
 	}
-	//output.Color = saturate((diffColor.rgba * lightIntensity * 0.8f) + (diffColor.rgba * 0.2f));
+	output.Color = saturate((diffColor.rgba * lightIntensity * 0.8f) + (diffColor.rgba * 0.2f));
 	//output.Color = float4(shadowUV,0,0);
+	//output.Color = float4(outVec,0);
+	//output.Color = float4(lightIntensity, 0, 0, 0);
+
 	return output;
 }
