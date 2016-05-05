@@ -62,6 +62,8 @@ ID3D11Buffer* shadow_constantBuffer = nullptr;
 ID3D11Buffer* worldSpaceBuffer = nullptr;
 ID3D11Buffer* lightWorldSpaceBuffer = nullptr;
 
+ID3D11SamplerState* pointSampler = nullptr;
+
 ID3D11GeometryShader *gGeometryShader = nullptr;
 ID3D11InputLayout* gVertexLayout = nullptr;
 ID3D11InputLayout* quadLayout = nullptr;
@@ -148,6 +150,8 @@ SimpleMath::Matrix* orthograficProjection = nullptr;
 void createWorldMatrices()
 {
 	Matrix* WVP_Ptr = nullptr;
+	orthograficProjection = new Matrix();
+	
 
 	viewSpace = new Matrix(DirectX::XMMatrixLookAtLH
 		(
@@ -182,7 +186,8 @@ void createWorldMatrices()
 	 lightViewMatrix = lightViewSpace;
 
 	 worldViewProj = new Matrix((*worldSpace) * (*viewSpace) * (*projectionSpace));
-	 lightWorldViewProj = new Matrix((*worldSpace) * (*lightViewSpace) * (*projectionSpace));
+	 lightWorldViewProj = new Matrix(DirectX::XMMatrixPerspectiveFovLH(3.14f*0.45f, 640.0f / 480.0f, 0.5f, 20.0f));
+
 
 	//worldViewProjLight = new Matrix(pointLight.getWorldMatrix() * (*viewSpace) * (*orthograficProjection));
 	 
@@ -365,6 +370,32 @@ void CreateShaders()
 	gDevice->CreatePixelShader(pPS2->GetBufferPointer(), pPS2->GetBufferSize(), nullptr, &gPixelShader);
 	// we do not need anymore this COM object, so we release it.
 	pPS->Release();
+
+	//creating pointSampler
+	D3D11_SAMPLER_DESC samplerDesc;
+
+	//Fill the texture sampler state description
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.MipLODBias = 0.0f;
+	samplerDesc.MaxAnisotropy = 1;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	samplerDesc.BorderColor[0] = 0;
+	samplerDesc.BorderColor[1] = 0;
+	samplerDesc.BorderColor[2] = 0;
+	samplerDesc.BorderColor[3] = 0;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	HRESULT hresult = gDevice->CreateSamplerState(&samplerDesc, &pointSampler);
+	if (FAILED(hresult))
+	{
+		//failed to create sampler
+		system("pause");
+	}
+
 }
 
 void createObjects()
@@ -518,25 +549,30 @@ void updateBuffers(Object* object1)
 	*worldSpace = object1->getWorldMatrix();
 
 	lightCamera.setCameraPos(Vector3(0, 2, -2));
+
 	*viewSpace = WorldCamera.getViewMatrix();
 	*lightViewMatrix = lightCamera.getViewMatrix();
+
 	//*lightViewMatrix = Matrix(XMMatrixLookAtLH(pointLight.getLightPos(), Vector3(0, 0, 0), Vector3(0.0f, 1.0f, 0.0f)));
 	
 
 	*worldViewProj = Matrix((*worldSpace) * (*viewSpace) * (*projectionSpace));
-	
+	*orthograficProjection = Matrix((*projectionSpace));
+
 	*lightWorldViewProj = Matrix((*worldSpace) * (*lightViewMatrix) * (*projectionSpace));
 
 	*eyeSpace = object1->getWorldMatrix();
 
 	worldViewProj = &worldViewProj->Transpose();
 	lightWorldViewProj = &lightWorldViewProj->Transpose();
+	orthograficProjection = &orthograficProjection->Transpose();
 
 	eyeSpace = &eyeSpace->Transpose();
+	lightViewMatrix = &lightViewMatrix->Transpose();
 
 	worldMatrixBuffer updateWorldMatrices
 	{
-		*worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix
+		*worldViewProj, *eyeSpace, *lightViewMatrix , *orthograficProjection
 	};
 
 	shadowMapMatrtixBuff shadowUpdate
@@ -675,6 +711,8 @@ void Render(const Object &object1)
 	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 	gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 
+	gDeviceContext->PSSetSamplers(0, 1, &pointSampler);
+
 	gDeviceContext->Draw(nrOfVertexDrawn,0);
 }
 
@@ -735,7 +773,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 						RenderShadowMap(*objectsToDraw.at(i));
 					}
 				}
-				//gDeviceContext->ClearDepthStencilView(ShadowDepthBuffer, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 				for (int i = 0; i < objectsToDraw.size(); i++)
 				{
@@ -745,6 +782,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 						Render(*objectsToDraw.at(i));
 					}
 				}
+				gDeviceContext->ClearDepthStencilView(ShadowDepthBuffer, D3D11_CLEAR_DEPTH, 1.0f, 0);
 			
 				
 				//gDeviceContext->VSSetShader(quadVertexShader, nullptr, 0);
