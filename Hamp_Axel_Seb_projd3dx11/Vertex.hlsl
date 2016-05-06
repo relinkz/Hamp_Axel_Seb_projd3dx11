@@ -1,37 +1,21 @@
-cbuffer perFrame : register(b0)
+/*float4 main( in float3 pos : POSITION ) : SV_POSITION
 {
-	float4x4 homoClipSpace;
-	float4x4 worldSpace;
-}
-
+	return float4(pos,1.0f);
+}*/
 struct VS_IN
 {
-	float3 Pos	: POSITION;
-	float3 Norm	: NORMAL;
-	float2 Tex	: TEXCOORD;
+	float3 Pos : POSITION;
+	float2 UVCoord : TEXCOORD;
 };
-
 struct VS_OUT
 {
-	float4 Pos	: SV_POSITION;
-	float3 Norm : NORMAL;
-	float2 Tex	: TEXCOORD;
-	float4 PosView : POSITION;
+	float4 Pos : SV_POSITION;
+	float2 UVCoord : TEXCOORD;
 };
-//-----------------------------------------------------------------------------------------
-// VertexShader: VSScene
-//-----------------------------------------------------------------------------------------
-VS_OUT VS_main(VS_IN input)
+VS_OUT main(VS_IN input)
 {
-	VS_OUT output = (VS_OUT)0;
-
-	output.Pos = mul(float4(input.Pos, 1.0f), homoClipSpace);
-	output.PosView = mul(float4(input.Pos,1.0f), worldSpace);
-	//output.Norm = mul(float4(input.Norm, 0.0f), superTest);
-	output.Norm = input.Norm;
-	//output.Norm = normalize(output.Norm);
-
-	output.Tex = input.Tex;
-
+	VS_OUT output;
+	output.Pos = float4(input.Pos, 1.0f);
+	output.UVCoord = input.UVCoord;
 	return output;
 }

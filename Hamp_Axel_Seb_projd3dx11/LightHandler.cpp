@@ -74,3 +74,11 @@ ID3D11Buffer* LightHandler::getCLightBuffer() const
 {
 	return this->cLightBuffer;
 }
+
+Matrix LightHandler::getWorldMatrix() const
+{
+	Matrix test;
+
+	test = Matrix(DirectX::XMMatrixTranslation(this->lights[0].x, this->lights[0].y, this->lights[0].z));
+	return test;
+}

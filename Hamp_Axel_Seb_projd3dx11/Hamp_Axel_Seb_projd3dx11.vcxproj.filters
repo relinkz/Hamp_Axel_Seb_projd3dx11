@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\HLSL Files">
+      <UniqueIdentifier>{96832edc-2362-4371-9c58-7b45ac141132}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -51,16 +54,34 @@
     <ClCompile Include="QuadTree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="shadowMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ShadowShaderClass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Vertex.hlsl">
-      <Filter>Source Files</Filter>
+    <FxCompile Include="GeometryShader.hlsl">
+      <Filter>Source Files\HLSL Files</Filter>
     </FxCompile>
     <FxCompile Include="PixelShader.hlsl">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\HLSL Files</Filter>
     </FxCompile>
-    <FxCompile Include="GeometryShader.hlsl">
-      <Filter>Source Files</Filter>
+    <FxCompile Include="shadowVS.hlsl">
+      <Filter>Source Files\HLSL Files</Filter>
+    </FxCompile>
+    <FxCompile Include="shadowPS.hlsl">
+      <Filter>Source Files\HLSL Files</Filter>
+    </FxCompile>
+    <FxCompile Include="DeferredPixel.hlsl">
+      <Filter>Source Files\HLSL Files</Filter>
+    </FxCompile>
+    <FxCompile Include="DeferredVertex.hlsl">
+      <Filter>Source Files\HLSL Files</Filter>
+    </FxCompile>
+    <FxCompile Include="Vertex.hlsl">
+      <Filter>Source Files\HLSL Files</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
@@ -83,6 +104,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="QuadTree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="shadowMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ShadowShaderClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -52,6 +52,9 @@ public:
 	Matrix getViewMatrix();
 	Vector3 getCameraPos();
 	Vector3 getLookAtPoint();
+	Vector3 getLookRight() const;
+	Vector3 getLookUp() const;
+
 	POINT GetMousePos(HWND hWnd);
 	void setUpViewFustrumPlanes();
 	std::vector<Object*> doFustrumCulling(std::vector<Object*> objects);
