@@ -555,7 +555,7 @@ void updateBuffers(Object* object1)
 	*worldSpace = object1->getWorldMatrix();
 	
 	//for good codestadards we set the light pos here, contact hampus if you have any complains
-	lightCamera.setCameraPos(Vector3(0, 0, -2));
+	lightCamera.setCameraPos(Vector3(0, 2, -2));
 
 	*viewSpace = WorldCamera.getViewMatrix();
 	*lightViewMatrix = lightCamera.getViewMatrix();
@@ -620,11 +620,6 @@ void RenderShadowMap(const Object &object1)
 	ID3D11RenderTargetView* renderTargets[1] = { 0 };
 
 	gDeviceContext->OMSetRenderTargets(1, renderTargets, ShadowDepthBuffer);
-	//gDeviceContext->OMSetRenderTargets(1, &shadowBufferRTV, ShadowDepthBuffer);
-
-	//OMSetRenderTargets(1, &RenderTargetView, DepthStencilView);
-	
-
 	gDeviceContext->IASetInputLayout(shadowLayout);
 	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -636,7 +631,6 @@ void RenderShadowMap(const Object &object1)
 	gShadowBuffer = object1.getShadowVertexBufferPointer();
 	gDeviceContext->IASetVertexBuffers(startslot, nrOfBuffers, &gShadowBuffer, &vertexSize, &offset);
 	gDeviceContext->VSSetConstantBuffers(startslot, nrOfBuffers, &worldSpaceBuffer);
-	//gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 
 	//clearing the depth stencil
 	gDeviceContext->Draw(nrOfVertexDrawn, 0);
@@ -771,7 +765,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 				objectsToDraw = WorldCamera.doFustrumCulling(objectsToDraw);
 
 				WorldCamera.Update(wndHandle); //update worldcamera
-		
+				
+
 				for (int i = 0; i < objectsToDraw.size(); i++)
 				{
 					if (objectsToDraw.at(i) != nullptr)
