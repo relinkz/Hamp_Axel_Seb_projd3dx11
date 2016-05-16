@@ -27,9 +27,12 @@ private:
 	ID3D11Texture2D*			diffuseMap;
 
 	short int vertexSize;
+
 	void createVertexBuffer(ID3D11Device* gDevice);
 	void createShadowVertexBuffer(ID3D11Device* gDevice);
 	void create2DTexture(ID3D11Device* gDevice, string srcImage);
+
+	void setBoundingBox();
 public:
 	Object();
 	Object(vector<TriangleVertex>fromParser, Vector3 worldPos, ID3D11Device* gDevice, string srcImage);

@@ -227,7 +227,7 @@ void Camera::setCameraPos(const Vector3 &newPos)
 
 void Camera::setDefaultValue()
 {
-	this->Pos = Vector3(0, 0, 0);
+	this->Pos = Vector3(1, 1, -1);
 	this->lookAtPoint = Vector3(0, 0, 1);
 	this->lookUpPoint = Vector3(0, 1, 0);
 	this->lookRightPoint = Vector3(1, 0, 0);

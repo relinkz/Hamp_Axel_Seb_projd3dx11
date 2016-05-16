@@ -208,4 +208,9 @@ void Object::create2DTexture(ID3D11Device* gDevice, string fileName)
 
 }
 
+void Object::setBoundingBox()
+{
+
+}
+
 #pragma endregion

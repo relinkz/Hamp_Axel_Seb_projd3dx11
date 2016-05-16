@@ -22,10 +22,10 @@ ID3D11RenderTargetView *deferredViews[4];
 
 ID3D11RenderTargetView* gBackbufferRTV = nullptr;
 ID3D11RenderTargetView* shadowBufferRTV = nullptr;
+
+
 ID3D11ShaderResourceView* shadowMapSRV = nullptr;
 ID3D11Texture2D* shadowMapTexture2D = nullptr;
-
-
 
 TriangleVertex* triangleVertices = nullptr;
 
@@ -62,6 +62,8 @@ ID3D11Buffer* shadow_constantBuffer = nullptr;
 ID3D11Buffer* worldSpaceBuffer = nullptr;
 ID3D11Buffer* lightWorldSpaceBuffer = nullptr;
 
+ID3D11SamplerState* pointSampler = nullptr;
+
 ID3D11GeometryShader *gGeometryShader = nullptr;
 ID3D11InputLayout* gVertexLayout = nullptr;
 ID3D11InputLayout* quadLayout = nullptr;
@@ -90,6 +92,9 @@ struct worldMatrixBuffer
 	XMFLOAT4X4 eyeSpace;
 	XMFLOAT4X4 lightViewMatrix;
 	XMFLOAT4X4 lightProjectionMatrix;
+	
+	XMFLOAT4 cameraPos;
+	XMFLOAT4 lightPos;
 };
 
 struct shadowMapMatrtixBuff
@@ -136,7 +141,8 @@ SimpleMath::Matrix* viewSpace = nullptr;
 SimpleMath::Matrix* lightViewSpace = nullptr;
 SimpleMath::Matrix* projectionSpace = nullptr;
 SimpleMath::Matrix* worldSpace = nullptr; // need one worldSpace for each object in the world
-Vector3 cameraPos = Vector3(0, 0, 20);
+Vector4 cameraPos;
+Vector4 lightPos;
 SimpleMath::Matrix* worldViewProj = nullptr;
 SimpleMath::Matrix* lightWorldViewProj = nullptr;
 Matrix* lightViewMatrix = nullptr;
@@ -148,6 +154,8 @@ SimpleMath::Matrix* orthograficProjection = nullptr;
 void createWorldMatrices()
 {
 	Matrix* WVP_Ptr = nullptr;
+	orthograficProjection = new Matrix();
+	
 
 	viewSpace = new Matrix(DirectX::XMMatrixLookAtLH
 		(
@@ -156,15 +164,6 @@ void createWorldMatrices()
 			Vector3(0, 1, 0)	//upVector
 			));
 
-/*	lightViewSpace = new Matrix(DirectX::XMMatrixLookAtLH
-		(
-			pointLight.getLightPos(),	//Position
-			Vector3(1, 2, 1),	//lookAtTarget
-			Vector3(0, 1, 0)	//upVector
-			));
-			*/
-
-	//viewSpace = &WorldCamera.getViewMatrix();
 	//ProjectionMatrix
 	lightViewSpace = &lightCamera.getViewMatrix();
 
@@ -182,7 +181,8 @@ void createWorldMatrices()
 	 lightViewMatrix = lightViewSpace;
 
 	 worldViewProj = new Matrix((*worldSpace) * (*viewSpace) * (*projectionSpace));
-	 lightWorldViewProj = new Matrix((*worldSpace) * (*lightViewSpace) * (*projectionSpace));
+	 lightWorldViewProj = new Matrix(DirectX::XMMatrixPerspectiveFovLH(3.14f*0.45f, 640.0f / 480.0f, 0.5f, 20.0f));
+
 
 	//worldViewProjLight = new Matrix(pointLight.getWorldMatrix() * (*viewSpace) * (*orthograficProjection));
 	 
@@ -201,9 +201,15 @@ void createWorldMatrices()
 	 lightViewMatrix = new Matrix();
 	 lightProjectionMatrix = new Matrix();
 
+	 Vector3 tempo = WorldCamera.getCameraPos();
+	 cameraPos = Vector4(tempo.x,tempo.y,tempo.z, 0);
+
+	 tempo = lightCamera.getCameraPos();
+	 lightPos = Vector4(tempo.x, tempo.y, tempo.z, 0);
+
 	 worldMatrixBuffer buffer
 	 {
-		 *worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix
+		 *worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix, cameraPos, lightPos
 	 };
 
 	 //buffers
@@ -365,6 +371,32 @@ void CreateShaders()
 	gDevice->CreatePixelShader(pPS2->GetBufferPointer(), pPS2->GetBufferSize(), nullptr, &gPixelShader);
 	// we do not need anymore this COM object, so we release it.
 	pPS->Release();
+
+	//creating pointSampler
+	D3D11_SAMPLER_DESC samplerDesc;
+
+	//Fill the texture sampler state description
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.MipLODBias = 0.0f;
+	samplerDesc.MaxAnisotropy = 1;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	samplerDesc.BorderColor[0] = 0;
+	samplerDesc.BorderColor[1] = 0;
+	samplerDesc.BorderColor[2] = 0;
+	samplerDesc.BorderColor[3] = 0;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	HRESULT hresult = gDevice->CreateSamplerState(&samplerDesc, &pointSampler);
+	if (FAILED(hresult))
+	{
+		//failed to create sampler
+		system("pause");
+	}
+
 }
 
 void createObjects()
@@ -441,19 +473,6 @@ void createObjects()
 	finalShit[4] = Vector4( 0.5f,   0.5f, 0.5f, 0.0f);
 	finalShit[5] = Vector4( 0.5f,  -0.5f, 0.5f, 0.0f);
 
-	/*
-	.     
-
-
-	.    .
-	
-	.
-
-
-	.		.
-	
-	*/
-
 
 
 	//finalShit[3] = (center + rightVector) + upVector;
@@ -526,30 +545,41 @@ void SetViewport()
 
 void updateBuffers(Object* object1)
 {
-	cameraPos = WorldCamera.getCameraPos();
+	Vector3 tempo = WorldCamera.getCameraPos();
+	cameraPos = Vector4(tempo.x, tempo.y, tempo.z, 0);
+
+	tempo = lightCamera.getCameraPos();
+	lightPos = Vector4(tempo.x, tempo.y, tempo.z, 0);
+
 
 	*worldSpace = object1->getWorldMatrix();
+	
+	//for good codestadards we set the light pos here, contact hampus if you have any complains
+	lightCamera.setCameraPos(Vector3(0, 2, -2));
 
-	lightCamera.setCameraPos(Vector3(0, -2, -2));
 	*viewSpace = WorldCamera.getViewMatrix();
 	*lightViewMatrix = lightCamera.getViewMatrix();
+
 	//*lightViewMatrix = Matrix(XMMatrixLookAtLH(pointLight.getLightPos(), Vector3(0, 0, 0), Vector3(0.0f, 1.0f, 0.0f)));
 	
 
 	*worldViewProj = Matrix((*worldSpace) * (*viewSpace) * (*projectionSpace));
-	
+	*orthograficProjection = Matrix((*projectionSpace));
+
 	*lightWorldViewProj = Matrix((*worldSpace) * (*lightViewMatrix) * (*projectionSpace));
 
 	*eyeSpace = object1->getWorldMatrix();
 
 	worldViewProj = &worldViewProj->Transpose();
 	lightWorldViewProj = &lightWorldViewProj->Transpose();
+	orthograficProjection = &orthograficProjection->Transpose();
 
 	eyeSpace = &eyeSpace->Transpose();
+	lightViewMatrix = &lightViewMatrix->Transpose();
 
 	worldMatrixBuffer updateWorldMatrices
 	{
-		*worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix
+		*worldViewProj, *eyeSpace, *lightViewMatrix , *orthograficProjection, cameraPos, lightPos
 	};
 
 	shadowMapMatrtixBuff shadowUpdate
@@ -590,11 +620,6 @@ void RenderShadowMap(const Object &object1)
 	ID3D11RenderTargetView* renderTargets[1] = { 0 };
 
 	gDeviceContext->OMSetRenderTargets(1, renderTargets, ShadowDepthBuffer);
-	//gDeviceContext->OMSetRenderTargets(1, &shadowBufferRTV, ShadowDepthBuffer);
-
-	//OMSetRenderTargets(1, &RenderTargetView, DepthStencilView);
-	
-
 	gDeviceContext->IASetInputLayout(shadowLayout);
 	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -606,12 +631,9 @@ void RenderShadowMap(const Object &object1)
 	gShadowBuffer = object1.getShadowVertexBufferPointer();
 	gDeviceContext->IASetVertexBuffers(startslot, nrOfBuffers, &gShadowBuffer, &vertexSize, &offset);
 	gDeviceContext->VSSetConstantBuffers(startslot, nrOfBuffers, &worldSpaceBuffer);
-	//gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 
 	//clearing the depth stencil
-	gDeviceContext->ClearDepthStencilView(ShadowDepthBuffer, D3D11_CLEAR_DEPTH, 1.0f, 0);
 	gDeviceContext->Draw(nrOfVertexDrawn, 0);
-
 }
 
 void Render(const Object &object1)
@@ -680,11 +702,17 @@ void Render(const Object &object1)
 	gDeviceContext->VSSetShader(vDeferredShader, NULL, 0);
 	gDeviceContext->PSSetShader(pDeferredShader, NULL, 0);
 
+	/*
+	Making the render targets 
+	*/
+
 	//dumping the shadowmap to the pipeline
 	gDeviceContext->PSSetShaderResources(1, 1, &shadowMapSRV);
 
 	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 	gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
+
+	gDeviceContext->PSSetSamplers(0, 1, &pointSampler);
 
 	gDeviceContext->Draw(nrOfVertexDrawn,0);
 }
@@ -730,20 +758,21 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 				gDeviceContext->ClearRenderTargetView(deferredViews[1], clearColor);
 				gDeviceContext->ClearRenderTargetView(deferredViews[2], grayColor);
 				gDeviceContext->ClearRenderTargetView(deferredViews[3], clearColor);
+
 				gDeviceContext->ClearDepthStencilView(gDepthBuffer, D3D11_CLEAR_DEPTH, 1, 0);
 
 				objectsToDraw = quadTree.getObjectsToDraw(WorldCamera.getCameraPos());
 				objectsToDraw = WorldCamera.doFustrumCulling(objectsToDraw);
 
 				WorldCamera.Update(wndHandle); //update worldcamera
-		
+				
+
 				for (int i = 0; i < objectsToDraw.size(); i++)
 				{
 					if (objectsToDraw.at(i) != nullptr)
 					{
 						updateBuffers(objectsToDraw.at(i));
 						RenderShadowMap(*objectsToDraw.at(i));
-
 					}
 				}
 
@@ -755,6 +784,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 						Render(*objectsToDraw.at(i));
 					}
 				}
+				gDeviceContext->ClearDepthStencilView(ShadowDepthBuffer, D3D11_CLEAR_DEPTH, 1.0f, 0);
 			
 				
 				//gDeviceContext->VSSetShader(quadVertexShader, nullptr, 0);

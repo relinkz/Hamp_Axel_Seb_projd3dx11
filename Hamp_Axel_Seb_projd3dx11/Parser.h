@@ -23,6 +23,17 @@ struct TriangleVertex
 	float u, v;
 };
 
+struct AABBValues
+{
+	DirectX::XMFLOAT3 maxX;
+	DirectX::XMFLOAT3 maxY;
+	DirectX::XMFLOAT3 maxZ;
+
+	DirectX::XMFLOAT3 minX;
+	DirectX::XMFLOAT3 minY;
+	DirectX::XMFLOAT3 minZ;
+};
+
 class Parser
 {
 public:
@@ -41,7 +52,6 @@ public:
 	Vector3 getVertex(const int &nr)		const;
 	void createList();
 	TriangleVertex popFirst();
-
 private:
 	string imageFile;
 	string mtllib;
