@@ -530,7 +530,7 @@ void updateBuffers(Object* object1)
 
 	*worldSpace = object1->getWorldMatrix();
 
-	lightCamera.setCameraPos(Vector3(0, 0, -2));
+	lightCamera.setCameraPos(Vector3(0, -2, -2));
 	*viewSpace = WorldCamera.getViewMatrix();
 	*lightViewMatrix = lightCamera.getViewMatrix();
 	//*lightViewMatrix = Matrix(XMMatrixLookAtLH(pointLight.getLightPos(), Vector3(0, 0, 0), Vector3(0.0f, 1.0f, 0.0f)));
