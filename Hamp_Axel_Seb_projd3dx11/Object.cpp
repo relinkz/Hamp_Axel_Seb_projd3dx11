@@ -33,6 +33,30 @@ Object::Object(vector<TriangleVertex>fromParser, Vector3 worldPos, ID3D11Device*
 	this->create2DTexture(gDevice, srcImage);
 }
 
+Object::Object(vector<TriangleVertex> fromParser, Vector3 worldPos, ID3D11Device * gDevice, string srcImage, string normalMap)
+{
+	this->vertexSize = fromParser.size();
+
+	for (int i = 0; i < this->vertexSize; i++)
+	{
+		this->vertexData.push_back(fromParser.at(i));
+	}
+	this->position = worldPos;
+
+	this->position = worldPos;
+
+	this->vertexBuffer = nullptr;
+	this->textureData = nullptr;
+	this->diffuseMap = nullptr;
+	this->diffuseMapSRV = nullptr;
+	this->normalMapData = nullptr;
+	this->normalMapSRV = nullptr;
+
+	this->createVertexBuffer(gDevice);
+	this->create2DTexture(gDevice, srcImage);
+	this->createNoarmalMap(gDevice, normalMap);
+}
+
 Object::Object(vector<TriangleVertex>fromParser, Vector3 worldPos, ID3D11Device* gDevice)
 {
 	this->vertexSize = fromParser.size();
@@ -74,6 +98,11 @@ ID3D11Buffer* Object::getVertexBufferPointer() const
 ID3D11ShaderResourceView* Object::getDiffuseMapSRV() const
 {
 	return this->diffuseMapSRV;
+}
+
+ID3D11ShaderResourceView * Object::getNormalMapSRV() const
+{
+	return this->normalMapSRV;
 }
 
 Vector3 Object::getPosition() const
@@ -163,6 +192,36 @@ void Object::create2DTexture(ID3D11Device* gDevice, string fileName)
 
 	////result = gDevice->CreateShaderResourceView(this->diffuseMap, &imageSRV, &(this->diffuseMapSRV));
 
+}
+
+void Object::createNoarmalMap(ID3D11Device * gDevice, string fileName)
+{
+	CoInitialize(nullptr); 	//Need to call this function to be able to use the DirectX ToolKit!
+
+	HRESULT result;
+
+	//string fileName = "brickNormalMap.png";
+	size_t maxsize = 0;
+
+	wstring superString;
+	for (int i = 0; i < fileName.length(); ++i)
+		superString += wchar_t(fileName[i]);
+
+	const wchar_t* hipsterFileTypeFileName = superString.c_str();
+
+	result = DirectX::CreateWICTextureFromFileEx
+		(
+			gDevice,
+			hipsterFileTypeFileName,
+			maxsize,
+			D3D11_USAGE_DEFAULT,
+			D3D11_BIND_SHADER_RESOURCE,
+			0,
+			0,
+			false,
+			&this->normalMapData,
+			&this->normalMapSRV
+			);
 }
 
 #pragma endregion
