@@ -17,12 +17,6 @@ void Parser::progressFile(const string& dest) throw(...)
 {
 	DirectX::XMFLOAT3 startVal(0,0,0);
 
-	AABBValues boundingBox
-	{
-		startVal, startVal, startVal,
-		startVal, startVal, startVal
-	};
-
 	stringstream errorMessage;
 	stringstream dataStream;
 	string data = "";

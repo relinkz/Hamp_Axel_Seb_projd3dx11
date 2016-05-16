@@ -16,8 +16,6 @@ private:
 	vector<TriangleVertex>	vertexData;
 	vector<shadowtriVertex> shadowVertexData;
 
-	float halfSideLength;
-
 	ID3D11Buffer*			vertexBuffer;
 	ID3D11Buffer*			shadowVertexBuffer;
 
@@ -27,9 +25,6 @@ private:
 	ID3D11Resource*				textureData;
 	ID3D11ShaderResourceView*	diffuseMapSRV;
 	ID3D11Texture2D*			diffuseMap;
-
-	DirectX::XMFLOAT3 topRight;
-	DirectX::XMFLOAT3 bottomLeft;
 
 	short int vertexSize;
 
