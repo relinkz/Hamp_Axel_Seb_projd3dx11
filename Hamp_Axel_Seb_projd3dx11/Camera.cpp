@@ -108,46 +108,8 @@ void Camera::Update(HWND hWnd, Terrain* terrain)
 	else//walking on terrain
 	{
 		this->Pos += Vector3(0, -1, 0) * 0.0011f;
-		int intCamX = (int)floorf(this->Pos.x);
-		int intCamZ = (int)floorf(this->Pos.z);
-
-		if (intCamX > terrain->getWidth()-1)
-			intCamX = terrain->getWidth()-1;
-		if (intCamZ > terrain->getLength()-1)
-			intCamZ = terrain->getLength()-1;
-		if (intCamX < 0)
-			intCamX = 0;
-		if (intCamZ < 0)
-			intCamZ = 0;
-
-
-		float y0 = terrain->getY(intCamX, intCamZ);
-		float y1 = terrain->getY(intCamX, intCamZ + 1);
-		float y2 = terrain->getY(intCamX + 1, intCamZ);
-		float y3 = terrain->getY(intCamX + 1, intCamZ + 1);
-
-		XMVECTOR v1 = XMLoadFloat3(&XMFLOAT3(intCamX, y0, intCamZ));
-		XMVECTOR v2 = XMLoadFloat3(&XMFLOAT3(intCamX, y1, intCamZ + 1));
-		XMVECTOR v3 = XMLoadFloat3(&XMFLOAT3(intCamX + 1, y2, intCamZ));
-		XMVECTOR v4 = XMLoadFloat3(&XMFLOAT3(intCamX + 1, y3, intCamZ + 1));
-
-		XMVECTOR norm;
 		
-		
-
-		if (this->Pos.x - intCamX < this->Pos.z - intCamZ)//vänster triangel
-		{
-			norm = XMVector3Cross(XMVectorSubtract(v1, v2), XMVectorSubtract(v4, v2));
-		}
-		else//höger triangel
-		{
-			norm = XMVector3Cross(XMVectorSubtract(v1, v3), XMVectorSubtract(v4, v3));
-		}
-
-		float d = -(XMVectorGetX(norm) * XMVectorGetX(v1) + XMVectorGetY(norm) * XMVectorGetY(v1) + XMVectorGetZ(norm) * XMVectorGetZ(v1));
-		float newY = (this->Pos.x * XMVectorGetX(norm) + this->Pos.z * XMVectorGetZ(norm) + d) / -XMVectorGetY(norm);
-		//float newY = (XMVectorGetX(norm) * this->Pos.x + XMVectorGetY(norm) * (this->Pos.y - 1) + XMVectorGetZ(norm) * this->Pos.z + d)
-		//	/ sqrt(XMVectorGetX(norm)*XMVectorGetX(norm) + XMVectorGetY(norm)*XMVectorGetY(norm) + XMVectorGetZ(norm)*XMVectorGetZ(norm));
+		float newY = terrain->getY(this->Pos.x, this->Pos.z);
 
 		if (newY > this->Pos.y - 1)
 		//if (0 > newY)

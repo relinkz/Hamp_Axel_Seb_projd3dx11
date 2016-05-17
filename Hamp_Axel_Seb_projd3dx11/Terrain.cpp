@@ -22,15 +22,15 @@ Terrain::Terrain(int width, int length)
 
 	int index = 0;
 
-	this->connectedPoints.resize(this->TerrainWidth+1);
+	this->connectedPoints.resize(this->TerrainWidth);
 	for (int i = 0; i < this->connectedPoints.size(); i++)
 	{
-		this->connectedPoints[i].resize(this->TerrainLength+1);
+		this->connectedPoints[i].resize(this->TerrainLength);
 	}
 
-	for (int i = 0; i < this->TerrainWidth; i++)
+	for (int i = 0; i < this->TerrainWidth - 1; i++)
 	{
-		for (int j = 0; j < this->TerrainLength; j++)
+		for (int j = 0; j < this->TerrainLength - 1; j++)
 		{
 			input.x = i + 0;
 			input.z = j + 0;
@@ -76,13 +76,13 @@ Terrain::Terrain(int width, int length)
 		this->vertecies[i].ny = XMVectorGetY(normal);
 		this->vertecies[i].nz = XMVectorGetZ(normal);
 
-		this->vertecies[i+1].nx = XMVectorGetX(normal);
-		this->vertecies[i+1].ny = XMVectorGetY(normal);
-		this->vertecies[i+1].nz = XMVectorGetZ(normal);
+		this->vertecies[i + 1].nx = XMVectorGetX(normal);
+		this->vertecies[i + 1].ny = XMVectorGetY(normal);
+		this->vertecies[i + 1].nz = XMVectorGetZ(normal);
 
-		this->vertecies[i+2].nx = XMVectorGetX(normal);
-		this->vertecies[i+2].ny = XMVectorGetY(normal);
-		this->vertecies[i+2].nz = XMVectorGetZ(normal);
+		this->vertecies[i + 2].nx = XMVectorGetX(normal);
+		this->vertecies[i + 2].ny = XMVectorGetY(normal);
+		this->vertecies[i + 2].nz = XMVectorGetZ(normal);
 
 	}
 }
@@ -101,7 +101,7 @@ void Terrain::setHeightmapToMap()
 		{
 			for (int k = 0; k < this->connectedPoints[i][j].size(); k++)
 			{
-				this->vertecies[this->connectedPoints[i][j][k]].y = this->hminfo.heightMap[i+j].y;
+				this->vertecies[this->connectedPoints[i][j][k]].y = this->hminfo.heightMap[i + j].y;
 			}
 		}
 	}
@@ -110,7 +110,7 @@ void Terrain::setHeightmapToMap()
 
 void Terrain::loadFromFile()
 {
-	FILE *filePtr; 
+	FILE *filePtr;
 	BITMAPFILEHEADER bitmapFileHeader;
 	BITMAPINFOHEADER bitmapInfoHeader;
 	int imageSize = 0;
@@ -181,6 +181,63 @@ std::vector<TriangleVertex> Terrain::getVertecies() const
 float Terrain::getY(int x, int z) const
 {
 	return this->vertecies[this->connectedPoints[x][z][0]].y;
+}
+
+float Terrain::getY(float x, float z) const
+{
+	
+
+	int intX = (int)floorf(x);
+	int intZ = (int)floorf(z);
+
+	if (intX < 0)
+	{
+		intX = 0;
+	}
+	if (intZ < 0)
+	{
+		intZ = 0;
+	}
+
+	if (intX > TerrainWidth - 2)
+	{
+		intX = TerrainWidth - 2;
+	}
+	if (intZ > TerrainLength - 2)
+	{
+		intZ = TerrainLength - 2;
+	}
+
+
+
+	float y0 = this->getY(intX, intZ);
+	float y1 = this->getY(intX, intZ + 1);
+	float y2 = this->getY(intX + 1, intZ);
+	float y3 = this->getY(intX + 1, intZ + 1);
+
+	XMVECTOR v1 = XMLoadFloat3(&XMFLOAT3(intX, y0, intZ));
+	XMVECTOR v2 = XMLoadFloat3(&XMFLOAT3(intX, y1, intZ + 1));
+	XMVECTOR v3 = XMLoadFloat3(&XMFLOAT3(intX + 1, y2, intZ));
+	XMVECTOR v4 = XMLoadFloat3(&XMFLOAT3(intX + 1, y3, intZ + 1));
+
+	XMVECTOR norm;
+
+
+
+	if (x - intX < z - intZ)//vänster triangel
+	{
+		norm = XMVector3Cross(XMVectorSubtract(v1, v2), XMVectorSubtract(v4, v2));
+	}
+	else//höger triangel
+	{
+		norm = XMVector3Cross(XMVectorSubtract(v1, v3), XMVectorSubtract(v4, v3));
+	}
+
+	float d = -(XMVectorGetX(norm) * XMVectorGetX(v1) + XMVectorGetY(norm) * XMVectorGetY(v1) + XMVectorGetZ(norm) * XMVectorGetZ(v1));
+	float newY = (x * XMVectorGetX(norm) + z * XMVectorGetZ(norm) + d) / -XMVectorGetY(norm);
+
+
+	return newY;
 }
 
 int Terrain::getWidth() const

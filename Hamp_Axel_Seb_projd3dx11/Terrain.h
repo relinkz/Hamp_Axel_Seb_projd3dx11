@@ -34,6 +34,7 @@ public:
 
 	std::vector<TriangleVertex> getVertecies() const;
 	float getY(int x, int z)const;
+	float getY(float x, float z)const;
 	int getWidth()const;
 	int getLength()const;
 };
