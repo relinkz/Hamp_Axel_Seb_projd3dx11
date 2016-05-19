@@ -5,7 +5,6 @@ ShadowShaderClass::ShadowShaderClass()
 	this->shadow_vertexShader		= nullptr;
 	this->shadow_pixelShader		= nullptr;
 	this->shadow_layout				= nullptr;
-	this->shadow_matrixBuffer		= nullptr;
 	this->shadow_constantBuffer		= nullptr;
 
 	this->shadowDepthStencilView	= nullptr;
@@ -19,11 +18,51 @@ ShadowShaderClass::~ShadowShaderClass()
 	this->shutdown();
 }
 
-bool ShadowShaderClass::initialize(ID3D11Device* gDevice, HWND hWind, Matrix toConstantBuffer)
+bool ShadowShaderClass::initialize(ID3D11Device* gDevice, HWND hWind, Vector3 lightPos, Vector3 lookAt, Vector3 upVector) throw(...)
 {
 	bool result;
-	//högst sannoligt fel här
-	result = this->initializeShader(gDevice, hWind, L"shadowVS.hlsl", L"shadowPS.hlsl"); //restertek.com
+	HRESULT helper;
+
+	//create depthBuffer
+	result = this->initializeDepthStencil(gDevice);
+	if (result == false)
+	{
+		throw("ShadowMap: Failed to initialize depthStencil");
+	}
+	//create vertex shader
+	result = this->createVertexShader(gDevice, hWind, L"shadowVS.hlsl");
+	if (result == false)
+	{
+		throw("ShadowMap: Failed to create vertexshader");
+	}
+
+	//creating matrices, identityMatrix
+	this->worldMatrix = Matrix();
+	//rotating the world in to the lights view
+	this->viewMatrix = Matrix(DirectX::XMMatrixLookAtLH(
+		Vector3(-2,0,0),	//lights position
+		Vector3(1,2,1),		//Look at target
+		Vector3(0,1,0)		//Upvector
+		));
+	//adding projection
+	this->projectionMatrix = Matrix(DirectX::XMMatrixPerspectiveFovLH
+		(
+			3.14f*0.45f,		// FOV
+			640.0f / 480.0f,	//Aspect Ratio
+			0.5f,				//near plane
+			20.0f				//far plane
+			));
+	//Matrix multipication to worldViewProjection
+	this->wvpMatrix = this->worldMatrix * this->viewMatrix * this->projectionMatrix;
+	//transpose it for the pipeline
+	this->wvpMatrix = this->wvpMatrix.Transpose();
+
+	//creating the constant buffer
+	result = this->createConstantBuffer(gDevice);
+	if (result == false)
+	{
+		throw("ShadowMap: Failed creating the constantbuffer");
+	}
 
 	return result;
 }
@@ -68,13 +107,33 @@ ID3D11RenderTargetView* ShadowShaderClass::getRenderTargetView() const
 	return this->shadowMapRTV;
 }
 
-void ShadowShaderClass::clearRenderTargetView(ID3D11DeviceContext* gDeviceContext)
+void ShadowShaderClass::render(Object & toDraw, int nrOfVertex, ID3D11Device * gDevice, ID3D11DeviceContext* gDeviceContext)
 {
-	float clearColor[] = { 0, 0, 0, 1 };
-	float whiteColor[] = { 1, 1, 1, 1 };
-	float grayColor[] = { 0.5, 0.5, 0.5 , 1 };
+	UINT32 vertexSize = sizeof(shadowtriVertex);
+	UINT32 offset = 0;
 
-	gDeviceContext->ClearRenderTargetView(this->shadowMapRTV, whiteColor);
+	ID3D11Buffer* vertexBuffer = nullptr;
+
+	vertexBuffer = toDraw.getVertexBufferPointer();
+
+	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	gDeviceContext->IASetInputLayout(this->shadow_layout);
+
+	gDeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &vertexSize, &offset);
+	gDeviceContext->OMSetRenderTargets(1, &this->shadowMapRTV, this->shadowDepthStencilView);
+	//gDeviceContext->OMSetRenderTargets(2, &shadowBufferRTV, gDepthBuffer);
+
+
+	gDeviceContext->VSSetShader(this->shadow_vertexShader, NULL, 0);
+	gDeviceContext->PSSetShader(NULL, NULL, 0);
+
+	UINT startslot = 1;
+	UINT nrOfBuffers = 1;
+
+	gDeviceContext->VSSetConstantBuffers(startslot, nrOfBuffers, &this->shadow_constantBuffer);
+
+	gDeviceContext->Draw(nrOfVertex, 0);
+
 }
 
 void ShadowShaderClass::clearDepthBuffer(ID3D11DeviceContext* gDeviceContext)
@@ -89,8 +148,6 @@ bool ShadowShaderClass::initializeShader(ID3D11Device* gDevice, HWND hWind, WCHA
 	//creating shaders
 	result = this->createVertexShader(gDevice, hWind, vsFileName);
 	
-	result = this->createPixelShader(gDevice, hWind, psFileName);
-
 	//creating the depth buffer
 	if(this->initializeDepthStencil(gDevice) == false);
 	{
@@ -105,90 +162,52 @@ bool ShadowShaderClass::initializeDepthStencil(ID3D11Device* gDevice)
 	bool result = false;
 
 	D3D11_TEXTURE2D_DESC textureDepthDesc;
-	textureDepthDesc.Width = 640.0f;
-	textureDepthDesc.Height = 480.0f;
+	ZeroMemory(&textureDepthDesc, sizeof(textureDepthDesc));
+	textureDepthDesc.Width = 1024.0f;
+	textureDepthDesc.Height = 1024.0f;
 	textureDepthDesc.MipLevels = 1;
 	textureDepthDesc.ArraySize = 1;
-	textureDepthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	textureDepthDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 
-	textureDepthDesc.SampleDesc.Count = 4;  //must match the swap chain
+	textureDepthDesc.SampleDesc.Count = 1;  //must match the swap chain
 	textureDepthDesc.SampleDesc.Quality = 0;
 	
 	textureDepthDesc.Usage = D3D11_USAGE_DEFAULT;
-	textureDepthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	textureDepthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
 	textureDepthDesc.CPUAccessFlags = 0;
 	textureDepthDesc.MiscFlags = 0;
 
-
 	//create the texture for depthmap?
-	resultHandler = gDevice->CreateTexture2D(
-		&textureDepthDesc,
-		NULL,
-		&(this->shadowmapDepthtexture)
-		);
+	resultHandler = gDevice->CreateTexture2D(&textureDepthDesc,	NULL, &(this->shadowmapDepthtexture));
 
-	//create another texture for the render target view
-	D3D11_TEXTURE2D_DESC textureDescRTV;
+	//create Depth Stencil
+	D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc;
+	ZeroMemory(&dsvDesc, sizeof(dsvDesc));
 
-	ZeroMemory(&textureDescRTV, sizeof(textureDescRTV));
+	dsvDesc.Flags = 0;
+	dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	dsvDesc.Texture2D.MipSlice = 0;
 
-	//setup the render target texture description
-	textureDescRTV.Width = 640.0f;
-	textureDescRTV.Height = 480.0f;
-	textureDescRTV.MipLevels = 1;
-	textureDescRTV.ArraySize = 1;
-	textureDescRTV.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-
-	textureDescRTV.SampleDesc.Count = 4;  //must match swapchain
-	textureDescRTV.SampleDesc.Quality = 0;
-
-	textureDescRTV.Usage = D3D11_USAGE_DEFAULT;
-	textureDescRTV.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-	textureDescRTV.CPUAccessFlags = 0;
-	textureDescRTV.MiscFlags = 0;
-
-	resultHandler = gDevice->CreateTexture2D(&textureDescRTV, NULL, &this->shadowmapRenderTargetViewTexture);
+	resultHandler = gDevice->CreateDepthStencilView(this->shadowmapDepthtexture, &dsvDesc, &(this->shadowDepthStencilView));
 
 
+	//create shader resource view
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+	ZeroMemory(&srvDesc, sizeof(srvDesc));
 
-	//create render target view
-	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourseViewDesc;
-	
-	ZeroMemory(&shaderResourseViewDesc, sizeof(shaderResourseViewDesc));
-
-	//texture already created
-
-	//setup the description of the render target view
-	//didn't work, but with null it does, no questions asked
-
-	//Create the render target view using the depthbuffer?
-	//resultHandler = gDevice->CreateRenderTargetView(this->shadowmapRenderTargetViewTexture, &renderTargetViewDesc, &this->shadowMapRTV);
-	//http://www.rastertek.com/dx11tut22.html <--- here
-	resultHandler = gDevice->CreateRenderTargetView(this->shadowmapRenderTargetViewTexture, NULL, &this->shadowMapRTV);
-
-
-	//set upp description to the shader resource view
-	shaderResourseViewDesc.Format = textureDescRTV.Format;
-	shaderResourseViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	shaderResourseViewDesc.Texture2D.MostDetailedMip = 0;
-	shaderResourseViewDesc.Texture2D.MipLevels = 0;
+	srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MostDetailedMip = 0;
 
 	//create the shader resourse view
-	//resultHandler = gDevice->CreateShaderResourceView(this->shadowmapRenderTargetViewTexture, &shaderResourseViewDesc, &this->shaderResourceView);
-	resultHandler = gDevice->CreateShaderResourceView(this->shadowmapRenderTargetViewTexture, NULL, &this->shaderResourceView);
-
-	//create depthStencilView
-	resultHandler = gDevice->CreateDepthStencilView(
-		this->shadowmapDepthtexture,   //resorse we want to create a view to
-		0,
-		&(this->shadowDepthStencilView)  //the depthStencilView
-		);
+	resultHandler = gDevice->CreateShaderResourceView(this->shadowmapDepthtexture, &srvDesc, &this->shaderResourceView);
 
 	if (!FAILED(resultHandler))
 	{
 		result = true;
 	}
-
 	return result;
 }
 
@@ -303,6 +322,8 @@ bool ShadowShaderClass::createVertexShader(ID3D11Device* gDevice, HWND hWind,WCH
 	{
 		//crash
 		totalResult = false;
+
+
 	}
 	return totalResult;
 }
@@ -336,5 +357,34 @@ bool ShadowShaderClass::createPixelShader(ID3D11Device* gDevice, HWND hWind,WCHA
 
 	resultHelp = gDevice->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), NULL ,&(this->shadow_pixelShader));
 
+	return result;
+}
+
+bool ShadowShaderClass::createConstantBuffer(ID3D11Device * gDevice)
+{
+	HRESULT help;
+	bool result = true;
+
+	//This will never change in the application
+	D3D11_BUFFER_DESC constantBuffer;
+	constantBuffer.ByteWidth = sizeof(Matrix);
+	constantBuffer.Usage = D3D11_USAGE_DEFAULT;
+	constantBuffer.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	constantBuffer.CPUAccessFlags = NULL;
+	constantBuffer.MiscFlags = NULL;
+	constantBuffer.StructureByteStride = NULL;
+
+	D3D11_SUBRESOURCE_DATA initData;
+	initData.pSysMem = &this->wvpMatrix;
+	initData.SysMemPitch = 0;
+	initData.SysMemSlicePitch = 0;
+
+	help = gDevice->CreateBuffer(&constantBuffer, &initData, &this->shadow_constantBuffer);
+	
+	if (help)
+	{
+		result = false;
+	}
+	
 	return result;
 }

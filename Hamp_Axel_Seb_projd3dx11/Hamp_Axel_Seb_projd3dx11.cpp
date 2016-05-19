@@ -707,7 +707,10 @@ void Render(const Object &object1)
 	*/
 
 	//dumping the shadowmap to the pipeline
-	gDeviceContext->PSSetShaderResources(1, 1, &shadowMapSRV);
+	//gDeviceContext->PSSetShaderResources(1, 1, &shadowMapSRV);
+	ID3D11ShaderResourceView* shadowSRVtest = shadowMap.getShaderResourceView();
+
+	gDeviceContext->PSSetShaderResources(1, 1, &shadowSRVtest);
 
 	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
 	gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
@@ -738,6 +741,19 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		createObjects(); //5. Definiera triangelvertiser, 6. Skapa vertex buffer, 7. Skapa input layout
 
 		ShowWindow(wndHandle, nCmdShow);
+
+		try
+		{
+			shadowMap.initialize(gDevice, wndHandle, lightCamera.getCameraPos(), lightCamera.getLookAtPoint(), lightCamera.getLookUp());
+		}
+		catch (char* error)
+		{
+			MessageBox(wndHandle, L"shadowMap error", L"Read the error" ,MB_OK);
+			system("PAUSE");
+		}
+		
+
+		shadowMap.clearDepthBuffer(gDeviceContext);
 
 		while (WM_QUIT != msg.message)
 		{
@@ -772,7 +788,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 					if (objectsToDraw.at(i) != nullptr)
 					{
 						updateBuffers(objectsToDraw.at(i));
-						RenderShadowMap(*objectsToDraw.at(i));
+						//RenderShadowMap(*objectsToDraw.at(i));
+						shadowMap.render(*objectsToDraw.at(i), nrOfVertexDrawn, gDevice, gDeviceContext);
 					}
 				}
 
@@ -784,6 +801,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 						Render(*objectsToDraw.at(i));
 					}
 				}
+
+				shadowMap.clearDepthBuffer(gDeviceContext);
+
+
 				gDeviceContext->ClearDepthStencilView(ShadowDepthBuffer, D3D11_CLEAR_DEPTH, 1.0f, 0);
 			
 				
@@ -945,6 +966,7 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		descDepth.MiscFlags = 0;
 
 
+
 		D3D11_TEXTURE2D_DESC descDepth2;
 		descDepth2.Width = 640.0f;
 		descDepth2.Height = 480.0f;
@@ -965,6 +987,7 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		hr = gDevice->CreateTexture2D(&descDepth2, NULL, &NormalStencil);
 		hr = gDevice->CreateTexture2D(&descDepth2, NULL, &ColorStencil);
 		//hr = gDevice->CreateTexture2D(&descDepth2, NULL, &LightDepthStencil); //shadowMap
+
 
 
 		D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
@@ -996,8 +1019,6 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		//hr = gDevice->CreateDepthStencilView(LightDepthStencil, &descDSV, &shadowDepthStencil);
 
 		lightViewMatrix = new Matrix(XMMatrixLookAtLH(pointLight.getLightPos(), Vector3(0, 0, 0), Vector3(0.0f, 1.0f, 0.0f)));
-
-		shadowMap.initialize(gDevice, wndHandle, *lightViewMatrix);
 
 		shadowBufferRTV = shadowMap.getRenderTargetView();
 		ShadowDepthBuffer = shadowMap.getDepthStencilView();

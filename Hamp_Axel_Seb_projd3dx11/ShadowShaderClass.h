@@ -19,16 +19,9 @@ using namespace std;
 class ShadowShaderClass
 {
 private:
-	struct LightBufferType
+	struct shadowMapMatrtixBuff
 	{
-		Vector4 ambientColor;
-		Vector4 diffuseColor;
-	};
-
-	struct LightBufferType2
-	{
-		Vector3 lightPos;
-		float padding;
+		DirectX::XMFLOAT4X4 lightWorldViewProj;
 	};
 
 
@@ -47,7 +40,11 @@ private:
 	ID3D11RenderTargetView* shadowMapRTV;
 	ID3D11ShaderResourceView* shaderResourceView;
 
-	ID3D11Buffer* shadow_matrixBuffer;
+	Matrix worldMatrix;
+	Matrix viewMatrix;
+	Matrix projectionMatrix;
+
+	Matrix wvpMatrix;
 
 	bool initializeShader(ID3D11Device*, HWND hWind, WCHAR* vsfileName, WCHAR* psFileName);
 	bool initializeDepthStencil(ID3D11Device* gDevice);
@@ -56,11 +53,13 @@ private:
 
 	bool createVertexShader(ID3D11Device* gDevice, HWND hWind, WCHAR* vsFileName);
 	bool createPixelShader(ID3D11Device* gDevixe, HWND hWind,WCHAR* psFileName); //helpshader
+
+	bool createConstantBuffer(ID3D11Device* gDevice);
 public:
 	ShadowShaderClass();
 	virtual ~ShadowShaderClass();
 
-	bool initialize(ID3D11Device*, HWND hWind, Matrix toConstantBuffer);
+	bool initialize(ID3D11Device*, HWND hWind, Vector3 lightPos, Vector3 lookAt, Vector3 upVector) throw(...);
 	void shutdown();
 
 	//getters
@@ -72,12 +71,12 @@ public:
 	ID3D11InputLayout* getInputLayout() const;
 	ID3D11ShaderResourceView* getShaderResourceView() const;
 	ID3D11RenderTargetView* getRenderTargetView() const;
+	void render(Object &toDraw, int nrOfVertex,ID3D11Device* gDevice, ID3D11DeviceContext* gDeviceContext);
 
 
 	//setters
 
-
-	void clearRenderTargetView(ID3D11DeviceContext* gDeviceContext);
+	//void clearRenderTargetView(ID3D11DeviceContext* gDeviceContext);
 	void clearDepthBuffer(ID3D11DeviceContext* gDeviceContext);
 };
 
