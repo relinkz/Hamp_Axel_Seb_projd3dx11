@@ -1,4 +1,4 @@
-cbuffer world
+cbuffer world : register(b0)
 {
 	float4x4 worldViewProj;
 	float4x4 eyeSpace;
@@ -9,6 +9,10 @@ cbuffer world
 	float4 lightPosition;  //if not directx will scream at me :(
 };
 
+cbuffer shadowMapData : register(b1)
+{
+	float4x4 lightWVP;
+}
 
 Texture2D txDiffuse : register(t0);
 Texture2D shadowMap : register(t1);
@@ -38,7 +42,9 @@ defPixelOutput main(in defPixelInput input) : SV_TARGET
 	float4 diffColor = float4(0, 0, 0, 0);
 	float2 shadowUV = float2(0, 0);
 
-	float4 lightPos = lightPosition;
+	//float4 lightPos = lightPosition;
+	float4 lightPos = float4(0, 0, -2, 1);
+	
 	float lightIntensity = 0.0f;
 	float lightDepthValue = 0.0f;
 	float depthValue = 0.0f;
@@ -54,8 +60,11 @@ defPixelOutput main(in defPixelInput input) : SV_TARGET
 	//move the position to projection space for the light
 	//lightPos = mul(lightPos, lightProjectionMatrix);
 	
-	lightPos = mul(input.PosView, lightViewMatrix);
-	lightPos = mul(lightPos, lightProjectionMatrix);
+	//lightPos = mul(input.PosView, lightViewMatrix);
+	//lightPos = mul(lightPos, lightProjectionMatrix);
+
+	lightPos = mul(input.PosView, lightWVP);
+	//lightPos = mul(lightWVP, input.PosView);
 
 	//create the normalized vector from position to light source
 	//float3 outVec = normalize(lightPos - input.PosView).xyz;
@@ -100,7 +109,7 @@ defPixelOutput main(in defPixelInput input) : SV_TARGET
 
 		//sample the shadowmap
 		//depthValue = shadowUV = shadowMap.Sample(sampAni, shadowUV).r;
-		depthValue = shadowMap.Sample(sampAni, shadowUV).r;
+		depthValue = shadowMap.Sample(pointSampler, shadowUV).r;
 
 		// Subtract the bias from the lightDepthValue.
 		lightDepthValue = lightDepthValue - bias;
@@ -115,7 +124,7 @@ defPixelOutput main(in defPixelInput input) : SV_TARGET
 	}
 	output.Color = saturate((diffColor.rgba * lightIntensity * 0.8f) + (diffColor.rgba * 0.2f));
 	//output.Color = float4(shadowUV,0,0);
-	//output.Color = float4(outVec,0);
+	//output.Color = float4(-1*outVec,0);
 	//output.Color = float4(lightIntensity, 0, 0, 0);
 
 	return output;

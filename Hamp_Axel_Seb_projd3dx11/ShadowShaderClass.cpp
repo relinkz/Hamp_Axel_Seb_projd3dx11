@@ -40,11 +40,12 @@ bool ShadowShaderClass::initialize(ID3D11Device* gDevice, HWND hWind, Vector3 li
 	this->worldMatrix = Matrix();
 	//rotating the world in to the lights view
 	this->viewMatrix = Matrix(DirectX::XMMatrixLookAtLH(
-		Vector3(-2,0,0),	//lights position
-		Vector3(1,2,1),		//Look at target
+		Vector3(0,0,-2),	//lights position
+		Vector3(0,0,1),		//Look at target
 		Vector3(0,1,0)		//Upvector
 		));
 	//adding projection
+
 	this->projectionMatrix = Matrix(DirectX::XMMatrixPerspectiveFovLH
 		(
 			3.14f*0.45f,		// FOV
@@ -52,8 +53,12 @@ bool ShadowShaderClass::initialize(ID3D11Device* gDevice, HWND hWind, Vector3 li
 			0.5f,				//near plane
 			20.0f				//far plane
 			));
+
+	//this->projectionMatrix = Matrix(DirectX::XMMatrixOrthographicLH(640.0f, 480.f, 0.5f, 20.0f));
+
+
 	//Matrix multipication to worldViewProjection
-	this->wvpMatrix = this->worldMatrix * this->viewMatrix * this->projectionMatrix;
+	this->wvpMatrix = (this->worldMatrix * this->viewMatrix) * this->projectionMatrix;
 	//transpose it for the pipeline
 	this->wvpMatrix = this->wvpMatrix.Transpose();
 
@@ -80,6 +85,11 @@ ID3D11VertexShader* ShadowShaderClass::getShadowVS() const
 ID3D11PixelShader * ShadowShaderClass::getShadowPS() const
 {
 	return this->shadow_pixelShader;
+}
+
+ID3D11Buffer* ShadowShaderClass::getLightBuffer() const
+{
+	return this->shadow_constantBuffer;
 }
 
 ID3D11DepthStencilView* ShadowShaderClass::getDepthStencilView() const
@@ -114,20 +124,20 @@ void ShadowShaderClass::render(Object & toDraw, int nrOfVertex, ID3D11Device * g
 
 	ID3D11Buffer* vertexBuffer = nullptr;
 
-	vertexBuffer = toDraw.getVertexBufferPointer();
+	vertexBuffer = toDraw.getShadowVertexBufferPointer();
 
 	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	gDeviceContext->IASetInputLayout(this->shadow_layout);
 
 	gDeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &vertexSize, &offset);
-	gDeviceContext->OMSetRenderTargets(1, &this->shadowMapRTV, this->shadowDepthStencilView);
+	gDeviceContext->OMSetRenderTargets(0, nullptr, this->shadowDepthStencilView);
 	//gDeviceContext->OMSetRenderTargets(2, &shadowBufferRTV, gDepthBuffer);
 
 
 	gDeviceContext->VSSetShader(this->shadow_vertexShader, NULL, 0);
 	gDeviceContext->PSSetShader(NULL, NULL, 0);
 
-	UINT startslot = 1;
+	UINT startslot = 0;
 	UINT nrOfBuffers = 1;
 
 	gDeviceContext->VSSetConstantBuffers(startslot, nrOfBuffers, &this->shadow_constantBuffer);
@@ -163,8 +173,8 @@ bool ShadowShaderClass::initializeDepthStencil(ID3D11Device* gDevice)
 
 	D3D11_TEXTURE2D_DESC textureDepthDesc;
 	ZeroMemory(&textureDepthDesc, sizeof(textureDepthDesc));
-	textureDepthDesc.Width = 1024.0f;
-	textureDepthDesc.Height = 1024.0f;
+	textureDepthDesc.Width = 640.0f;
+	textureDepthDesc.Height = 480.0f;
 	textureDepthDesc.MipLevels = 1;
 	textureDepthDesc.ArraySize = 1;
 	textureDepthDesc.Format = DXGI_FORMAT_R32_TYPELESS;

@@ -65,6 +65,7 @@ public:
 	//getters
 	ID3D11VertexShader* getShadowVS() const;
 	ID3D11PixelShader* getShadowPS() const;
+	ID3D11Buffer* getLightBuffer() const;
 
 	ID3D11DepthStencilView* getDepthStencilView() const;
 	ID3D11Texture2D* getDepthStencilRTV() const;

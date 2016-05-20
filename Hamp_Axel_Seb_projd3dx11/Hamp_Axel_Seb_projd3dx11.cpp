@@ -555,7 +555,7 @@ void updateBuffers(Object* object1)
 	*worldSpace = object1->getWorldMatrix();
 	
 	//for good codestadards we set the light pos here, contact hampus if you have any complains
-	lightCamera.setCameraPos(Vector3(0, 2, -2));
+	lightCamera.setCameraPos(Vector3(0, 0, -2));
 
 	*viewSpace = WorldCamera.getViewMatrix();
 	*lightViewMatrix = lightCamera.getViewMatrix();
@@ -630,7 +630,10 @@ void RenderShadowMap(const Object &object1)
 
 	gShadowBuffer = object1.getShadowVertexBufferPointer();
 	gDeviceContext->IASetVertexBuffers(startslot, nrOfBuffers, &gShadowBuffer, &vertexSize, &offset);
-	gDeviceContext->VSSetConstantBuffers(startslot, nrOfBuffers, &worldSpaceBuffer);
+
+	gDeviceContext->VSSetConstantBuffers(startslot++, nrOfBuffers, &worldSpaceBuffer);
+	
+
 
 	//clearing the depth stencil
 	gDeviceContext->Draw(nrOfVertexDrawn, 0);
@@ -706,14 +709,21 @@ void Render(const Object &object1)
 	Making the render targets 
 	*/
 
-	//dumping the shadowmap to the pipeline
-	//gDeviceContext->PSSetShaderResources(1, 1, &shadowMapSRV);
-	ID3D11ShaderResourceView* shadowSRVtest = shadowMap.getShaderResourceView();
 
-	gDeviceContext->PSSetShaderResources(1, 1, &shadowSRVtest);
 
 	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);
+
+	
+	//getting the constant buffer, need temp ptr otherwise directX yells at me
+	ID3D11Buffer* shadowCB = shadowMap.getLightBuffer();
 	gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);
+	gDeviceContext->PSSetConstantBuffers(1, 1, &shadowCB);
+
+	ID3D11ShaderResourceView* shadowSRVtest = shadowMap.getShaderResourceView();
+	
+	//dumping the shadowmap to the pipeline
+	//gDeviceContext->PSSetShaderResources(1, 1, &shadowMapSRV);
+	gDeviceContext->PSSetShaderResources(1, 1, &shadowSRVtest);
 
 	gDeviceContext->PSSetSamplers(0, 1, &pointSampler);
 
@@ -787,7 +797,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 				{
 					if (objectsToDraw.at(i) != nullptr)
 					{
-						updateBuffers(objectsToDraw.at(i));
+						//updateBuffers(objectsToDraw.at(i));
 						//RenderShadowMap(*objectsToDraw.at(i));
 						shadowMap.render(*objectsToDraw.at(i), nrOfVertexDrawn, gDevice, gDeviceContext);
 					}
