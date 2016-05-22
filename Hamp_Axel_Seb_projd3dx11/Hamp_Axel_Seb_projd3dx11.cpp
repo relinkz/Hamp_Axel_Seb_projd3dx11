@@ -201,6 +201,8 @@ void createWorldMatrices()
 
 	HRESULT test = gDevice->CreateBuffer(&viewSpaceDesc, &testa, &worldSpaceBuffer);	//creates the worldSpaceBuffer
 
+	viewSpaceDesc.ByteWidth = sizeof(worldMatrixBuffer2);
+
 	D3D11_SUBRESOURCE_DATA testa2;
 	testa2.pSysMem = &buffer2;
 
@@ -587,7 +589,7 @@ void SecondRenderCall()
 	HRESULT hr;
 	//THIS IS THE START OF THE SECOND REDENR CALL
 	//sets the OutputMerger to use the RTV that is linked to the backbuffer
-	gDeviceContext->OMSetRenderTargets(1, &deferredViews[0], gDepthBuffer);
+	gDeviceContext->OMSetRenderTargets(1, &deferredViews[0], nullptr);
 
 	//enable the shaders taht will be used (no Geometry shader here)
 	gDeviceContext->VSSetShader(quadVertexShader, NULL, 0);

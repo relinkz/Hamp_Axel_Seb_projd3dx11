@@ -142,6 +142,7 @@ void ShadowShaderClass::render(Object & toDraw, int nrOfVertex, ID3D11Device * g
 
 
 	gDeviceContext->VSSetShader(this->shadow_vertexShader, NULL, 0);
+	gDeviceContext->GSSetShader(NULL, NULL, 0);
 	gDeviceContext->PSSetShader(NULL, NULL, 0);
 
 	UINT startslot = 0;
