@@ -39,9 +39,11 @@ bool ShadowShaderClass::initialize(ID3D11Device* gDevice, HWND hWind, Vector3 li
 	//creating matrices, identityMatrix
 	this->worldMatrix = Matrix();
 	//rotating the world in to the lights view
+	this->lightPos = Vector3(-2, 6, 1);
+
 	this->viewMatrix = Matrix(DirectX::XMMatrixLookAtLH(
-		Vector3(0,0,-2),	//lights position
-		Vector3(0,0,1),		//Look at target
+		this->lightPos,	    //lights position
+		Vector3(1,-1,0),	//Look at target
 		Vector3(0,1,0)		//Upvector
 		));
 	//adding projection
@@ -90,6 +92,11 @@ ID3D11PixelShader * ShadowShaderClass::getShadowPS() const
 ID3D11Buffer* ShadowShaderClass::getLightBuffer() const
 {
 	return this->shadow_constantBuffer;
+}
+
+Vector3 ShadowShaderClass::getLightPos() const
+{
+	return this->lightPos;
 }
 
 ID3D11DepthStencilView* ShadowShaderClass::getDepthStencilView() const
@@ -149,6 +156,26 @@ void ShadowShaderClass::render(Object & toDraw, int nrOfVertex, ID3D11Device * g
 void ShadowShaderClass::clearDepthBuffer(ID3D11DeviceContext* gDeviceContext)
 {
 	gDeviceContext->ClearDepthStencilView(this->shadowDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+}
+
+void ShadowShaderClass::updateBuffer(Object & toDraw, ID3D11DeviceContext* gDeviceContext)
+{
+	shadowMapMatrtixBuff* Light_Ptr = nullptr;
+	
+	Matrix objWorldMatrix = toDraw.getWorldMatrix().Transpose();
+
+	shadowMapMatrtixBuff updatedBuffer
+	{
+		this->wvpMatrix,
+		objWorldMatrix
+	};
+
+	D3D11_MAPPED_SUBRESOURCE lightViewSpaceData;
+	memset(&lightViewSpaceData, 0, sizeof(lightViewSpaceData));
+
+	HRESULT test = gDeviceContext->Map(this->shadow_constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &lightViewSpaceData);
+	memcpy(lightViewSpaceData.pData, &updatedBuffer, sizeof(updatedBuffer));
+	gDeviceContext->Unmap(this->shadow_constantBuffer, 0);
 }
 
 bool ShadowShaderClass::initializeShader(ID3D11Device* gDevice, HWND hWind, WCHAR* vsFileName, WCHAR* psFileName)
@@ -372,20 +399,26 @@ bool ShadowShaderClass::createPixelShader(ID3D11Device* gDevice, HWND hWind,WCHA
 
 bool ShadowShaderClass::createConstantBuffer(ID3D11Device * gDevice)
 {
+	shadowMapMatrtixBuff shadowCB
+	{
+		this->wvpMatrix,
+		this->wvpMatrix
+	};
+	
 	HRESULT help;
 	bool result = true;
 
 	//This will never change in the application
 	D3D11_BUFFER_DESC constantBuffer;
-	constantBuffer.ByteWidth = sizeof(Matrix);
-	constantBuffer.Usage = D3D11_USAGE_DEFAULT;
+	constantBuffer.ByteWidth = sizeof(shadowMapMatrtixBuff);
+	constantBuffer.Usage = D3D11_USAGE_DYNAMIC;
 	constantBuffer.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	constantBuffer.CPUAccessFlags = NULL;
+	constantBuffer.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	constantBuffer.MiscFlags = NULL;
 	constantBuffer.StructureByteStride = NULL;
 
 	D3D11_SUBRESOURCE_DATA initData;
-	initData.pSysMem = &this->wvpMatrix;
+	initData.pSysMem = &shadowCB;
 	initData.SysMemPitch = 0;
 	initData.SysMemSlicePitch = 0;
 

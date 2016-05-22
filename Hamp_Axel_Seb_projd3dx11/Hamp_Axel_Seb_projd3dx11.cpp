@@ -108,7 +108,7 @@ vector<Object*> objectsToDraw;
 
 int nrOfObjects = 0;
 
-QuadTree quadTree(Vector3(0, 0, 0), Vector3(10, 0, 10), 2, 10, 0, 10, 0);
+QuadTree quadTree(Vector3(0, 0, 0), Vector3(10, 0, 10), 0, 10, 0, 10, 0);
 
 int nrOfVertexDrawn = 0;
 
@@ -519,8 +519,24 @@ void createObjects()
 	}
 
 	*/
-	objects.push_back(Object(triangleVertices, Vector3((0.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile()));
-	objects.push_back(Object(triangleVertices, Vector3((0.0f), (0.0f), (3.0f)), gDevice, fromFile.getImageFile()));
+	
+
+
+
+	objects.push_back(Object(triangleVertices, Vector3((1.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile()));
+	objects.push_back(Object(triangleVertices, Vector3((3.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile()));
+
+	//creating the floor
+	for (int i = 0; i < 10; i++)
+	{
+		float x = i;
+		for (int j = 0; j < 10; j++)
+		{
+			float y = j;
+			objects.push_back(Object(triangleVertices, Vector3((x), (-2.0f), (y)), gDevice, fromFile.getImageFile()));
+		}
+	}
+
 
 	//objects.push_back(Object(triangleVertices, Vector3(0.0f, 0.0f, 1.0f), gDevice, fromFile.getImageFile()));
 	//worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice);
@@ -555,7 +571,7 @@ void updateBuffers(Object* object1)
 	*worldSpace = object1->getWorldMatrix();
 	
 	//for good codestadards we set the light pos here, contact hampus if you have any complains
-	lightCamera.setCameraPos(Vector3(0, 0, -2));
+	lightCamera.setCameraPos(shadowMap.getLightPos());
 
 	*viewSpace = WorldCamera.getViewMatrix();
 	*lightViewMatrix = lightCamera.getViewMatrix();
@@ -788,7 +804,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 				gDeviceContext->ClearDepthStencilView(gDepthBuffer, D3D11_CLEAR_DEPTH, 1, 0);
 
 				objectsToDraw = quadTree.getObjectsToDraw(WorldCamera.getCameraPos());
-				objectsToDraw = WorldCamera.doFustrumCulling(objectsToDraw);
+				//objectsToDraw = WorldCamera.doFustrumCulling(objectsToDraw);
 
 				WorldCamera.Update(wndHandle); //update worldcamera
 				
@@ -799,6 +815,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 					{
 						//updateBuffers(objectsToDraw.at(i));
 						//RenderShadowMap(*objectsToDraw.at(i));
+						shadowMap.updateBuffer(*objectsToDraw.at(i), gDeviceContext);
 						shadowMap.render(*objectsToDraw.at(i), nrOfVertexDrawn, gDevice, gDeviceContext);
 					}
 				}

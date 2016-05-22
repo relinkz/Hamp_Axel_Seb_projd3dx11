@@ -102,11 +102,6 @@ Vector3 Object::getPosition() const
 	return this->position;
 }
 
-void Object::createFloor()
-{
-
-}
-
 #pragma region
 /*
 * Help and utility functions

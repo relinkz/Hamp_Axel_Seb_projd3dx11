@@ -38,17 +38,17 @@ struct defPixelOutput
 
 defPixelOutput main(in defPixelInput input) : SV_TARGET
 {
-	//float4 camPos1 = float4(1,1,-1,0);
+	//float4 camPos = float4(1,1,-1,0);
 	float4 diffColor = float4(0, 0, 0, 0);
 	float2 shadowUV = float2(0, 0);
 
-	//float4 lightPos = lightPosition;
-	float4 lightPos = float4(0, 0, -2, 1);
+	float4 lightPos = lightPosition;
+	//float4 lightPos = float4(5, 3, 0, 1);
 	
 	float lightIntensity = 0.0f;
 	float lightDepthValue = 0.0f;
 	float depthValue = 0.0f;
-	float bias = 0.00005f;
+	float bias = 0.005f;
 
 
 	defPixelOutput output;
@@ -63,18 +63,22 @@ defPixelOutput main(in defPixelInput input) : SV_TARGET
 	//lightPos = mul(input.PosView, lightViewMatrix);
 	//lightPos = mul(lightPos, lightProjectionMatrix);
 
-	lightPos = mul(input.PosView, lightWVP);
+	
 	//lightPos = mul(lightWVP, input.PosView);
 
 	//create the normalized vector from position to light source
 	//float3 outVec = normalize(lightPos - input.PosView).xyz;
-	float3 outVec = normalize(input.PosView - lightPos).xyz;
+	//float3 outVec = normalize(input.PosView - lightPos).xyz;
+	float3 outVec = normalize(lightPos.xyz - input.PosView.xyz);
+	//float3 outVec = normalize(input.PosView.xyz - lightPos.xyz);
 
+	
+	lightPos = mul(input.PosView, lightWVP);
 	//Create the normalized reflection vector
 	//float3 refVec = normalize(reflect(-outVec, input.Normal));
 
 	//create the normalized vector form positon to camera
-	float3 viewDir = normalize(camPos - input.PosView).xyz;
+	float3 viewDir = normalize(camPos.xyz - input.PosView.xyz);
 
 	//float specIntesity = saturate(dot(refVec, viewDir));
 	float shineFactor = 5.0f;
@@ -101,29 +105,30 @@ defPixelOutput main(in defPixelInput input) : SV_TARGET
 	}
 	else
 	{
-		//pixel is in shadow
+		//pixel is in shadow map
 		lightIntensity = 0;
 
 		//calculate the depth of the light
 		lightDepthValue = lightPos.z / lightPos.w;
 
 		//sample the shadowmap
-		//depthValue = shadowUV = shadowMap.Sample(sampAni, shadowUV).r;
-		depthValue = shadowMap.Sample(pointSampler, shadowUV).r;
+		depthValue = shadowMap.Sample(sampAni, shadowUV).r;
+		//depthValue = shadowMap.Sample(pointSampler, shadowUV).r;
 
 		// Subtract the bias from the lightDepthValue.
 		lightDepthValue = lightDepthValue - bias;
 
 		//light sees the pixel
-		if (lightDepthValue < depthValue)
+		if (lightDepthValue <= depthValue)
 		{
-			lightIntensity = saturate(dot(input.Normal.xyz, outVec.xyz));
+			lightIntensity = saturate(dot(outVec.xyz, input.Normal.xyz));
 			output.Color = float4(0, 1, 0, 0);
 		}
 		//output.Color = float4(0, 1, 0, 0);
 	}
 	output.Color = saturate((diffColor.rgba * lightIntensity * 0.8f) + (diffColor.rgba * 0.2f));
-	//output.Color = float4(shadowUV,0,0);
+	//shadowUV = saturate(shadowUV);
+	//output.Color = float4(input.Normal,0);
 	//output.Color = float4(-1*outVec,0);
 	//output.Color = float4(lightIntensity, 0, 0, 0);
 

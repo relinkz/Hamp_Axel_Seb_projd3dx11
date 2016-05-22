@@ -21,9 +21,10 @@ class ShadowShaderClass
 private:
 	struct shadowMapMatrtixBuff
 	{
-		DirectX::XMFLOAT4X4 lightWorldViewProj;
+		Matrix lightWorldViewProj;
+		Matrix objWorldMatrix;
 	};
-
+	Vector3 lightPos;
 
 	ID3D11Texture2D* shadowmapDepthtexture;
 	ID3D11Texture2D* shadowmapRenderTargetViewTexture;
@@ -66,6 +67,7 @@ public:
 	ID3D11VertexShader* getShadowVS() const;
 	ID3D11PixelShader* getShadowPS() const;
 	ID3D11Buffer* getLightBuffer() const;
+	Vector3 getLightPos() const;
 
 	ID3D11DepthStencilView* getDepthStencilView() const;
 	ID3D11Texture2D* getDepthStencilRTV() const;
@@ -79,6 +81,7 @@ public:
 
 	//void clearRenderTargetView(ID3D11DeviceContext* gDeviceContext);
 	void clearDepthBuffer(ID3D11DeviceContext* gDeviceContext);
+	void updateBuffer(Object &toDraw, ID3D11DeviceContext* gDeviceContext);
 };
 
 
