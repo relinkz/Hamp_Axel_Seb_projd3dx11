@@ -4,28 +4,73 @@ ShadowShaderClass::ShadowShaderClass()
 {
 	this->shadow_vertexShader		= nullptr;
 	this->shadow_pixelShader		= nullptr;
-
 	this->shadow_layout				= nullptr;
-	this->shadow_sampleStateWrap	= nullptr;
+	this->shadow_constantBuffer		= nullptr;
 
-	this->shadow_matrixBuffer		= nullptr;
-	this->shadow_lightBuffer		= nullptr;
-	this->shadow_lightBuffer2		= nullptr;
-
-	this->shadowDepthStencilView = nullptr;
-	this->shadowmapDepthtexture = nullptr;
+	this->shadowDepthStencilView	= nullptr;
+	this->shadowmapDepthtexture		= nullptr;
+	this->shadowMapRTV				= nullptr;
+	this->shadowmapRenderTargetViewTexture = nullptr;
 }
 
 ShadowShaderClass::~ShadowShaderClass()
 {
+	this->shutdown();
 }
 
-bool ShadowShaderClass::initialize(ID3D11Device* gDevice, HWND hWind)
+bool ShadowShaderClass::initialize(ID3D11Device* gDevice, HWND hWind, Vector3 lightPos, Vector3 lookAt, Vector3 upVector) throw(...)
 {
 	bool result;
-	//högst sannoligt fel här
-	result = this->initializeShader(gDevice, hWind, L"shadowVS.hlsl", L"shadowPS.hlsl"); //restertek.com
-	
+	HRESULT helper;
+
+	//create depthBuffer
+	result = this->initializeDepthStencil(gDevice);
+	if (result == false)
+	{
+		throw("ShadowMap: Failed to initialize depthStencil");
+	}
+	//create vertex shader
+	result = this->createVertexShader(gDevice, hWind, L"shadowVS.hlsl");
+	if (result == false)
+	{
+		throw("ShadowMap: Failed to create vertexshader");
+	}
+
+	//creating matrices, identityMatrix
+	this->worldMatrix = Matrix();
+	//rotating the world in to the lights view
+	this->lightPos = Vector3(0, 10, 0);
+
+	this->viewMatrix = Matrix(DirectX::XMMatrixLookAtLH(
+		this->lightPos,	    //lights position
+		Vector3(1,-1,0),	//Look at target
+		Vector3(0,1,0)		//Upvector
+		));
+	//adding projection
+
+	this->projectionMatrix = Matrix(DirectX::XMMatrixPerspectiveFovLH
+		(
+			3.14f*0.45f,		// FOV
+			640.0f / 480.0f,	//Aspect Ratio
+			0.5f,				//near plane
+			20.0f				//far plane
+			));
+
+	//this->projectionMatrix = Matrix(DirectX::XMMatrixOrthographicLH(640.0f, 480.f, 0.5f, 20.0f));
+
+
+	//Matrix multipication to worldViewProjection
+	this->wvpMatrix = (this->worldMatrix * this->viewMatrix) * this->projectionMatrix;
+	//transpose it for the pipeline
+	this->wvpMatrix = this->wvpMatrix.Transpose();
+
+	//creating the constant buffer
+	result = this->createConstantBuffer(gDevice);
+	if (result == false)
+	{
+		throw("ShadowMap: Failed creating the constantbuffer");
+	}
+
 	return result;
 }
 
@@ -34,46 +79,24 @@ void ShadowShaderClass::shutdown()
 	this->shutdownShader();
 }
 
-bool ShadowShaderClass::Render(
-	ID3D11DeviceContext* gContextDevice,
-	int indexCount,
-	Matrix worldMatrix,
-	Matrix viewMatrix,
-	Matrix projectionMatrix,
-	Matrix lightViewMatrix,
-	Matrix lightProjectionMatrix,
-	ID3D11ShaderResourceView* texture,
-	ID3D11ShaderResourceView* depthMapTexture,
-	Vector3 lightPos,
-	Vector4 ambientColor,
-	Vector4 diffuseColor)
-{
-	bool result;
-
-	result = this->setShaderParameters(
-		gContextDevice, 
-		worldMatrix, 
-		viewMatrix, 
-		projectionMatrix, 
-		lightViewMatrix, 
-		lightProjectionMatrix, 
-		texture, 
-		depthMapTexture, 
-		lightPos, 
-		ambientColor, 
-		diffuseColor);
-
-	if (result == true)
-	{
-		//renderShader(gContextDevice, indexCount);
-	}
-
-	return result;
-}
-
 ID3D11VertexShader* ShadowShaderClass::getShadowVS() const
 {
 	return this->shadow_vertexShader;
+}
+
+ID3D11PixelShader * ShadowShaderClass::getShadowPS() const
+{
+	return this->shadow_pixelShader;
+}
+
+ID3D11Buffer* ShadowShaderClass::getLightBuffer() const
+{
+	return this->shadow_constantBuffer;
+}
+
+Vector3 ShadowShaderClass::getLightPos() const
+{
+	return this->lightPos;
 }
 
 ID3D11DepthStencilView* ShadowShaderClass::getDepthStencilView() const
@@ -91,227 +114,83 @@ ID3D11InputLayout* ShadowShaderClass::getInputLayout() const
 	return this->shadow_layout;
 }
 
-/*
-Private functions
-*/
+ID3D11ShaderResourceView* ShadowShaderClass::getShaderResourceView() const
+{
+	return this->shaderResourceView;
+}
+
+ID3D11RenderTargetView* ShadowShaderClass::getRenderTargetView() const
+{
+	return this->shadowMapRTV;
+}
+
+void ShadowShaderClass::render(Object & toDraw, int nrOfVertex, ID3D11Device * gDevice, ID3D11DeviceContext* gDeviceContext)
+{
+	UINT32 vertexSize = sizeof(shadowtriVertex);
+	UINT32 offset = 0;
+
+	ID3D11Buffer* vertexBuffer = nullptr;
+
+	vertexBuffer = toDraw.getShadowVertexBufferPointer();
+
+	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	gDeviceContext->IASetInputLayout(this->shadow_layout);
+
+	gDeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &vertexSize, &offset);
+	gDeviceContext->OMSetRenderTargets(0, nullptr, this->shadowDepthStencilView);
+	//gDeviceContext->OMSetRenderTargets(2, &shadowBufferRTV, gDepthBuffer);
+
+
+	gDeviceContext->VSSetShader(this->shadow_vertexShader, NULL, 0);
+	gDeviceContext->PSSetShader(NULL, NULL, 0);
+
+	UINT startslot = 0;
+	UINT nrOfBuffers = 1;
+
+	gDeviceContext->VSSetConstantBuffers(startslot, nrOfBuffers, &this->shadow_constantBuffer);
+
+	gDeviceContext->Draw(nrOfVertex, 0);
+
+}
+
+void ShadowShaderClass::clearDepthBuffer(ID3D11DeviceContext* gDeviceContext)
+{
+	gDeviceContext->ClearDepthStencilView(this->shadowDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+}
+
+void ShadowShaderClass::updateBuffer(Object & toDraw, ID3D11DeviceContext* gDeviceContext)
+{
+	shadowMapMatrtixBuff* Light_Ptr = nullptr;
+	
+	Matrix objWorldMatrix = toDraw.getWorldMatrix().Transpose();
+
+	shadowMapMatrtixBuff updatedBuffer
+	{
+		this->wvpMatrix,
+		objWorldMatrix
+	};
+
+	D3D11_MAPPED_SUBRESOURCE lightViewSpaceData;
+	memset(&lightViewSpaceData, 0, sizeof(lightViewSpaceData));
+
+	HRESULT test = gDeviceContext->Map(this->shadow_constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &lightViewSpaceData);
+	memcpy(lightViewSpaceData.pData, &updatedBuffer, sizeof(updatedBuffer));
+	gDeviceContext->Unmap(this->shadow_constantBuffer, 0);
+}
 
 bool ShadowShaderClass::initializeShader(ID3D11Device* gDevice, HWND hWind, WCHAR* vsFileName, WCHAR* psFileName)
 {
-	HRESULT result;
-	bool resultBool;
-	ID3D10Blob* errorMessage		= nullptr;
-	ID3D10Blob* vertexShaderBuffer	= nullptr;
-	ID3D10Blob* pixelShaderBuffer	= nullptr;
-	D3D11_INPUT_ELEMENT_DESC polygonLayout[3];
-	unsigned int numElements;
-	D3D11_SAMPLER_DESC samplerDesc;
-	D3D11_BUFFER_DESC matrixBufferDesc;
-	D3D11_BUFFER_DESC lightBufferDesc;
-	D3D11_BUFFER_DESC lightBufferDesc2;
+	bool result = true;
 
-	//there is now a new description for the second clamp
-	//sampler state used in the pixel shader
-
-	//loading shaders!
-
-	/*
-	******************
-	*	vertexShader *
-	******************
-	*/
-
+	//creating shaders
+	result = this->createVertexShader(gDevice, hWind, vsFileName);
 	
-
-	result = D3DCompileFromFile(
-		vsFileName, //filename
-		NULL,
-		NULL,
-		"ShadowVertexShader",
-		"vs_4_0",
-		D3DCOMPILE_DEBUG,  //D3D10_SHADER_ENABLE_STRICTNESS
-		0,
-		&vertexShaderBuffer,
-		&errorMessage
-		);
-
-		if(FAILED(result))
-		{
-			this->outputShaderErrorMessage(errorMessage, hWind, vsFileName);
-			MessageBox(hWind, vsFileName, L"Missing Shader File", MB_OK);
-		}
-		// If there was nothing in the error message then it simply could not find the file itself.
-
-/*
-		/*
-		******************
-		*	PixelShader  *
-		******************
-		
-
-		result = D3DCompileFromFile(
-			vsFileName, //filename
-			NULL,
-			NULL,
-			"ShadowPixelShader",
-			"ps_4_0",
-			D3DCOMPILE_DEBUG,  //D3D10_SHADER_ENABLE_STRICTNESS
-			0,
-			&pixelShaderBuffer,
-			&errorMessage
-			);
-
-		if (FAILED(result))
-		{
-			this->outputShaderErrorMessage(errorMessage, hWind, psFileName);
-		}
-		else
-		{
-			MessageBox(hWind, psFileName, L"Missing Shader File", MB_OK);
-		}
-
-		*/
-
-		//creating the vertex shader from buffer
-		result = gDevice->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &(this->shadow_vertexShader));
-
-		if (FAILED(result))
-		{
-			//das crash
-		}
-
-		//result = gDevice->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), NULL, &(this->shadow_pixelShader));
-
-		//if (FAILED(result))
-		//{
-		//	//das crash
-		//}
-
-		// Create the vertex input layout description
-		polygonLayout[0].SemanticName = "POSITION";
-		polygonLayout[0].SemanticIndex = 0;
-		polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-		polygonLayout[0].InputSlot = 0;
-		polygonLayout[0].AlignedByteOffset = 0;
-		polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-		polygonLayout[0].InstanceDataStepRate = 0;
-
-		polygonLayout[1].SemanticName = "TEXCOORD";
-		polygonLayout[1].SemanticIndex = 0;
-		polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
-		polygonLayout[1].InputSlot = 0;
-		polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-		polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-		polygonLayout[1].InstanceDataStepRate = 0;
-
-		polygonLayout[2].SemanticName = "NORMAL";
-		polygonLayout[2].SemanticIndex = 0;
-		polygonLayout[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
-		polygonLayout[2].InputSlot = 0;
-		polygonLayout[2].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-		polygonLayout[2].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-		polygonLayout[2].InstanceDataStepRate = 0;
-
-		// Get a count of the elements in the layout.
-		numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
-
-		// Create the vertex input layout.
-		result = gDevice->CreateInputLayout(polygonLayout, numElements, vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(),
-			&(this->shadow_layout));
-
-		// Release the vertex shader buffer and pixel shader buffer since they are no longer needed.
-		vertexShaderBuffer->Release();
-		vertexShaderBuffer = 0;
-
-		//pixelShaderBuffer->Release();
-		//pixelShaderBuffer = 0;
-
-		// Create a wrap texture sampler state description.
-		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-		samplerDesc.MipLODBias = 0.0f;
-		samplerDesc.MaxAnisotropy = 1;
-		samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
-		samplerDesc.BorderColor[0] = 0;
-		samplerDesc.BorderColor[1] = 0;
-		samplerDesc.BorderColor[2] = 0;
-		samplerDesc.BorderColor[3] = 0;
-		samplerDesc.MinLOD = 0;
-		samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-		// Create the texture sampler state.
-		result = gDevice->CreateSamplerState(&samplerDesc, &(this->shadow_sampleStateWrap));
-		if (FAILED(result))
-		{
-			return false;
-		}
-
-		// Create a clamp texture sampler state description.
-		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
-
-		// Create the texture sampler state.
-		result = gDevice->CreateSamplerState(&samplerDesc, &(this->shadow_sampleStateClamp));
-		if (FAILED(result))
-		{
-			return false;
-		}
-
-		// Setup the description of the dynamic matrix constant buffer that is in the vertex shader.
-		matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-		matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
-		matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		matrixBufferDesc.MiscFlags = 0;
-		matrixBufferDesc.StructureByteStride = 0;
-
-		// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
-		result = gDevice->CreateBuffer(&matrixBufferDesc, NULL, &(this->shadow_matrixBuffer));
-		if (FAILED(result))
-		{
-			return false;
-		}
-
-		// Setup the description of the light dynamic constant buffer that is in the pixel shader.
-		lightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-		lightBufferDesc.ByteWidth = sizeof(LightBufferType);
-		lightBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		lightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		lightBufferDesc.MiscFlags = 0;
-		lightBufferDesc.StructureByteStride = 0;
-
-		// Create the constant buffer pointer so we can access the pixel shader constant buffer from within this class.
-		result = gDevice->CreateBuffer(&lightBufferDesc, NULL, &(this->shadow_lightBuffer));
-		if (FAILED(result))
-		{
-			return false;
-		}
-
-		// Setup the description of the light dynamic constant buffer that is in the vertex shader.
-		lightBufferDesc2.Usage = D3D11_USAGE_DYNAMIC;
-		lightBufferDesc2.ByteWidth = sizeof(LightBufferType2);
-		lightBufferDesc2.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		lightBufferDesc2.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		lightBufferDesc2.MiscFlags = 0;
-		lightBufferDesc2.StructureByteStride = 0;
-
-		// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
-		result = gDevice->CreateBuffer(&lightBufferDesc2, NULL, &(this->shadow_lightBuffer2));
-
-		if(this->initializeDepthStencil(gDevice) == false);
-		{
-			//error depthStencil
-			return false;
-		}
-
-		if (FAILED(result))
-		{
-			return false;
-		}
-
-		return true;
+	//creating the depth buffer
+	if(this->initializeDepthStencil(gDevice) == false);
+	{
+		result = false;
+	}
+	return result;
 }
 
 bool ShadowShaderClass::initializeDepthStencil(ID3D11Device* gDevice)
@@ -319,78 +198,59 @@ bool ShadowShaderClass::initializeDepthStencil(ID3D11Device* gDevice)
 	HRESULT resultHandler;
 	bool result = false;
 
-	D3D11_TEXTURE2D_DESC depthDesc;
-	depthDesc.Width = 640.0f;
-	depthDesc.Height = 480.0f;
-	depthDesc.MipLevels = 1;
-	depthDesc.ArraySize = 1;
-	depthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	D3D11_TEXTURE2D_DESC textureDepthDesc;
+	ZeroMemory(&textureDepthDesc, sizeof(textureDepthDesc));
+	textureDepthDesc.Width = 640.0f;
+	textureDepthDesc.Height = 480.0f;
+	textureDepthDesc.MipLevels = 1;
+	textureDepthDesc.ArraySize = 1;
+	textureDepthDesc.Format = DXGI_FORMAT_R32_TYPELESS;
 
-	depthDesc.SampleDesc.Count = 4;  //must match the swap chain
-	depthDesc.SampleDesc.Quality = 0;
+	textureDepthDesc.SampleDesc.Count = 1;  //must match the swap chain
+	textureDepthDesc.SampleDesc.Quality = 0;
+	
+	textureDepthDesc.Usage = D3D11_USAGE_DEFAULT;
+	textureDepthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	textureDepthDesc.CPUAccessFlags = 0;
+	textureDepthDesc.MiscFlags = 0;
 
-	depthDesc.Usage = D3D11_USAGE_DEFAULT;
-	depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	depthDesc.CPUAccessFlags = 0;
-	depthDesc.MiscFlags = 0;
+	//create the texture for depthmap?
+	resultHandler = gDevice->CreateTexture2D(&textureDepthDesc,	NULL, &(this->shadowmapDepthtexture));
 
-	//create the texture
-	resultHandler = gDevice->CreateTexture2D(
-		&depthDesc,
-		0,
-		&(this->shadowmapDepthtexture)
-		);
+	//create Depth Stencil
+	D3D11_DEPTH_STENCIL_VIEW_DESC dsvDesc;
+	ZeroMemory(&dsvDesc, sizeof(dsvDesc));
 
-	//create depthStencilView
-	resultHandler = gDevice->CreateDepthStencilView(
-		this->shadowmapDepthtexture,   //resorse we want to create a view to
-		0,
-		&(this->shadowDepthStencilView)  //the depthStencilView
-		);
+	dsvDesc.Flags = 0;
+	dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	dsvDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	dsvDesc.Texture2D.MipSlice = 0;
+
+	resultHandler = gDevice->CreateDepthStencilView(this->shadowmapDepthtexture, &dsvDesc, &(this->shadowDepthStencilView));
+
+
+	//create shader resource view
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+	ZeroMemory(&srvDesc, sizeof(srvDesc));
+
+	srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+
+	//create the shader resourse view
+	resultHandler = gDevice->CreateShaderResourceView(this->shadowmapDepthtexture, &srvDesc, &this->shaderResourceView);
 
 	if (!FAILED(resultHandler))
 	{
 		result = true;
 	}
-
 	return result;
 }
 
 void ShadowShaderClass::shutdownShader()
 {
-	// Release the light constant buffers.
-	if (this->shadow_lightBuffer)
-	{
-		this->shadow_lightBuffer->Release();
-		this->shadow_lightBuffer = 0;
-	}
-
-	if (this->shadow_lightBuffer2)
-	{
-		this->shadow_lightBuffer2->Release();
-		this->shadow_lightBuffer2 = 0;
-	}
-
-	// Release the matrix constant buffer.
-	if (this->shadow_matrixBuffer)
-	{
-		this->shadow_matrixBuffer->Release();
-		this->shadow_matrixBuffer = 0;
-	}
-
-	// Release the sampler states.
-	if (this->shadow_sampleStateWrap)
-	{
-		this->shadow_sampleStateWrap->Release();
-		this->shadow_sampleStateWrap = 0;
-	}
-	//release the new clamp sampler here
-	if (this->shadow_sampleStateClamp)
-	{
-		this->shadow_sampleStateClamp->Release();
-		this->shadow_sampleStateClamp = 0;
-	}
-
+	
 	// Release the layout.
 	if (this->shadow_layout)
 	{
@@ -398,18 +258,17 @@ void ShadowShaderClass::shutdownShader()
 		this->shadow_layout = 0;
 	}
 
-	// Release the pixel shader.
-	if (this->shadow_pixelShader)
-	{
-		this->shadow_pixelShader->Release();
-		this->shadow_pixelShader = 0;
-	}
-
 	// Release the vertex shader.
 	if (this->shadow_vertexShader)
 	{
 		this->shadow_vertexShader->Release();
 		this->shadow_vertexShader = 0;
+	}
+
+	if (this->shadowmapRenderTargetViewTexture)
+	{
+		this->shadowmapRenderTargetViewTexture->Release();
+		this->shadowmapRenderTargetViewTexture = nullptr;
 	}
 }
 
@@ -448,109 +307,127 @@ void ShadowShaderClass::outputShaderErrorMessage(ID3D10Blob* errorMessage, HWND 
 	return;
 }
 
-bool ShadowShaderClass::setShaderParameters(
-	ID3D11DeviceContext* gDeviceContext,
-	Matrix worldMatrix,
-	Matrix viewMatrix,
-	Matrix projectionMatrix,
-	Matrix lightViewMatrix,
-	Matrix lightProjectionMatrix,
-	ID3D11ShaderResourceView* texture,
-	ID3D11ShaderResourceView* depthMapTexture,
-	Vector3 lightPos,
-	Vector4 ambientColor,
-	Vector4 diffuseColor)
+bool ShadowShaderClass::createVertexShader(ID3D11Device* gDevice, HWND hWind,WCHAR* vsFileName)
 {
+	bool totalResult = true;
+	ID3D10Blob* vertexShaderBuffer = nullptr;
+	ID3D10Blob* errorMessage;
 	HRESULT result;
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	unsigned int bufferNumber;
-	MatrixBufferType* dataPtr;
-	LightBufferType* dataPtr2;
-	LightBufferType2* dataPtr3;
 
-	dataPtr = new MatrixBufferType;
+	result = D3DCompileFromFile(
+		vsFileName, //filename
+		NULL,
+		NULL,
+		"ShadowVertexShader",
+		"vs_4_0",
+		D3DCOMPILE_DEBUG,  //D3D10_SHADER_ENABLE_STRICTNESS
+		0,
+		&vertexShaderBuffer,
+		&errorMessage
+		);
 
-	dataPtr->lightView = lightViewMatrix;
-	dataPtr->lightProjection = lightProjectionMatrix;
-
-	// Unlock the constant buffer.
-	gDeviceContext->Unmap(this->shadow_matrixBuffer, 0);
-
-	// Set the position of the constant buffer in the vertex shader.
-	bufferNumber = 0;
-
-	// Now set the constant buffer in the vertex shader with the updated values.
-	gDeviceContext->VSSetConstantBuffers(bufferNumber, 1, &(this->shadow_matrixBuffer));
-
-	// Set shader texture resource in the pixel shader.
-	gDeviceContext->PSSetShaderResources(0, 1, &texture);
-
-	gDeviceContext->PSSetShaderResources(1, 1, &depthMapTexture);
-
-	// Lock the light constant buffer so it can be written to.
-	result = gDeviceContext->Map(this->shadow_lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	if (FAILED(result))
 	{
-		return false;
+		this->outputShaderErrorMessage(errorMessage, hWind, vsFileName);
+		MessageBox(hWind, vsFileName, L"Missing Shader File", MB_OK);
 	}
 
-	// Get a pointer to the data in the constant buffer.
-	dataPtr2 = (LightBufferType*)mappedResource.pData;
+	//creating the vertex shader from buffer
+	result = gDevice->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &(this->shadow_vertexShader));
 
-	// Copy the lighting variables into the constant buffer.
-	dataPtr2->ambientColor = ambientColor;
-	dataPtr2->diffuseColor = diffuseColor;
+	// Create the vertex input layout description
+	D3D11_INPUT_ELEMENT_DESC polygonLayout[1];
+	int numElements = 0;
 
-	// Unlock the constant buffer.
-	gDeviceContext->Unmap(this->shadow_lightBuffer, 0);
+	polygonLayout[0].SemanticName = "SHADOW_POSITION";
+	polygonLayout[0].SemanticIndex = 0;
+	polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	polygonLayout[0].InputSlot = 0;
+	polygonLayout[0].AlignedByteOffset = 0;
+	polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	polygonLayout[0].InstanceDataStepRate = 0;
 
-	// Set the position of the light constant buffer in the pixel shader.
-	bufferNumber = 0;
 
-	// Finally set the light constant buffer in the pixel shader with the updated values.
-	gDeviceContext->PSSetConstantBuffers(bufferNumber, 1, &(this->shadow_lightBuffer));
+	// Get a count of the elements in the layout.
+	numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
 
-	// Lock the second light constant buffer so it can be written to.
-	result = gDeviceContext->Map(this->shadow_lightBuffer2, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	// Create the vertex input layout.
+	result = gDevice->CreateInputLayout(polygonLayout, numElements, vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(),
+		&(this->shadow_layout));
+
 	if (FAILED(result))
 	{
-		return false;
+		//crash
+		totalResult = false;
+
+
 	}
-
-	// Get a pointer to the data in the constant buffer.
-	dataPtr3 = (LightBufferType2*)mappedResource.pData;
-
-	// Copy the lighting variables into the constant buffer.
-	dataPtr3->lightPos = lightPos;
-	dataPtr3->padding = 0.0f;
-
-	// Unlock the constant buffer.
-	gDeviceContext->Unmap(this->shadow_lightBuffer2, 0);
-
-	// Set the position of the light constant buffer in the vertex shader.
-	bufferNumber = 1;
-
-	// Finally set the light constant buffer in the pixel shader with the updated values.
-	gDeviceContext->VSSetConstantBuffers(bufferNumber, 1, &(this->shadow_lightBuffer2));
+	return totalResult;
 }
 
-void ShadowShaderClass::renderShader(ID3D11DeviceContext* gDeviceContext, Object toDraw)
+bool ShadowShaderClass::createPixelShader(ID3D11Device* gDevice, HWND hWind,WCHAR* psFileName)
 {
-	// Set the vertex input layout.
-	gDeviceContext->IASetInputLayout(this->shadow_layout);
+	bool result = true;
 
-	// Set the vertex and pixel shaders that will be used to render this triangle.
-	gDeviceContext->VSSetShader(this->shadow_vertexShader, NULL, 0);
-	//gDeviceContext->PSSetShader(this->shadow_pixelShader, NULL, 0);
+	bool totalResult = true;
+	ID3D10Blob* pixelShaderBuffer = nullptr;
+	ID3D10Blob* errorMessage;
+	HRESULT resultHelp;
 
-	// Set the sampler states in the pixel shader.
-	//gDeviceContext->PSSetSamplers(0, 1, &(this->shadow_sampleStateClamp));
-	//gDeviceContext->PSSetSamplers(1, 1, &(this->shadow_sampleStateWrap));
+	resultHelp = D3DCompileFromFile(
+		psFileName, //filename
+		NULL,
+		NULL,
+		"ShadowPixelShader",
+		"ps_4_0",
+		D3DCOMPILE_DEBUG,  //D3D10_SHADER_ENABLE_STRICTNESS
+		0,
+		&pixelShaderBuffer,
+		&errorMessage
+		);
 
-	//gDeviceContext->OMSetRenderTargets(1, &deferredViews[0], shadowMap.getDepthStencilView());
+	if (FAILED(resultHelp))
+	{
+		this->outputShaderErrorMessage(errorMessage, hWind, psFileName);
+		MessageBox(hWind, psFileName, L"Missing Shader File", MB_OK);
+	}
 
-	// Render the triangle.
-	//Render
-	//gDeviceContext->Draw();
+	resultHelp = gDevice->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), NULL ,&(this->shadow_pixelShader));
 
+	return result;
+}
+
+bool ShadowShaderClass::createConstantBuffer(ID3D11Device * gDevice)
+{
+	shadowMapMatrtixBuff shadowCB
+	{
+		this->wvpMatrix,
+		this->wvpMatrix
+	};
+	
+	HRESULT help;
+	bool result = true;
+
+	//This will never change in the application
+	D3D11_BUFFER_DESC constantBuffer;
+	constantBuffer.ByteWidth = sizeof(shadowMapMatrtixBuff);
+	constantBuffer.Usage = D3D11_USAGE_DYNAMIC;
+	constantBuffer.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	constantBuffer.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	constantBuffer.MiscFlags = NULL;
+	constantBuffer.StructureByteStride = NULL;
+
+	D3D11_SUBRESOURCE_DATA initData;
+	initData.pSysMem = &shadowCB;
+	initData.SysMemPitch = 0;
+	initData.SysMemSlicePitch = 0;
+
+	help = gDevice->CreateBuffer(&constantBuffer, &initData, &this->shadow_constantBuffer);
+	
+	if (help)
+	{
+		result = false;
+	}
+	
+	return result;
 }

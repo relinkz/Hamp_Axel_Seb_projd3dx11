@@ -1,11 +1,3 @@
-cbuffer world
-{
-	float4x4 worldViewProj;
-	float4x4 eyeSpace;
-	float4x4 lightViewMatrix;
-	float4x4 lightProjectionMatrix;
-};
-
 
 Texture2D txDiffuse : register(t0);
 Texture2D normalMap : register(t1);
@@ -50,6 +42,7 @@ defPixelOutput main(in defPixelInput input) : SV_TARGET
 	float3 newNormal = normalize(mul(normalTexture, TBN)); //transform the normal
 	
 	output.Normal = float4(newNormal, 0.0f);
+	//output.Normal = float4(input.Normal, 0.0f);
 
 	output.Pos = input.PosView;
 	output.Depth.xyz = input.PosWVP.z;

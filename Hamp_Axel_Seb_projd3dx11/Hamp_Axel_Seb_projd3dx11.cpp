@@ -49,6 +49,7 @@ ID3D11Buffer* lightBuffer = nullptr;
 ID3D11Buffer* cameraBuffer = nullptr;
 
 ID3D11Buffer* worldSpaceBuffer = nullptr;
+ID3D11Buffer* worldSpaceBuffer2 = nullptr;
 
 ID3D11GeometryShader *gGeometryShader = nullptr;
 ID3D11InputLayout* gVertexLayout = nullptr;
@@ -79,7 +80,16 @@ struct worldMatrixBuffer
 	XMFLOAT4X4 lightViewMatrix;
 	XMFLOAT4X4 lightProjectionMatrix;
 };
+struct worldMatrixBuffer2
+{
+	XMFLOAT4X4 worldViewProj;
+	XMFLOAT4X4 eyeSpace;
+	XMFLOAT4X4 lightViewMatrix;
+	XMFLOAT4X4 lightProjectionMatrix;
 
+	XMFLOAT4 cameraPos;
+	XMFLOAT4 lightPos;
+};
 vertex finalShit[6];
 vector<Object> objects;
 vector<Object*> objectsToDraw;
@@ -172,7 +182,10 @@ void createWorldMatrices()
 	 {
 		 *worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix
 	 };
-
+	 worldMatrixBuffer2 buffer2
+	 {
+		 *worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix, Vector4(0,10,0,0), Vector4(0,10,0,0)
+	 };
 
 	 //buffers
 	 D3D11_BUFFER_DESC viewSpaceDesc;
@@ -187,6 +200,11 @@ void createWorldMatrices()
 	 testa.pSysMem = &buffer;
 
 	HRESULT test = gDevice->CreateBuffer(&viewSpaceDesc, &testa, &worldSpaceBuffer);	//creates the worldSpaceBuffer
+
+	D3D11_SUBRESOURCE_DATA testa2;
+	testa2.pSysMem = &buffer2;
+
+	test = gDevice->CreateBuffer(&viewSpaceDesc, &testa2, &worldSpaceBuffer2);	//creates the worldSpaceBuffer
 
 	cameraData cameraBufferData
 	{
@@ -394,7 +412,7 @@ void createObjects()
 
 
 	//creates all the Objects
-	int xMax = 6;
+	/*int xMax = 6;
 	int yMax = 3;
 	int zMax = 6;
 	for (int x = 0; x < xMax; x++)
@@ -410,6 +428,19 @@ void createObjects()
 					nrOfObjects++;
 				}
 			}
+		}
+	}*/
+	objects.push_back(Object(triangleVertices, Vector3((1.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
+	objects.push_back(Object(triangleVertices, Vector3((3.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
+
+	//creating the floor
+	for (int i = 0; i < 10; i++)
+	{
+		float x = i;
+		for (int j = 0; j < 10; j++)
+		{
+			float y = j;
+			objects.push_back(Object(triangleVertices, Vector3((x), (-2.0f), (y)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
 		}
 	}
 
@@ -510,13 +541,13 @@ void FirstRenderCall()
 	//THIS IS THE START OF THE FIRST RENDERCALL
 	HRESULT hr;
 	float clearColor[] = { 0, 0, 0, 1 };
-	float whiteColor[] = { 1, 1, 1, 1 };
-	float grayColor[] = { 0.5, 0.5, 0.5 , 1 };
+	//float whiteColor[] = { 1, 1, 1, 1 };
+	//float grayColor[] = { 0.5, 0.5, 0.5 , 1 };
 
 	//clear all the RTV
-	gDeviceContext->ClearRenderTargetView(deferredViews[0], whiteColor);
+	gDeviceContext->ClearRenderTargetView(deferredViews[0], clearColor);
 	gDeviceContext->ClearRenderTargetView(deferredViews[1], clearColor);
-	gDeviceContext->ClearRenderTargetView(deferredViews[2], grayColor);
+	gDeviceContext->ClearRenderTargetView(deferredViews[2], clearColor);
 	gDeviceContext->ClearRenderTargetView(deferredViews[3], clearColor);
 	//clear depthbuffer
 	gDeviceContext->ClearDepthStencilView(gDepthBuffer, D3D11_CLEAR_DEPTH, 1, 0);
@@ -535,7 +566,7 @@ void FirstRenderCall()
 	gDeviceContext->GSSetShader(gGeometryShader, NULL, 0);
 	gDeviceContext->PSSetShader(pDeferredShader, NULL, 0);
 
-	gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);					//give the worldSpaceBuffer to the PixelShader
+	//gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);					//give the worldSpaceBuffer to the PixelShader
 	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	//set the topology
 	gDeviceContext->IASetInputLayout(gVertexLayout);								//set the input layout
 
@@ -566,6 +597,7 @@ void SecondRenderCall()
 	ID3D11ShaderResourceView* Position = nullptr;
 	ID3D11ShaderResourceView* Normal = nullptr;
 	ID3D11ShaderResourceView* Color = nullptr;
+	ID3D11ShaderResourceView* shadowMapSRV = nullptr;
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
 	memset(&SRVDesc, 0, sizeof(SRVDesc));
@@ -574,10 +606,16 @@ void SecondRenderCall()
 	SRVDesc.Texture2D.MipLevels = 1;
 	SRVDesc.Texture2D.MostDetailedMip = 0;
 
+	gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer2);
+
 
 	UpdateCameraBuffer(); //update the CameraBuffer
 
 	gDeviceContext->PSSetConstantBuffers(1, 1, &cameraBuffer);
+
+	ID3D11Buffer* shadowCB = shadowMap.getLightBuffer();
+	gDeviceContext->PSSetConstantBuffers(2, 1, &shadowCB);
+
 
 	hr = gDevice->CreateShaderResourceView(PositionStencil, &SRVDesc, &Position);	//turn the RTV that stores the Positions into a 
 	gDeviceContext->PSSetShaderResources(0, 1, &Position);							//ShaderResouresView and send it to the PixelShader
@@ -587,6 +625,9 @@ void SecondRenderCall()
 
 	hr = gDevice->CreateShaderResourceView(ColorStencil, &SRVDesc, &Color);			//turn the RTV that stores the Colors into a 
 	gDeviceContext->PSSetShaderResources(2, 1, &Color);								//ShaderResouresView and send it to the PixelShader
+
+	shadowMapSRV = shadowMap.getShaderResourceView();
+	gDeviceContext->PSSetShaderResources(3, 1, &shadowMapSRV);
 
 
 	UINT32 vertexSize = sizeof(float) * 5;	//set the size of a vertex sizeof(float) * 5 the positions(x,y,z) and the UV coords(U,V) 
@@ -624,7 +665,16 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 		ShowWindow(wndHandle, nCmdShow);
 
-		shadowMap.initialize(gDevice, wndHandle);
+
+		try
+		{
+			shadowMap.initialize(gDevice, wndHandle, Vector3(0,10,0), Vector3(1,-1,0), Vector3(0,1,0));
+		}
+		catch (char* error)
+		{
+			MessageBox(wndHandle, L"shadowMap error", L"Read the error", MB_OK);
+			system("PAUSE");
+		}
 
 		while (WM_QUIT != msg.message)
 		{
@@ -639,10 +689,22 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 				FirstRenderCall(); //DO THE FIRST RENDER CALL THAT RENDERS ALL THE OBJECTS AND STORES THEIR VALUES IN THE RTVs
 
+				for (int i = 0; i < objectsToDraw.size(); i++)
+				{
+					if (objectsToDraw.at(i) != nullptr)
+					{
+						//updateBuffers(objectsToDraw.at(i));
+						//RenderShadowMap(*objectsToDraw.at(i));
+						shadowMap.updateBuffer(*objectsToDraw.at(i), gDeviceContext);
+						shadowMap.render(*objectsToDraw.at(i), nrOfVertexDrawn, gDevice, gDeviceContext);
+					}
+				}
+
 				SecondRenderCall(); //DO THE SECOND RENDERCALL THAT RENDERS TO A QUAD
 
 
 				gSwapChain->Present(0, 0); //9. Växla front- och back-buffer
+				shadowMap.clearDepthBuffer(gDeviceContext);
 			}
 		}
 
