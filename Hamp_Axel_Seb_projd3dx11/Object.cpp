@@ -33,13 +33,18 @@ Object::Object(vector<TriangleVertex>fromParser, Vector3 worldPos, ID3D11Device*
 	this->create2DTexture(gDevice, srcImage);
 }
 
-Object::Object(vector<TriangleVertex> fromParser, Vector3 worldPos, ID3D11Device * gDevice, string srcImage, string normalMap)
+Object::Object(vector<TriangleVertex> fromParser, Vector3 worldPos, ID3D11Device * gDevice, string srcImage, string normalMap, int objID)
 {
-	this->vertexSize = fromParser.size();
+	this->vertexSize = sizeof(TriangleVertex);
+	this->objID = objID;
 
 	for (int i = 0; i < this->vertexSize; i++)
 	{
-		this->vertexData.push_back(fromParser.at(i));
+		TriangleVertex temp = fromParser.at(i);
+		temp.ID = objID;
+		this->vertexData.push_back(temp);
+		
+		
 		shadowtriVertex shadowVertexData;
 
 		shadowVertexData.x = fromParser.at(i).x;
@@ -191,38 +196,6 @@ void Object::create2DTexture(ID3D11Device* gDevice, string fileName)
 			&this->textureData,
 			&this->diffuseMapSRV
 		);
-	//D3D11_TEXTURE2D_DESC image;
-	//memset(&image, 0, sizeof(image));
-
-	//image.Width = 1024;
-	//image.Height = 1024;
-	//image.MipLevels = 1;
-	//image.ArraySize = 1;
-	//image.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	//image.SampleDesc.Count = 1;      //kolla upp
-	//image.SampleDesc.Quality = 0;
-	//image.Usage = D3D11_USAGE_DEFAULT;  //GPU behöver endast access
-	//image.BindFlags = D3D11_BIND_SHADER_RESOURCE;  // har jag bindat den till någon resurs nu?
-	//image.CPUAccessFlags = 0;
-	//image.MiscFlags = 0;
-
-	//D3D11_SUBRESOURCE_DATA imageData;
-	//memset(&imageData, 0, sizeof(imageData));
-	//imageData.pSysMem = this->textureData;
-	//imageData.SysMemPitch = 1024 * 4 * sizeof(char);
-
-	//D3D11_SHADER_RESOURCE_VIEW_DESC imageSRV;
-	//memset(&imageSRV, 0, sizeof(imageSRV));
-	//imageSRV.Format = image.Format;
-	//imageSRV.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	//imageSRV.Texture2D.MipLevels = image.MipLevels;
-	//imageSRV.Texture2D.MostDetailedMip = 0;
-	//ID3D11Texture2D* temp = this->diffuseMap;
-
-	//result = gDevice->CreateTexture2D(&image, &imageData, &temp);
-
-	////result = gDevice->CreateShaderResourceView(this->diffuseMap, &imageSRV, &(this->diffuseMapSRV));
-
 }
 
 void Object::createNoarmalMap(ID3D11Device * gDevice, string fileName)
@@ -253,6 +226,25 @@ void Object::createNoarmalMap(ID3D11Device * gDevice, string fileName)
 			&this->normalMapData,
 			&this->normalMapSRV
 			);
+}
+
+void Object::createObjectIndex(ID3D11Device * gDevice, int & Idnr)
+{
+	D3D11_TEXTURE2D_DESC descDepth2;
+	descDepth2.Width = 640.0f;
+	descDepth2.Height = 480.0f;
+	descDepth2.MipLevels = 1;
+	descDepth2.ArraySize = 1;
+	descDepth2.Format = DXGI_FORMAT_R32_UINT;
+	descDepth2.SampleDesc.Count = 4;
+	descDepth2.SampleDesc.Quality = 0;
+	descDepth2.Usage = D3D11_USAGE_DEFAULT;
+	descDepth2.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE; //must be used as RenderTargetViews and ShaderResources
+	descDepth2.CPUAccessFlags = 0;
+	descDepth2.MiscFlags = 0;
+
+
+	HRESULT hr = gDevice->CreateTexture2D(&descDepth2, nullptr, &this->objectIndexTexture);
 }
 
 #pragma endregion

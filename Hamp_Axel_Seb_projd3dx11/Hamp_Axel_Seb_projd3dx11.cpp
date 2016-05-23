@@ -2,12 +2,18 @@
 
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dcompiler.lib")
+
+//for inputHandler
+#pragma comment(lib, "dinput8.lib")
+#pragma comment(lib, "dxguid.lib")
+
 #include "Parser.h"
 #include "Object.h"
 #include "Camera.h"
 #include "LightHandler.h"
 #include "QuadTree.h"
 #include "shadowShaderClass.h"
+
 
 HWND InitWindow(HINSTANCE hInstance);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -17,7 +23,8 @@ HRESULT CreateDirect3DContext(HWND wndHandle);
 IDXGISwapChain* gSwapChain = nullptr;
 ID3D11Device* gDevice = nullptr;
 ID3D11DeviceContext* gDeviceContext = nullptr;
-ID3D11RenderTargetView *deferredViews[4];
+ID3D11RenderTargetView *deferredViews[5];
+	
 
 ID3D11RenderTargetView* gBackbufferRTV = nullptr;
 TriangleVertex* triangleVertices = nullptr;
@@ -39,6 +46,9 @@ ID3D11RenderTargetView* PositionRTV = nullptr;
 
 ID3D11Texture2D* LightDepthStencil = nullptr;
 ID3D11RenderTargetView* LightDepthRTV = nullptr;
+
+ID3D11Texture2D* ObjectIndexStencil= nullptr;
+ID3D11RenderTargetView* ObjectIndexRTV = nullptr;
 
 ID3D11Buffer* gVertexBuffer = nullptr;
 ID3D11Buffer* quadVertexBuffer = nullptr;
@@ -257,8 +267,9 @@ void CreateShaders()
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "ID", 0, DXGI_FORMAT_R32_UINT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
-	gDevice->CreateInputLayout(inputDesc, ARRAYSIZE(inputDesc), pVS->GetBufferPointer(), pVS->GetBufferSize(), &gVertexLayout);
+	hr = gDevice->CreateInputLayout(inputDesc, ARRAYSIZE(inputDesc), pVS->GetBufferPointer(), pVS->GetBufferSize(), &gVertexLayout);
 
 	/*
 	Createing the next vertexShader for quad
@@ -410,30 +421,10 @@ void createObjects()
 	data.pSysMem = finalShit;
 
 	HRESULT hr = gDevice->CreateBuffer(&bufferDesc, &data, &quadVertexBuffer);
-	//--------
+	unsigned int objNr = 0;
 
-
-	//creates all the Objects
-	/*int xMax = 6;
-	int yMax = 3;
-	int zMax = 6;
-	for (int x = 0; x < xMax; x++)
-	{
-		for (int y = 0; y < yMax; y++)
-		{
-			for (int z = 0; z < zMax; z++)
-			{
-				if (x == 0 || x == xMax - 1 || y == 0 || y == yMax - 1 || z == 0 || z == zMax - 1)
-				{
-					//creates an object
-					objects.push_back(Object(triangleVertices, Vector3((2.0f * x), (2.0f * y), (2.0f * z)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
-					nrOfObjects++;
-				}
-			}
-		}
-	}*/
-	objects.push_back(Object(triangleVertices, Vector3((1.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
-	objects.push_back(Object(triangleVertices, Vector3((3.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
+	objects.push_back(Object(triangleVertices, Vector3((1.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
+	objects.push_back(Object(triangleVertices, Vector3((3.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png",objNr++));
 
 	//creating the floor
 	for (int i = 0; i < 10; i++)
@@ -442,7 +433,7 @@ void createObjects()
 		for (int j = 0; j < 10; j++)
 		{
 			float y = j;
-			objects.push_back(Object(triangleVertices, Vector3((x), (-2.0f), (y)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
+			objects.push_back(Object(triangleVertices, Vector3((x), (-2.0f), (y)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 		}
 	}
 
@@ -520,6 +511,7 @@ void Render(Object object1)
 
 	ID3D11ShaderResourceView* diffuseSRV = object1.getDiffuseMapSRV();	//get the DiffuseMap from the object
 	gDeviceContext->PSSetShaderResources(0, 1, &diffuseSRV);			//send the DiffuseMap to the DeferredPixelShader
+	
 	ID3D11ShaderResourceView* normalMapSRV = object1.getNormalMapSRV(); //get the NormalMap from the object
 	gDeviceContext->PSSetShaderResources(1, 1, &normalMapSRV);			//send the NormalMap to the DeferredPixelShader
 
@@ -551,6 +543,8 @@ void FirstRenderCall()
 	gDeviceContext->ClearRenderTargetView(deferredViews[1], clearColor);
 	gDeviceContext->ClearRenderTargetView(deferredViews[2], clearColor);
 	gDeviceContext->ClearRenderTargetView(deferredViews[3], clearColor);
+	gDeviceContext->ClearRenderTargetView(deferredViews[4], clearColor);
+
 	//clear depthbuffer
 	gDeviceContext->ClearDepthStencilView(gDepthBuffer, D3D11_CLEAR_DEPTH, 1, 0);
 
@@ -560,8 +554,8 @@ void FirstRenderCall()
 	//does viewfustrum culling on the objects gathered from the quadtree (does not have to be used)
 	//objectsToDraw = WorldCamera.doFustrumCulling(objectsToDraw);
 
-	//set the OutputMerger to use the 4 RTV
-	gDeviceContext->OMSetRenderTargets(4, deferredViews, gDepthBuffer);
+	//set the OutputMerger to use the 5 RTV
+	gDeviceContext->OMSetRenderTargets(5, deferredViews, gDepthBuffer);
 
 	//enable the shaders
 	gDeviceContext->VSSetShader(vDeferredShader, NULL, 0);
@@ -655,7 +649,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	if (wndHandle)
 	{
 		CreateDirect3DContext(wndHandle); //2. Skapa och koppla SwapChain, Device och Device Context
-
 
 		SetViewport(); //3. Sätt viewport
 
@@ -770,6 +763,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 HRESULT CreateDirect3DContext(HWND wndHandle)
 {
+	//setting initial values
+	for(int i = 0; i < 5; i++)
+	{
+		deferredViews[i] = nullptr;
+	}
+
 	// create a struct to hold information about the swap chain
 	DXGI_SWAP_CHAIN_DESC scd;
 
@@ -838,11 +837,14 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 
 		ID3D11Resource*	textureData;
 
-		hr = gDevice->CreateTexture2D(&descDepth, NULL, &pDepthStencil);	//creates the DepthStencil Texture2D
-		hr = gDevice->CreateTexture2D(&descDepth2, NULL, &PositionStencil);	//creates the Position Texture2D used in DeferredRendering
-		hr = gDevice->CreateTexture2D(&descDepth2, NULL, &NormalStencil);	//creates the Normal Texture2D used in DeferredRendering
-		hr = gDevice->CreateTexture2D(&descDepth2, NULL, &ColorStencil);	//creates the Color Texture2D used in DeferredRendering
+		hr = gDevice->CreateTexture2D(&descDepth, NULL, &pDepthStencil);		//creates the DepthStencil Texture2D
+		hr = gDevice->CreateTexture2D(&descDepth2, NULL, &PositionStencil);		//creates the Position Texture2D used in DeferredRendering
+		hr = gDevice->CreateTexture2D(&descDepth2, NULL, &NormalStencil);		//creates the Normal Texture2D used in DeferredRendering
+		hr = gDevice->CreateTexture2D(&descDepth2, NULL, &ColorStencil);		//creates the Color Texture2D used in DeferredRendering
 
+		descDepth2.Format = DXGI_FORMAT_R32_UINT;
+		
+		hr = gDevice->CreateTexture2D(&descDepth2, nullptr, &ObjectIndexStencil);	//creating the texture
 
 		D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
 		memset(&descDSV, 0, sizeof(descDSV));
@@ -860,6 +862,10 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		hr = gDevice->CreateRenderTargetView(PositionStencil, &desc, &deferredViews[1]);	//connects the Textured2D with a RTV deferredView[1] = PositionTexture
 		hr = gDevice->CreateRenderTargetView(NormalStencil, &desc, &deferredViews[2]);		//connects the Textured2D with a RTV deferredView[2] = NormalTexture
 		hr = gDevice->CreateRenderTargetView(ColorStencil, &desc, &deferredViews[3]);		//connects the Textured2D with a RTV deferredView[3] = ColorTexture
+		
+		desc.Format = DXGI_FORMAT_R32_UINT;
+
+		hr = gDevice->CreateRenderTargetView(ObjectIndexStencil, &desc, &deferredViews[4]);
 
 		pBackBuffer->Release();
 

@@ -11,6 +11,7 @@ struct defPixelInput
 	float2 Tex : TEXCOORD0;
 	float4 PosView : POSITION;
 	float3 Tangent : TANGENT;
+	uint objID : ID;
 };
 
 struct defPixelOutput
@@ -19,6 +20,7 @@ struct defPixelOutput
 	float4 Pos	: SV_TARGET1;
 	float4 Normal : SV_TARGET2;
 	float4 Color : SV_TARGET3;
+	uint objID : SV_TARGET4;
 };
 
 defPixelOutput main(in defPixelInput input) : SV_TARGET
@@ -26,6 +28,8 @@ defPixelOutput main(in defPixelInput input) : SV_TARGET
 	float3 text;
 	float3 normalTexture;
 	defPixelOutput output;
+
+	output.objID = input.objID;
 
 	output.Color = float4(txDiffuse.Sample(sampAni, input.Tex).xyz, 0.0f);  //sample the DiffuseMap
 	normalTexture = normalMap.Sample(sampAni, input.Tex).xyz;				//sample the NormalMap
