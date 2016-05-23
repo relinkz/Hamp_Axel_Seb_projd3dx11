@@ -28,4 +28,6 @@ public:
 	D3D11_SUBRESOURCE_DATA getData();
 	PosLight* getLights();
 
+	Matrix getWorldMatrix() const;
+
 };

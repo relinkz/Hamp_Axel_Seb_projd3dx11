@@ -1,11 +1,7 @@
-cbuffer perFrame : register(b0)
+cbuffer CameraData : register(b0)
 {
-	float4x4 _matrix;
-};
-cbuffer perFrame : register(b1)
-{
-	float4x4 worldViewMatrix;
-};
+	float4 cameraPos;
+}
 struct GSOutput
 {
 	float4 Pos : SV_POSITION;
@@ -14,48 +10,54 @@ struct GSOutput
 struct VS_OUT
 {
 	float4 Pos : SV_POSITION;
+	float3 Norm : NORMAL;
 	float2 Tex : TEXCOORD;
-	float4 Norm : NORMAL;
-	float4 Pos2 : POSITION;
+	float4 PosView : POSITION;
+	float3 Tangent : TANGENT;
 };
 
 [maxvertexcount(7)]
 void main(triangle VS_OUT input[3], inout TriangleStream< VS_OUT > data)
 {
 
-	float4 normal = float4(cross(input[1].Pos - input[0].Pos, input[2].Pos - input[0].Pos), 0.0f);
+	float4 pos = float4(0, -2, 0, 0);
+	float4 norm2 = float4(1, 0, 1, 0);
+	float4 toCamera = cameraPos - input[0].PosView;
+	toCamera = normalize(toCamera);
 
-	normal = normalize(normal);
-
-	float4 rotNorm = mul(normal, worldViewMatrix);
-		rotNorm = normalize(rotNorm);
-
-	VS_OUT output[3];
-	for (uint i = 0; i < 3; i++)
+	float angle = dot(toCamera, input[0].Norm);
+	//backface culling
+	if (angle > -0.1f)
 	{
-		output[i].Pos = input[i].Pos;
-		output[i].Pos = mul(input[i].Pos, _matrix);
-		//output[i].Color = float4(input[i].Color, 0.0f);
-		output[i].Tex = input[i].Tex;
-		output[i].Norm = rotNorm;
-		output[i].Pos2 = mul(input[i].Pos, worldViewMatrix);
-		data.Append(output[i]);
+		//calculate the Tangent to be used in NormalMapping
+		float3 edge1 = normalize(input[1].PosView - input[0].PosView);
+		float3 edge2 = normalize(input[2].PosView - input[0].PosView);
+
+		float2 texEdge1 = normalize(input[1].Tex - input[0].Tex);
+		float2 texEdge2 = normalize(input[2].Tex - input[0].Tex);
+
+		float det = (texEdge1.x * texEdge2.y) - (texEdge1.y * texEdge2.x);
+
+		float3 tangent = float3(0, 0, 0);
+		tangent.x = (texEdge2.y * edge1.x - texEdge1.y * edge2.x) * det;
+		tangent.y = (texEdge2.y * edge1.y - texEdge1.y * edge2.y) * det;
+		tangent.z = (texEdge2.y * edge1.z - texEdge1.y * edge2.z) * det;
+		tangent = normalize(tangent);
+
+		VS_OUT output[3];
+		for (uint i = 0; i < 3; i++)
+		{
+			output[i].Pos = input[i].Pos;
+			output[i].Tex = input[i].Tex;
+			output[i].Norm = input[i].Norm;
+			output[i].PosView = input[i].PosView;
+			output[i].Tangent = tangent;
+			data.Append(output[i]);
 
 
+		}
+		data.RestartStrip();
 	}
-	data.RestartStrip();
-	VS_OUT outputCopy[3];
-	for (uint i = 0; i < 3; i++)
-	{
-		outputCopy[i].Pos = input[i].Pos + normal;
-		outputCopy[i].Pos = mul(outputCopy[i].Pos, _matrix);
-		//outputCopy[i].Color = float4(input[i].Color, 0.0f);
-		outputCopy[i].Tex = input[i].Tex;
-		outputCopy[i].Norm = rotNorm;
-		outputCopy[i].Pos2 = mul(input[i].Pos, worldViewMatrix);
-		data.Append(outputCopy[i]);
-	}
-	data.RestartStrip();
 
 
 }
