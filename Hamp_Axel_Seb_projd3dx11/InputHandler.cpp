@@ -25,6 +25,16 @@ bool InputHandler::readMouse()
 
 void InputHandler::processInput()
 {
+	//update the location of the mouse curson based on the change of the mouse location frame
+	this->mouse_X += this->mouseState.lX;
+	this->mouse_Y += this->mouseState.lY;
+
+	//ensure the mouse location doesn't exceed the screen with or height
+	if (this->mouse_X < 0){ this->mouse_X = 0; }
+	if (this->mouse_Y < 0){	this->mouse_Y = 0; }
+
+	if (this->mouse_X > this->screenWidth){	this->mouse_X = this->screenWidth; }
+	if (this->mouse_Y > this->screenHeight){ this->mouse_Y = this->screenHeight; }
 }
 
 InputHandler::InputHandler()
@@ -121,4 +131,6 @@ void InputHandler::update()
 
 void InputHandler::getMouseLocation(int & xPos, int & yPos)
 {
+	xPos = this->mouse_X;
+	yPos = this->mouse_Y;
 }

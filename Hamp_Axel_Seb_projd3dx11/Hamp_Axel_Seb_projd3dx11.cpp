@@ -674,6 +674,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		}
 		inputHandler.update();
 
+		int test;
+		int test2;
+
+		inputHandler.getMouseLocation(test, test2);
+
 		while (WM_QUIT != msg.message)
 		{
 			WorldCamera.Update(wndHandle); //update worldcamera
