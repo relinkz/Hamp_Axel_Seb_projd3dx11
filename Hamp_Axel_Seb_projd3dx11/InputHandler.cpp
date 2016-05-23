@@ -2,7 +2,25 @@
 
 bool InputHandler::readMouse()
 {
-	return false;
+	bool result = true;
+	HRESULT resultHelp;
+
+	//read the mouse device
+	resultHelp = this->mouse->GetDeviceState(sizeof(DIMOUSESTATE), (LPVOID)&this->mouseState);
+	
+	if (FAILED(resultHelp))
+	{
+		//read the mouse device
+		if ((resultHelp == DIERR_INPUTLOST) || resultHelp == DIERR_NOTACQUIRED)
+		{
+			this->mouse->Acquire();
+		}
+		else
+		{
+			result = false;
+		}
+	}
+	return result;
 }
 
 void InputHandler::processInput()
@@ -31,7 +49,7 @@ void InputHandler::initialize(HINSTANCE hInstance, HWND hwind, int screenWidth, 
 	this->mouse_X = 0;
 	this->mouse_Y = 0;
 
-	resultHelp = DirectInput8Create(hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)this->directInput, nullptr);
+	resultHelp = DirectInput8Create(hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&this->directInput, nullptr);
 
 	if (FAILED(resultHelp))
 	{
@@ -56,7 +74,7 @@ void InputHandler::initialize(HINSTANCE hInstance, HWND hwind, int screenWidth, 
 
 	//the tutorial says:
 	//set the cooperatice level of the mouse to share with other programs
-	resultHelp = this->mouse->SetCooperativeLevel(hwind, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
+	resultHelp = this->mouse->SetCooperativeLevel(hwind, DISCL_BACKGROUND | DISCL_NONEXCLUSIVE);
 
 	if (FAILED(resultHelp))
 	{
@@ -68,16 +86,37 @@ void InputHandler::initialize(HINSTANCE hInstance, HWND hwind, int screenWidth, 
 
 	if (FAILED(resultHelp))
 	{
-		throw("INPUTHANDLER : failed to accuire interface");
+		//throw("INPUTHANDLER : failed to accuire interface");
 	}
 }
 
 void InputHandler::shutdown()
 {
+	if (this->mouse != nullptr)
+	{
+		this->mouse->Unacquire();
+		this->mouse->Release();
+		this->mouse = nullptr;
+	}
+
+	if (this->directInput != nullptr)
+	{
+		this->directInput->Release();
+		this->directInput = nullptr;
+	}
 }
 
 void InputHandler::update()
 {
+	bool result = false;
+
+	//read the state of the mouse
+	result = readMouse();
+
+	if (result == true)
+	{
+		this->processInput();
+	}
 }
 
 void InputHandler::getMouseLocation(int & xPos, int & yPos)

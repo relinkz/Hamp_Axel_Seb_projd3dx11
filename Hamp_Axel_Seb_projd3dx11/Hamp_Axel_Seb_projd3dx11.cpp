@@ -3,20 +3,20 @@
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dcompiler.lib")
 
-//for inputHandler
-#pragma comment(lib, "dinput8.lib")
-#pragma comment(lib, "dxguid.lib")
-
 #include "Parser.h"
 #include "Object.h"
 #include "Camera.h"
 #include "LightHandler.h"
 #include "QuadTree.h"
 #include "shadowShaderClass.h"
+#include "InputHandler.h"
 
 
 HWND InitWindow(HINSTANCE hInstance);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+
+int const SCREEN_WIDTH = 640;
+int const SCREEN_HEIGHT = 480;
 
 HRESULT CreateDirect3DContext(HWND wndHandle);
 
@@ -24,7 +24,6 @@ IDXGISwapChain* gSwapChain = nullptr;
 ID3D11Device* gDevice = nullptr;
 ID3D11DeviceContext* gDeviceContext = nullptr;
 ID3D11RenderTargetView *deferredViews[5];
-	
 
 ID3D11RenderTargetView* gBackbufferRTV = nullptr;
 TriangleVertex* triangleVertices = nullptr;
@@ -73,6 +72,8 @@ ID3D11PixelShader* pDeferredShader = nullptr;
 Camera WorldCamera;
 Object worldObject;
 ShadowShaderClass shadowMap;
+InputHandler inputHandler;
+
 
 struct vertex
 {
@@ -446,8 +447,8 @@ void createObjects()
 void SetViewport()
 {
 	D3D11_VIEWPORT vp;
-	vp.Width = (float)640;
-	vp.Height = (float)480;
+	vp.Width = (float)SCREEN_WIDTH;
+	vp.Height = (float)SCREEN_HEIGHT;
 	vp.MinDepth = 0.0f;
 	vp.MaxDepth = 1.0f;
 	vp.TopLeftX = 0;
@@ -660,16 +661,18 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 		ShowWindow(wndHandle, nCmdShow);
 
-
 		try
 		{
 			shadowMap.initialize(gDevice, wndHandle, Vector3(0,10,0), Vector3(1,-1,0), Vector3(0,1,0));
+
+			inputHandler.initialize(hInstance, wndHandle, SCREEN_WIDTH, SCREEN_HEIGHT);
 		}
 		catch (char* error)
 		{
-			MessageBox(wndHandle, L"shadowMap error", L"Read the error", MB_OK);
+			MessageBox(wndHandle, L"error", L"Read the error", MB_OK);
 			system("PAUSE");
 		}
+		inputHandler.update();
 
 		while (WM_QUIT != msg.message)
 		{
