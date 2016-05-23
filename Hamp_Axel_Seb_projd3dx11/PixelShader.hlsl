@@ -44,6 +44,7 @@ float4 main(PS_IN input) : SV_TARGET
 	float3 color;
 	float3 pos;
 	float3 normal;
+	float4 specular;
 	//float3 posLight = float3(cameraPos.x, cameraPos.y, cameraPos.z);	//hardCoded light on the cameraPosition
 	//float3 posLight = float3(2, 2, 0);								//hardCoded light on x = 0, y = 100, z = 0
 	//float3 lightColor = float3(1.0f, 1.0f, 1.0f);
@@ -52,6 +53,8 @@ float4 main(PS_IN input) : SV_TARGET
 	pos = positionMap.Sample(sampAni, input.UVCoord).xyz;	//sample the PositionMap from DeferredRendering
 	normal = normalMap.Sample(sampAni, input.UVCoord).xyz;	//sample the NormalMap from DeferredRendering
 
+	//initialize the specular color
+	specular = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
 	normal = normalize(normal);
 
@@ -76,15 +79,11 @@ float4 main(PS_IN input) : SV_TARGET
 	float shineFactor = 5.0f;
 	float lightSpecular = 0.65f;
 
-	/*lightIntensity = dot(normal, outVec);
-	if (lightIntensity < 0)
-	{
-		lightIntensity = 0;
-	}*/
+	lightIntensity = saturate(dot(normal, outVec));
+
+
 	shadowUV.x = ((lightPos.x / lightPos.w) / 2.0f) + 0.5f;
 	shadowUV.y = ((lightPos.y / lightPos.w) / -2.0f) + 0.5f;
-
-
 
 	if (saturate(shadowUV.x) != shadowUV.x || saturate(shadowUV.y) != shadowUV.y)
 	{
@@ -114,7 +113,22 @@ float4 main(PS_IN input) : SV_TARGET
 		//output.Color = float4(0, 1, 0, 0);
 	}
 
-	color = saturate((color.rgb * lightIntensity * 0.8f) + (color.rgb * 0.2f));
+	float3 diffuseColor = (color.rgb * lightIntensity * 0.8f);
+	float3 ambientColor = (color.rgb * 0.2f);
+
+	//color = saturate((color.rgb * lightIntensity * 0.8f) + (color.rgb * 0.2f));
+	
+	if (lightIntensity > 0.0f)
+	{
+		// Calculate the reflection vector based on the light intensity, normal vector, and light direction.
+		float3 reflection = normalize(2 * lightIntensity * normal.xyz - outVec.xyz);
+		
+		//determine the amount of specular light based on the reflection vector, viewing direction and specular power
+		specular = pow(saturate(dot(reflection, viewDir)), 32.0f);
+	}
+	color = saturate(diffuseColor + ambientColor);
+	color = saturate(color + specular);
+
 	return float4(color, 1.0f);
 	/*float3 lightVec = posLight - pos;
 
