@@ -130,21 +130,4 @@ float4 main(PS_IN input) : SV_TARGET
 	color = saturate(color + specular);
 
 	return float4(color, 1.0f);
-	/*float3 lightVec = posLight - pos;
-
-	lightVec = normalize(lightVec);
-	float angle = dot(lightVec, normal);
-
-	if (angle < 0)
-	{
-		angle = 0;
-	}
-	//light calculation
-	float3 finalColor;
-	finalColor.x = color.x * angle + color.x * 0.0f;
-	finalColor.y = color.y * angle + color.y * 0.0f;
-	finalColor.z = color.z * angle + color.z * 0.0f;
-
-	return float4(finalColor, 1.0f);*/
-
 }
