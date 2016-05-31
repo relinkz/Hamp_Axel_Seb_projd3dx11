@@ -157,6 +157,7 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Hamp_Axel_Seb_projd3dx11.cpp" />
     <ClCompile Include="LightHandler.cpp" />
+    <ClCompile Include="Map.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="Parser.cpp" />
@@ -227,6 +228,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="light.h" />
     <ClInclude Include="LightHandler.h" />
+    <ClInclude Include="Map.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Object.h" />
     <ClInclude Include="Parser.h" />
