@@ -141,8 +141,8 @@ Matrix* lightProjectionMatrix = nullptr;
 SimpleMath::Matrix* eyeSpace = nullptr;
 SimpleMath::Matrix* orthograficProjection = nullptr;
 
-const int  WIDTH = 10;
-const int HEIGHT = 10;
+const int  WIDTH = 15;
+const int HEIGHT = 15;
 
 //Node* nodes;
 Node** nodes;
@@ -940,17 +940,37 @@ void createMap()
 	{
 		for (int y = 0; y < HEIGHT; y++)
 		{
-			if (nodes[x][y].cLeft == false || x == 0)
+			if (x == WIDTH - 1)
+			{
+				objects.push_back(Object(Vector3(x, 0.0f, y),
+					worldObject.getDiffuseMapSRV(),
+					worldObject.getNormalMapSRV(),
+					worldObject.getVertexBufferPointer(),
+					worldObject.getShadowVertexBufferPointer(),
+					Vector3(0.5f, 0.0f, 0.0f),
+					Vector3(0.2f, 1.0f, 1.0f)));
+			}
+			if (y == 0)
+			{
+				objects.push_back(Object(Vector3(x, 0.0f, y),
+					worldObject.getDiffuseMapSRV(),
+					worldObject.getNormalMapSRV(),
+					worldObject.getVertexBufferPointer(),
+					worldObject.getShadowVertexBufferPointer(),
+					Vector3(0.0f, 0.0f, -0.5f),
+					Vector3(1.0f, 1.0f, 0.2f)));
+			}
+			if (nodes[x][y].cLeft == false)
 			{
 				objects.push_back(Object(Vector3(x, 0.0f, y), 
-											worldObject.getDiffuseMapSRV(), 
-											worldObject.getNormalMapSRV(), 
-											worldObject.getVertexBufferPointer(), 
-											worldObject.getShadowVertexBufferPointer(),
-											Vector3(-0.5f,0.0f,0.0f),
-											Vector3(0.2f,1.0f,1.0f)));
+					worldObject.getDiffuseMapSRV(), 
+					worldObject.getNormalMapSRV(), 
+					worldObject.getVertexBufferPointer(), 
+					worldObject.getShadowVertexBufferPointer(),
+					Vector3(-0.5f,0.0f,0.0f),
+					Vector3(0.2f,1.0f,1.0f)));
 			}
-			if (nodes[x][y].cUp == false || y == 0)
+			if (nodes[x][y].cUp == false)
 			{
 				objects.push_back(Object(Vector3(x, 0.0f, y),
 					worldObject.getDiffuseMapSRV(),

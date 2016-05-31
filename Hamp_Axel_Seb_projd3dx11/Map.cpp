@@ -153,14 +153,14 @@ bool Map::makeConnection(Node** nodes, int x, int y, int direction)
 		result = Union(&nodes[x][y], &nodes[x][y - 1]);
 		if (result)
 		{
-			nodes[x][y].cUp = true;
+			nodes[x][y - 1].cUp = true;
 		}
 		break;
 	case(3) ://down
 		result = Union(&nodes[x][y], &nodes[x][y + 1]);
 		if (result)
 		{
-			nodes[x][y + 1].cUp = true;
+			nodes[x][y].cUp = true;
 		}
 		break;
 	}
