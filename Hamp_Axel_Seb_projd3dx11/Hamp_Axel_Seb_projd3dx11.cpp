@@ -145,6 +145,8 @@ void createWorldMatrices()
 {
 	Matrix* WVP_Ptr = nullptr;
 
+
+
 	viewSpace = new Matrix(DirectX::XMMatrixLookAtLH
 		(
 			Vector3(-2, 0, 0),	//Position
@@ -182,9 +184,10 @@ void createWorldMatrices()
 	 {
 		 *worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix
 	 };
+	 XMFLOAT4 lightpos = XMFLOAT4(shadowMap.getLightPos().x, shadowMap.getLightPos().y, shadowMap.getLightPos().z, 0.0f);
 	 worldMatrixBuffer2 buffer2
 	 {
-		 *worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix, Vector4(0,10,0,0), Vector4(0,10,0,0)
+		 *worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix, Vector4(0,10,0,0),lightpos
 	 };
 
 	 //buffers
@@ -432,8 +435,9 @@ void createObjects()
 			}
 		}
 	}*/
-	objects.push_back(Object(triangleVertices, Vector3((1.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
-	objects.push_back(Object(triangleVertices, Vector3((3.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
+	worldObject = Object(triangleVertices, Vector3((1.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png");
+	objects.push_back(Object(Vector3(0.0f,0.0f,1.0f),worldObject.getDiffuseMapSRV(),worldObject.getNormalMapSRV(),worldObject.getVertexBufferPointer(),worldObject.getShadowVertexBufferPointer()));
+	objects.push_back(Object(Vector3(3.0f, 0.0f, 1.0f), worldObject.getDiffuseMapSRV(), worldObject.getNormalMapSRV(), worldObject.getVertexBufferPointer(), worldObject.getShadowVertexBufferPointer()));
 
 	//creating the floor
 	for (int i = 0; i < 10; i++)
@@ -442,7 +446,8 @@ void createObjects()
 		for (int j = 0; j < 10; j++)
 		{
 			float y = j;
-			objects.push_back(Object(triangleVertices, Vector3((x), (-2.0f), (y)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
+			objects.push_back(Object(Vector3(x, -2.0f, y), worldObject.getDiffuseMapSRV(), worldObject.getNormalMapSRV(), worldObject.getVertexBufferPointer(), worldObject.getShadowVertexBufferPointer()));
+			//objects.push_back(Object(triangleVertices, Vector3((x), (-2.0f), (y)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
 		}
 	}
 
@@ -642,6 +647,9 @@ void SecondRenderCall()
 	gDeviceContext->IASetInputLayout(quadLayout);										//set inputlayout
 
 	gDeviceContext->Draw(6, 0); //second RenderCall renders the 6 vertexes that makeup the quad
+	Position->Release();
+	Normal->Release();
+	Color->Release();
 	//SECOND RENDERCALL DONE
 }
 
@@ -663,20 +671,22 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 		createWorldMatrices(); //initierar världsmatriserna här, vid frågor och klagomål, så ansvarar jag inte för detta!
 
-		createObjects(); //5. Definiera triangelvertiser, 6. Skapa vertex buffer, 7. Skapa input layout
-
-		ShowWindow(wndHandle, nCmdShow);
-
-
 		try
 		{
-			shadowMap.initialize(gDevice, wndHandle, Vector3(0,10,0), Vector3(1,-1,0), Vector3(0,1,0));
+			shadowMap.initialize(gDevice, wndHandle, Vector3(0, 0, -1), Vector3(1, -1, 0), Vector3(0, 1, 0));
 		}
 		catch (char* error)
 		{
 			MessageBox(wndHandle, L"shadowMap error", L"Read the error", MB_OK);
 			system("PAUSE");
 		}
+
+		createObjects(); //5. Definiera triangelvertiser, 6. Skapa vertex buffer, 7. Skapa input layout
+
+		ShowWindow(wndHandle, nCmdShow);
+
+
+
 
 		while (WM_QUIT != msg.message)
 		{
@@ -721,6 +731,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		gDevice->Release();
 		gDeviceContext->Release();
 		DestroyWindow(wndHandle);
+
+		//delete viewSpace;
+		//delete projectionSpace;
+		//delete worldSpace;
+		//delete worldViewProj;
+		//delete eyeSpace;
+		//delete lightViewMatrix;
+		//delete lightProjectionMatrix;
+
 	}
 
 	return (int)msg.wParam;

@@ -86,6 +86,15 @@ Object::Object(vector<TriangleVertex>fromParser, Vector3 worldPos, ID3D11Device*
 	this->createVertexBuffer(gDevice);
 }
 
+Object::Object(Vector3 worldPos, ID3D11ShaderResourceView * diffuseMapSRV, ID3D11ShaderResourceView * normalMapSRV, ID3D11Buffer * vertexBuffer, ID3D11Buffer * shadowVertexBuffer)
+{
+	this->position = worldPos;
+	this->diffuseMapSRV = diffuseMapSRV;
+	this->normalMapSRV = normalMapSRV;
+	this->vertexBuffer = vertexBuffer;
+	this->shadowVertexBuffer = shadowVertexBuffer;
+}
+
 Object::~Object()
 {
 

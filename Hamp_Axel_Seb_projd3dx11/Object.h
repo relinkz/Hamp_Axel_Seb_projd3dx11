@@ -38,6 +38,7 @@ public:
 	Object(vector<TriangleVertex>fromParser, Vector3 worldPos, ID3D11Device* gDevice, string srcImage);
 	Object(vector<TriangleVertex>fromParser, Vector3 worldPos, ID3D11Device* gDevice, string srcImage, string normalMap);
 	Object(vector<TriangleVertex>fromParser, Vector3 worldPos, ID3D11Device* gDevice);
+	Object(Vector3 worldPos, ID3D11ShaderResourceView* diffuseMapSRV, ID3D11ShaderResourceView* normalMapSRV, ID3D11Buffer* vertexBuffer, ID3D11Buffer* shadowVertexBuffer);
 	virtual ~Object();
 
 	//getters setters
