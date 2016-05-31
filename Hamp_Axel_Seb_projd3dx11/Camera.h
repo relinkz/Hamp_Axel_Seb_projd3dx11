@@ -47,7 +47,7 @@ public:
 	Camera(int width, int height, float x, float y, float z);
 	~Camera();
 
-	void Update(HWND hWnd);
+	void Update(HWND hWnd, float dt);
 
 	Matrix getViewMatrix();
 	Vector3 getCameraPos();

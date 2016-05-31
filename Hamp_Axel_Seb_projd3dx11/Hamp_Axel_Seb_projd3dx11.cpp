@@ -8,6 +8,8 @@
 #include "LightHandler.h"
 #include "QuadTree.h"
 #include "shadowShaderClass.h"
+#include "Map.h"
+#include <ctime>
 
 HWND InitWindow(HINSTANCE hInstance);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -63,6 +65,10 @@ ID3D11PixelShader* pDeferredShader = nullptr;
 Camera WorldCamera;
 Object worldObject;
 ShadowShaderClass shadowMap;
+Map mapGenerator;
+
+long float currTime;
+long float oldTime;
 
 struct vertex
 {
@@ -73,13 +79,7 @@ struct vertex
 	float v;
 };
 
-struct worldMatrixBuffer
-{
-	XMFLOAT4X4 worldViewProj;
-	XMFLOAT4X4 eyeSpace;
-	XMFLOAT4X4 lightViewMatrix;
-	XMFLOAT4X4 lightProjectionMatrix;
-};
+
 struct worldMatrixBuffer2
 {
 	XMFLOAT4X4 worldViewProj;
@@ -128,6 +128,7 @@ struct cameraData
 {
 	Vector4 pos;
 };
+void createMap();
 
 //Matrices
 SimpleMath::Matrix* viewSpace = nullptr;
@@ -140,6 +141,11 @@ Matrix* lightProjectionMatrix = nullptr;
 SimpleMath::Matrix* eyeSpace = nullptr;
 SimpleMath::Matrix* orthograficProjection = nullptr;
 
+const int  WIDTH = 10;
+const int HEIGHT = 10;
+
+//Node* nodes;
+Node** nodes;
 
 void createWorldMatrices()
 {
@@ -357,6 +363,11 @@ void CreateShaders()
 
 void createObjects()
 {
+	time_t sec;
+	time(&sec);
+	//srand(unsigned int(sec));
+	srand(unsigned(time(0)));
+
 #pragma region
 
 	Parser fromFile;
@@ -436,7 +447,8 @@ void createObjects()
 		}
 	}*/
 	worldObject = Object(triangleVertices, Vector3((1.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png");
-	objects.push_back(Object(Vector3(0.0f,0.0f,1.0f),worldObject.getDiffuseMapSRV(),worldObject.getNormalMapSRV(),worldObject.getVertexBufferPointer(),worldObject.getShadowVertexBufferPointer()));
+
+	/*objects.push_back(Object(Vector3(0.0f,0.0f,1.0f),worldObject.getDiffuseMapSRV(),worldObject.getNormalMapSRV(),worldObject.getVertexBufferPointer(),worldObject.getShadowVertexBufferPointer()));
 	objects.push_back(Object(Vector3(3.0f, 0.0f, 1.0f), worldObject.getDiffuseMapSRV(), worldObject.getNormalMapSRV(), worldObject.getVertexBufferPointer(), worldObject.getShadowVertexBufferPointer()));
 
 	//creating the floor
@@ -449,7 +461,27 @@ void createObjects()
 			objects.push_back(Object(Vector3(x, -2.0f, y), worldObject.getDiffuseMapSRV(), worldObject.getNormalMapSRV(), worldObject.getVertexBufferPointer(), worldObject.getShadowVertexBufferPointer()));
 			//objects.push_back(Object(triangleVertices, Vector3((x), (-2.0f), (y)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
 		}
+	}*/
+	//WIDTH
+	//HEIGHT
+
+	nodes = new Node*[WIDTH];
+	for (int i = 0; i < WIDTH; i++)
+	{
+		nodes[i] = new Node[HEIGHT];
 	}
+	/*for (int x = 0; x < WIDTH; x++)
+	{
+		for (int y = 0; y < HEIGHT; y++)
+		{
+			nodes[x][y].cLeft = false;
+			nodes[x][y].cUp = false;
+			nodes[x][y].parent = nullptr;
+		}
+	}*/
+	mapGenerator.makeLabyrinth(nodes, WIDTH, HEIGHT);
+
+	createMap();
 
 	quadTree.setTreeData(objects); //splits all the objects into the quads in the quadtree
 #pragma endregion
@@ -494,7 +526,6 @@ void UpdateCameraBuffer()
 
 void Render(Object object1)
 {
-
 	*worldSpace = object1.getWorldMatrix();		//get the worldMatrix of the object that we will render
 
 	*viewSpace = WorldCamera.getViewMatrix();	//get the viewMatrix from the camera
@@ -506,7 +537,7 @@ void Render(Object object1)
 
 	worldMatrixBuffer updateWorldMatrices // set the MatrixBuffer
 	{
-		*worldViewProj, *worldSpace, *lightViewMatrix , *lightProjectionMatrix
+		*worldViewProj, *worldSpace, Matrix() , Matrix()
 	};
 	//update the worldMatrixBuffer
 	Matrix* WVP_Ptr = nullptr;
@@ -521,14 +552,14 @@ void Render(Object object1)
 	gDeviceContext->Unmap(worldSpaceBuffer, 0);
 	//----------
 
-	UpdateCameraBuffer();
+	//UpdateCameraBuffer();
 
 	ID3D11ShaderResourceView* diffuseSRV = object1.getDiffuseMapSRV();	//get the DiffuseMap from the object
 	gDeviceContext->PSSetShaderResources(0, 1, &diffuseSRV);			//send the DiffuseMap to the DeferredPixelShader
 	ID3D11ShaderResourceView* normalMapSRV = object1.getNormalMapSRV(); //get the NormalMap from the object
 	gDeviceContext->PSSetShaderResources(1, 1, &normalMapSRV);			//send the NormalMap to the DeferredPixelShader
 
-	gDeviceContext->GSSetConstantBuffers(0, 1, &cameraBuffer);			//send the cameraBuffer to the GeometryShader
+	//gDeviceContext->GSSetConstantBuffers(0, 1, &cameraBuffer);			//send the cameraBuffer to the GeometryShader
 
 	
 
@@ -545,6 +576,7 @@ void Render(Object object1)
 
 void FirstRenderCall()
 {
+	//int t = GetCurrentTime();
 	//THIS IS THE START OF THE FIRST RENDERCALL
 	HRESULT hr;
 	float clearColor[] = { 0, 0, 0, 1 };
@@ -579,6 +611,10 @@ void FirstRenderCall()
 
 
 	//renders all the individual objects and stores their values in the RTVs
+	UpdateCameraBuffer();
+	gDeviceContext->GSSetConstantBuffers(0, 1, &cameraBuffer);
+
+	
 	for (int i = 0; i < objectsToDraw.size(); i++)
 	{
 		if (objectsToDraw.at(i) != nullptr)
@@ -686,11 +722,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		ShowWindow(wndHandle, nCmdShow);
 
 
-
+		oldTime = GetCurrentTime();
 
 		while (WM_QUIT != msg.message)
 		{
-			WorldCamera.Update(wndHandle); //update worldcamera
+			currTime = GetCurrentTime();
+			float dt = (currTime - oldTime) / 1000;
+			WorldCamera.Update(wndHandle, dt); //update worldcamera
 			if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 			{
 				TranslateMessage(&msg);
@@ -718,9 +756,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 				gSwapChain->Present(0, 0); //9. Växla front- och back-buffer
 				shadowMap.clearDepthBuffer(gDeviceContext);
 			}
+			oldTime = currTime;
 		}
 
-		gVertexBuffer->Release();
+		//gVertexBuffer->Release();
 
 		gVertexLayout->Release();
 		vDeferredShader->Release();
@@ -893,4 +932,36 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 	}
 
 	return hr;
+}
+
+void createMap()
+{
+	for (int x = 0; x < WIDTH; x++)
+	{
+		for (int y = 0; y < HEIGHT; y++)
+		{
+			if (nodes[x][y].cLeft == false || x == 0)
+			{
+				objects.push_back(Object(Vector3(x, 0.0f, y), 
+											worldObject.getDiffuseMapSRV(), 
+											worldObject.getNormalMapSRV(), 
+											worldObject.getVertexBufferPointer(), 
+											worldObject.getShadowVertexBufferPointer(),
+											Vector3(-0.5f,0.0f,0.0f),
+											Vector3(0.2f,1.0f,1.0f)));
+			}
+			if (nodes[x][y].cUp == false || y == 0)
+			{
+				objects.push_back(Object(Vector3(x, 0.0f, y),
+					worldObject.getDiffuseMapSRV(),
+					worldObject.getNormalMapSRV(),
+					worldObject.getVertexBufferPointer(),
+					worldObject.getShadowVertexBufferPointer(),
+					Vector3(0.0f, 0.0f, 0.5f),
+					Vector3(1.0f, 1.0f, 0.2f)));
+			}
+		}
+	}
+
+
 }

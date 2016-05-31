@@ -93,6 +93,19 @@ Object::Object(Vector3 worldPos, ID3D11ShaderResourceView * diffuseMapSRV, ID3D1
 	this->normalMapSRV = normalMapSRV;
 	this->vertexBuffer = vertexBuffer;
 	this->shadowVertexBuffer = shadowVertexBuffer;
+	this->offset = Vector3(0.0f, 0.0f, 0.0f);
+	this->scale = Vector3(1.0f, 1.0f, 1.0f);
+}
+
+Object::Object(Vector3 worldPos, ID3D11ShaderResourceView * diffuseMapSRV, ID3D11ShaderResourceView * normalMapSRV, ID3D11Buffer * vertexBuffer, ID3D11Buffer * shadowVertexBuffer, Vector3 offset, Vector3 scale)
+{
+	this->position = worldPos;
+	this->diffuseMapSRV = diffuseMapSRV;
+	this->normalMapSRV = normalMapSRV;
+	this->vertexBuffer = vertexBuffer;
+	this->shadowVertexBuffer = shadowVertexBuffer;
+	this->offset = offset;
+	this->scale = scale;
 }
 
 Object::~Object()
@@ -103,8 +116,8 @@ Object::~Object()
 Matrix Object::getWorldMatrix() const
 {
 	Matrix test;
-
-	test = Matrix(DirectX::XMMatrixTranslation(this->position.x, this->position.y, this->position.z));
+	Vector3 pos = this->position + this->offset;
+	test =  Matrix(DirectX::XMMatrixScaling(this->scale.x, this->scale.y, this->scale.z) * DirectX::XMMatrixTranslation(pos.x, pos.y, pos.z));
 	return test;
 }
 
@@ -133,6 +146,16 @@ Vector3 Object::getPosition() const
 	return this->position;
 }
 
+Vector3 Object::getPositionAndOffSet() const
+{
+	return this->position + this->offset;
+}
+
+Vector3 Object::getScale() const
+{
+	return this->scale;
+}
+
 #pragma region
 /*
 * Help and utility functions
@@ -146,6 +169,7 @@ void Object::createVertexBuffer(ID3D11Device* gDevice)
 	memset(&bufferDesc, 0, sizeof(bufferDesc));
 	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	//bufferDesc.Usage = D3D11_USAGE_STAGING;
 	//bufferDesc.ByteWidth = sizeof(*triangleVertices.data()) * nrOfVertexDrawn;  //triangleVertices
 	bufferDesc.ByteWidth = sizeof(*this->vertexData.data()) * this->vertexSize;  //triangleVertices
 

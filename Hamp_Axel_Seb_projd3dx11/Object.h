@@ -12,6 +12,8 @@ class Object
 private:
 	Vector3					position;
 	Vector2					UV_Coord;
+	Vector3					offset;
+	Vector3					scale;
 	vector<TriangleVertex>	vertexData;
 	vector<shadowtriVertex> shadowVertexData;
 
@@ -38,7 +40,16 @@ public:
 	Object(vector<TriangleVertex>fromParser, Vector3 worldPos, ID3D11Device* gDevice, string srcImage);
 	Object(vector<TriangleVertex>fromParser, Vector3 worldPos, ID3D11Device* gDevice, string srcImage, string normalMap);
 	Object(vector<TriangleVertex>fromParser, Vector3 worldPos, ID3D11Device* gDevice);
-	Object(Vector3 worldPos, ID3D11ShaderResourceView* diffuseMapSRV, ID3D11ShaderResourceView* normalMapSRV, ID3D11Buffer* vertexBuffer, ID3D11Buffer* shadowVertexBuffer);
+	Object(Vector3 worldPos, ID3D11ShaderResourceView* diffuseMapSRV, 
+							 ID3D11ShaderResourceView* normalMapSRV, 
+							 ID3D11Buffer* vertexBuffer, 
+							 ID3D11Buffer* shadowVertexBuffer);
+
+	Object(Vector3 worldPos, ID3D11ShaderResourceView* diffuseMapSRV, 
+							 ID3D11ShaderResourceView* normalMapSRV, 
+							 ID3D11Buffer* vertexBuffer, 
+							 ID3D11Buffer* shadowVertexBuffer,
+							 Vector3 offset,Vector3 scale);
 	virtual ~Object();
 
 	//getters setters
@@ -50,6 +61,8 @@ public:
 	ID3D11ShaderResourceView* getDiffuseMapSRV()	const;
 	ID3D11ShaderResourceView* getNormalMapSRV()		const;
 	Vector3 getPosition()							const;
+	Vector3 getPositionAndOffSet()					const;
+	Vector3 getScale()								const;
 };
 
 #endif
