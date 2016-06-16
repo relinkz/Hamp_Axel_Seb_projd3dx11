@@ -56,6 +56,7 @@ ID3D11Buffer* gGeometryBuffer = nullptr;
 ID3D11Buffer* testBuffer = nullptr;
 ID3D11Buffer* lightBuffer = nullptr;
 ID3D11Buffer* cameraBuffer = nullptr;
+ID3D11Buffer* mouseBuffer = nullptr;
 
 ID3D11Buffer* worldSpaceBuffer = nullptr;
 ID3D11Buffer* worldSpaceBuffer2 = nullptr;
@@ -138,6 +139,11 @@ newPosLight light
 struct cameraData
 {
 	Vector4 pos;
+};
+
+struct mouseData
+{
+	Vector2 pos;
 };
 
 //Matrices
@@ -595,6 +601,7 @@ void SecondRenderCall()
 	ID3D11ShaderResourceView* Normal = nullptr;
 	ID3D11ShaderResourceView* Color = nullptr;
 	ID3D11ShaderResourceView* shadowMapSRV = nullptr;
+	ID3D11ShaderResourceView* ObjectIndexSRV = nullptr;
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
 	memset(&SRVDesc, 0, sizeof(SRVDesc));
@@ -609,10 +616,11 @@ void SecondRenderCall()
 	UpdateCameraBuffer(); //update the CameraBuffer
 
 	gDeviceContext->PSSetConstantBuffers(1, 1, &cameraBuffer);
-
+	
 	ID3D11Buffer* shadowCB = shadowMap.getLightBuffer();
 	gDeviceContext->PSSetConstantBuffers(2, 1, &shadowCB);
 
+	gDeviceContext->PSSetConstantBuffers(3, 1, &mouseBuffer);
 
 	hr = gDevice->CreateShaderResourceView(PositionStencil, &SRVDesc, &Position);	//turn the RTV that stores the Positions into a 
 	gDeviceContext->PSSetShaderResources(0, 1, &Position);							//ShaderResouresView and send it to the PixelShader
@@ -626,6 +634,15 @@ void SecondRenderCall()
 	shadowMapSRV = shadowMap.getShaderResourceView();
 	gDeviceContext->PSSetShaderResources(3, 1, &shadowMapSRV);
 
+	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDescID;
+	memset(&SRVDescID, 0, sizeof(SRVDescID));
+	SRVDescID.Format = DXGI_FORMAT_R32_UINT;
+	SRVDescID.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
+	SRVDescID.Texture2D.MipLevels = 1;
+	SRVDescID.Texture2D.MostDetailedMip = 0;
+
+	hr = gDevice->CreateShaderResourceView(ObjectIndexStencil, &SRVDescID, &ObjectIndexSRV);
+	gDeviceContext->PSSetShaderResources(4, 1, &ObjectIndexSRV);
 
 	UINT32 vertexSize = sizeof(float) * 5;	//set the size of a vertex sizeof(float) * 5 the positions(x,y,z) and the UV coords(U,V) 
 	UINT32 offset = 0; // offset 0
@@ -638,6 +655,54 @@ void SecondRenderCall()
 
 	gDeviceContext->Draw(6, 0); //second RenderCall renders the 6 vertexes that makeup the quad
 	//SECOND RENDERCALL DONE
+}
+
+void createMouseBuffer()
+{
+	cameraData mousePos;
+	mousePos.pos = Vector4(0, 0, 0, 0);
+
+	D3D11_BUFFER_DESC mouseBufferDesc;
+	mouseBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	mouseBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	mouseBufferDesc.ByteWidth = sizeof(cameraData);
+	mouseBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	mouseBufferDesc.MiscFlags = 0;
+	mouseBufferDesc.StructureByteStride = 0;
+
+	D3D11_SUBRESOURCE_DATA data;
+	data.pSysMem = &mousePos;
+
+	HRESULT result = gDevice->CreateBuffer(&mouseBufferDesc, &data, &mouseBuffer); //creates the CameraBuffer
+}
+
+void updateMouseBuffer(HWND window)
+{
+	cameraData mousePos;
+
+	POINT temp = WorldCamera.GetMousePos(window);
+	if (ScreenToClient(window, &temp))
+	{
+		float xPos = temp.x;
+		float yPos = temp.y;
+		mousePos.pos = Vector4(xPos/640.0f, yPos/480.f, 0.f, 0.f);
+	}
+	else
+	{
+		mousePos.pos = Vector4(0, 0, 0, 0);
+	}
+	
+	
+
+	//update the Camera Buffer
+	D3D11_MAPPED_SUBRESOURCE oldMouseData;
+	memset(&oldMouseData, 0, sizeof(oldMouseData));
+
+	HRESULT hr = gDeviceContext->Map(mouseBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &oldMouseData);
+
+	memcpy(oldMouseData.pData, &mousePos, sizeof(Vector2));
+
+	gDeviceContext->Unmap(mouseBuffer, 0);
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
@@ -657,6 +722,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 		createWorldMatrices(); //initierar världsmatriserna här, vid frågor och klagomål, så ansvarar jag inte för detta!
 
+		createMouseBuffer();
+
 		createObjects(); //5. Definiera triangelvertiser, 6. Skapa vertex buffer, 7. Skapa input layout
 
 		ShowWindow(wndHandle, nCmdShow);
@@ -665,23 +732,19 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 		{
 			shadowMap.initialize(gDevice, wndHandle, Vector3(0,10,0), Vector3(1,-1,0), Vector3(0,1,0));
 
-			inputHandler.initialize(hInstance, wndHandle, SCREEN_WIDTH, SCREEN_HEIGHT);
 		}
 		catch (char* error)
 		{
 			MessageBox(wndHandle, L"error", L"Read the error", MB_OK);
 			system("PAUSE");
 		}
-		inputHandler.update();
 
-		int test;
-		int test2;
-
-		inputHandler.getMouseLocation(test, test2);
 
 		while (WM_QUIT != msg.message)
 		{
+			
 			WorldCamera.Update(wndHandle); //update worldcamera
+
 			if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 			{
 				TranslateMessage(&msg);
@@ -689,8 +752,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 			}
 			else
 			{
-
+				updateMouseBuffer(wndHandle);
 				FirstRenderCall(); //DO THE FIRST RENDER CALL THAT RENDERS ALL THE OBJECTS AND STORES THEIR VALUES IN THE RTVs
+
 
 				for (int i = 0; i < objectsToDraw.size(); i++)
 				{
@@ -704,8 +768,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 				}
 
 				SecondRenderCall(); //DO THE SECOND RENDERCALL THAT RENDERS TO A QUAD
-
-
 				gSwapChain->Present(0, 0); //9. Växla front- och back-buffer
 				shadowMap.clearDepthBuffer(gDeviceContext);
 			}
