@@ -428,7 +428,7 @@ void createObjects()
 	data.pSysMem = finalShit;
 
 	HRESULT hr = gDevice->CreateBuffer(&bufferDesc, &data, &quadVertexBuffer);
-	unsigned int objNr = 0;
+	unsigned int objNr = 1;
 
 	objects.push_back(Object(triangleVertices, Vector3((1.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 	objects.push_back(Object(triangleVertices, Vector3((3.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png",objNr++));
