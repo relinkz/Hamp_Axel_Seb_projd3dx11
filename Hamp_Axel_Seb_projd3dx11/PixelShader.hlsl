@@ -139,29 +139,14 @@ float4 main(PS_IN input) : SV_TARGET
 	}
 	color = saturate(diffuseColor + ambientColor);
 	color = saturate(color + specular);
-	
-	float2 mouseCoord;
 
-	mouseCoord.x = mousePos.x / 640.0f;
-	mouseCoord.y = mousePos.y / 480.0f;
-
-
-
-	//mouseCoord = mousePos.xy;
-
-	//id = IDMap.Sample(sampAni, mouseCoord);
-	//id = IDMap.Sample(sampAni, saturate(mousePos));
-	//saturate(mousePos)
 	
 	uint3 idColor = uint3(0, 0, 0);
 	uint idtemp = 0;
-	//idColor = IDMap.Sample(sampAni, mouseCoord).x;
 
 
 	//idtemp = IDMap.Load(int3(427,402, 0));
 	idtemp = IDMap.Load(int3(mousePos.x, mousePos.y, 0));
-	
-	//idColor.r = mouseCoord.x;
 	
 	if (idtemp == 0)
 	{
@@ -171,7 +156,7 @@ float4 main(PS_IN input) : SV_TARGET
 	{
 		if (idtemp == id)
 		{
-			color.b = +0;
+			color.b =+ 50;
 			return float4(color, 0);
 		}
 		//color.b = 255;
