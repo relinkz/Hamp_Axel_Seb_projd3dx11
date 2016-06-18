@@ -685,7 +685,8 @@ void updateMouseBuffer(HWND window)
 	{
 		float xPos = temp.x;
 		float yPos = temp.y;
-		mousePos.pos = Vector4(xPos/640.0f, yPos/480.f, 0.f, 0.f);
+		//mousePos.pos = Vector4(xPos/640.0f, yPos/480.f, 0.f, 0.f);
+		mousePos.pos = Vector4(xPos, yPos, 0, 0);
 	}
 	else
 	{

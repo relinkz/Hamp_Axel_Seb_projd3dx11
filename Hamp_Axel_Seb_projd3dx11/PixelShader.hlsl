@@ -27,7 +27,7 @@ Texture2D normalMap : register(t1);
 
 Texture2D colorMap : register(t2);
 Texture2D shadowMap : register(t3);
-Texture2D IDMap : register(t4);
+Texture2D<uint> IDMap : register(t4);
 
 
 struct PS_IN
@@ -58,7 +58,11 @@ float4 main(PS_IN input) : SV_TARGET
 
 	color = colorMap.Sample(sampAni, input.UVCoord).xyz;	//sample the colorMap from DeferredRendering
 	pos = positionMap.Sample(sampAni, input.UVCoord).xyz;	//sample the PositionMap from DeferredRendering
-	normal = normalMap.Sample(sampAni, input.UVCoord).xyz;	//sample the NormalMap from DeferredRendering
+	normal = normalMap.Sample(sampAni, input.UVCoord).xyz;
+	
+	
+	id = IDMap.Load(int3((input.UVCoord.x * 640), (input.UVCoord.y * 480), 0));
+	//sample the NormalMap from DeferredRendering
 	//id = IDMap.Sample(sampAni, saturate(mousePos)).xyz;
 															//initialize the specular color
 	specular = float4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -138,32 +142,41 @@ float4 main(PS_IN input) : SV_TARGET
 	
 	float2 mouseCoord;
 
-	mouseCoord.x = mousePos.x / 800.0f;
-	mouseCoord.y = mousePos.y / 600.0f;
+	mouseCoord.x = mousePos.x / 640.0f;
+	mouseCoord.y = mousePos.y / 480.0f;
 
-	mouseCoord = mousePos.xy;
 
-	id = IDMap.Sample(sampAni, mouseCoord);
+
+	//mouseCoord = mousePos.xy;
+
+	//id = IDMap.Sample(sampAni, mouseCoord);
 	//id = IDMap.Sample(sampAni, saturate(mousePos));
 	//saturate(mousePos)
 	
-	float4 idColor = float4(0, 0, 0, 0);
-	idColor.r = mouseCoord.x;
-	
-	//return idColor;
+	uint3 idColor = uint3(0, 0, 0);
+	uint idtemp = 0;
+	//idColor = IDMap.Sample(sampAni, mouseCoord).x;
 
-	if (id % 2 == 0)
+
+	//idtemp = IDMap.Load(int3(427,402, 0));
+	idtemp = IDMap.Load(int3(mousePos.x, mousePos.y, 0));
+	
+	//idColor.r = mouseCoord.x;
+	
+	if (idtemp == 0)
 	{
-		idColor.r = 255;
+		return float4(color, 1.0f);
 	}
 	else
 	{
-		idColor.b = 255;
+		if (idtemp == id)
+		{
+			color.b = +0;
+			return float4(color, 0);
+		}
+		//color.b = 255;
+		//return float4(idColor, 0);
 	}
 
-	return idColor;
-
-	return float4(id,0, 0 , 0 );
-	//return float4()
-	//return float4(color, 1.0f);
+	return float4(color, 1.0f);
 }
