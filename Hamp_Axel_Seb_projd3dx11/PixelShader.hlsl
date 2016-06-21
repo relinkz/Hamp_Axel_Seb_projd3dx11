@@ -148,20 +148,15 @@ float4 main(PS_IN input) : SV_TARGET
 	//idtemp = IDMap.Load(int3(427,402, 0));
 	idtemp = IDMap.Load(int3(mousePos.x, mousePos.y, 0));
 	
-	if (idtemp == 0)
-	{
-		return float4(color, 1.0f);
-	}
-	else
+	//if the sampled mousepos has the same id as the rendering pixel,
+	//that means that the object is highlighted
+	if (idtemp != 0)
 	{
 		if (idtemp == id)
 		{
 			color.b =+ 50;
 			return float4(color, 0);
 		}
-		//color.b = 255;
-		//return float4(idColor, 0);
 	}
-
 	return float4(color, 1.0f);
 }
