@@ -27,7 +27,7 @@ Texture2D normalMap : register(t1);
 
 Texture2D colorMap : register(t2);
 Texture2D shadowMap : register(t3);
-Texture2D<uint> IDMap : register(t4);
+Texture2D IDMap : register(t4);
 
 
 struct PS_IN
@@ -51,7 +51,7 @@ float4 main(PS_IN input) : SV_TARGET
 	float3 normal;
 	float4 specular;
 
-	uint id;
+	float3 id;
 	//float3 posLight = float3(cameraPos.x, cameraPos.y, cameraPos.z);	//hardCoded light on the cameraPosition
 	//float3 posLight = float3(2, 2, 0);								//hardCoded light on x = 0, y = 100, z = 0
 	//float3 lightColor = float3(1.0f, 1.0f, 1.0f);
@@ -60,8 +60,11 @@ float4 main(PS_IN input) : SV_TARGET
 	pos = positionMap.Sample(sampAni, input.UVCoord).xyz;	//sample the PositionMap from DeferredRendering
 	normal = normalMap.Sample(sampAni, input.UVCoord).xyz;
 	
+	//works on my computer
+	//id = IDMap.Load(int3((input.UVCoord.x * 640), (input.UVCoord.y * 480), 0));
 	
-	id = IDMap.Load(int3((input.UVCoord.x * 640), (input.UVCoord.y * 480), 0));
+	id = IDMap.Sample(sampAni, input.UVCoord).xyz;
+
 	//sample the NormalMap from DeferredRendering
 	//id = IDMap.Sample(sampAni, saturate(mousePos)).xyz;
 															//initialize the specular color
@@ -142,17 +145,18 @@ float4 main(PS_IN input) : SV_TARGET
 
 	
 	uint3 idColor = uint3(0, 0, 0);
-	uint idtemp = 0;
-
+	//uint idtemp = 0;
+	float4 idtemp = float4(0, 0, 0, 0);
 
 	//idtemp = IDMap.Load(int3(427,402, 0));
-	idtemp = IDMap.Load(int3(mousePos.x, mousePos.y, 0));
-	
+	//idtemp = IDMap.Load(int3(mousePos.x, mousePos.y, 0));
+	idtemp = IDMap.Sample(sampAni, float2(mousePos.x / 640, mousePos.y / 480));
+
 	//if the sampled mousepos has the same id as the rendering pixel,
 	//that means that the object is highlighted
-	if (idtemp != 0)
+	if (idtemp.x != 0)
 	{
-		if (idtemp == id)
+		if (idtemp.x == id.x)
 		{
 			color.b =+ 50;
 			return float4(color, 0);

@@ -634,6 +634,10 @@ void SecondRenderCall()
 	shadowMapSRV = shadowMap.getShaderResourceView();
 	gDeviceContext->PSSetShaderResources(3, 1, &shadowMapSRV);
 
+	hr = gDevice->CreateShaderResourceView(ObjectIndexStencil, &SRVDesc, &ObjectIndexSRV);
+	gDeviceContext->PSSetShaderResources(4, 1, &ObjectIndexSRV);
+	
+	/*
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDescID;
 	memset(&SRVDescID, 0, sizeof(SRVDescID));
 	SRVDescID.Format = DXGI_FORMAT_R32_UINT;
@@ -643,6 +647,8 @@ void SecondRenderCall()
 
 	hr = gDevice->CreateShaderResourceView(ObjectIndexStencil, &SRVDescID, &ObjectIndexSRV);
 	gDeviceContext->PSSetShaderResources(4, 1, &ObjectIndexSRV);
+
+	*/
 
 	UINT32 vertexSize = sizeof(float) * 5;	//set the size of a vertex sizeof(float) * 5 the positions(x,y,z) and the UV coords(U,V) 
 	UINT32 offset = 0; // offset 0
@@ -913,7 +919,7 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		hr = gDevice->CreateTexture2D(&descDepth2, NULL, &NormalStencil);		//creates the Normal Texture2D used in DeferredRendering
 		hr = gDevice->CreateTexture2D(&descDepth2, NULL, &ColorStencil);		//creates the Color Texture2D used in DeferredRendering
 
-		descDepth2.Format = DXGI_FORMAT_R32_UINT;
+		//descDepth2.Format = DXGI_FORMAT_R32_UINT;
 		
 		hr = gDevice->CreateTexture2D(&descDepth2, nullptr, &ObjectIndexStencil);	//creating the texture
 
@@ -933,10 +939,11 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		hr = gDevice->CreateRenderTargetView(PositionStencil, &desc, &deferredViews[1]);	//connects the Textured2D with a RTV deferredView[1] = PositionTexture
 		hr = gDevice->CreateRenderTargetView(NormalStencil, &desc, &deferredViews[2]);		//connects the Textured2D with a RTV deferredView[2] = NormalTexture
 		hr = gDevice->CreateRenderTargetView(ColorStencil, &desc, &deferredViews[3]);		//connects the Textured2D with a RTV deferredView[3] = ColorTexture
-		
-		desc.Format = DXGI_FORMAT_R32_UINT;
-
 		hr = gDevice->CreateRenderTargetView(ObjectIndexStencil, &desc, &deferredViews[4]);
+
+
+		//desc.Format = DXGI_FORMAT_R32_UINT;
+		//hr = gDevice->CreateRenderTargetView(ObjectIndexStencil, &desc, &deferredViews[4]);
 
 		pBackBuffer->Release();
 
