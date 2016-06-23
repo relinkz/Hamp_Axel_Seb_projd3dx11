@@ -1,14 +1,20 @@
-cbuffer perFrame : register(b0)
+cbuffer world : register(b0)
 {
-	float4 lightPos : POSITION;
-	float pad;
-	float ambient;
-	float diffuse;
-	float strength;
-}
+	float4x4 worldViewProj;
+	float4x4 eyeSpace;
+	float4x4 lightViewMatrix;
+	float4x4 lightProjectionMatrix;
+
+	float4 camPos;
+	float4 lightPosition;  //if not directx will scream at me :(
+};
 cbuffer CameraData : register(b1)
 {
 	float4 cameraPos;
+}
+cbuffer shadowMapData : register(b2)
+{
+	float4x4 lightWVP;
 }
 Texture2D positionMap : register(t0);
 SamplerState sampAni;
@@ -16,6 +22,7 @@ SamplerState sampAni;
 Texture2D normalMap : register(t1);
 
 Texture2D colorMap : register(t2);
+Texture2D shadowMap : register(t3);
 
 
 struct PS_IN
@@ -37,90 +44,104 @@ float4 main(PS_IN input) : SV_TARGET
 	float3 color;
 	float3 pos;
 	float3 normal;
-   // int3 sampleIndices = int3(input.Pos.xy, 0);
-	//text = positionMap.Load(sampleIndices).xyz;
-	float3 posLight = float3(cameraPos.x, cameraPos.y, cameraPos.z);
-	//float3 posLight = float3(2, 2, 2);
-	float3 lightColor = float3(1.0f, 1.0f, 1.0f);
+	float4 specular;
+	//float3 posLight = float3(cameraPos.x, cameraPos.y, cameraPos.z);	//hardCoded light on the cameraPosition
+	//float3 posLight = float3(2, 2, 0);								//hardCoded light on x = 0, y = 100, z = 0
+	//float3 lightColor = float3(1.0f, 1.0f, 1.0f);
 
-	color = colorMap.Sample(sampAni, input.UVCoord).xyz;
-	pos = positionMap.Sample(sampAni, input.UVCoord).xyz;
-	normal = normalMap.Sample(sampAni, input.UVCoord).xyz;
-	
+	color = colorMap.Sample(sampAni, input.UVCoord).xyz;	//sample the colorMap from DeferredRendering
+	pos = positionMap.Sample(sampAni, input.UVCoord).xyz;	//sample the PositionMap from DeferredRendering
+	normal = normalMap.Sample(sampAni, input.UVCoord).xyz;	//sample the NormalMap from DeferredRendering
+
+	//initialize the specular color
+	specular = float4(0.0f, 0.0f, 0.0f, 0.0f);
+
 	normal = normalize(normal);
-	float3 newNormal;
-	newNormal.x = ((normal.x * 2) - 1);
-	newNormal.y = ((normal.y * 2) - 1);
-	newNormal.z = ((normal.z * 2) - 1);
 
-	float3 lightVec = posLight - pos;
+	float2 shadowUV = float2(0, 0);
 
-	lightVec = normalize(lightVec);
-	float angle = dot(lightVec, normal);
+	shadowUV = input.UVCoord;
 
-	if (angle < 0)
-	{
-		angle = 0;
-	}
-	float3 finalColor;
-	finalColor.x = color.x * angle + color.x * 0.0f;
-	finalColor.y = color.y * angle + color.y * 0.0f;
-	finalColor.z = color.z * angle + color.z * 0.0f;
-	return float4(finalColor, 1.0f);
-	return float4(1.0f,0.0f,1.0f, 0.0f);
-//float3 pixelPos = float3(input.PosView.xyz);
-//float3 posLight = lightPos.xyz;
-//
-////float3 lightVector = posLight - float3(0.0f, 0.0f, 4.0f);
-//
-//float3 lightVector = posLight - pixelPos;
-//lightVector = normalize(lightVector);
-//
-////float4 pixToLight = lightPos - input.PosView;
-//float angle = dot(lightVector, (input.Norm));
-////angle = saturate(angle);
-//
-//if (angle < 0)
+//if (angle >= 0)
 //{
-//	angle = 0;
+//	text.x = diffuse * text.x * angle + text.x * ambient;
+//	text.y = diffuse * text.y * angle + text.y * ambient;
+//	text.z = diffuse * text.z * angle + text.z * ambient;
 //}
-//
-//text.x = diffuse * text.x * angle + text.x * ambient;
-//text.y = diffuse * text.y * angle + text.y * ambient;
-//text.z = diffuse * text.z * angle + text.z * ambient;
-//
-//
+//else
+//{
+//	text.x = text.x * ambient;
+//	text.y = text.y * ambient;
+//	text.z = text.z * ambient;
+//}
 
-/*if (angle >= 0) //there is a way for the light to hit the surface
-{
-text.x = diffuse1 * text.x * angle + text.x * ambient1;
-text.y = diffuse1 * text.y * angle + text.y * ambient1;
-text.z = diffuse1 * text.z * angle + text.z * ambient1;
-}
-else //so that ambient just applies
-{
-text.x = text.x * ambient1;
-text.y = text.y * ambient1;
-text.z = text.z * ambient1;
-}*/
+	float4 lightPos = lightPosition;
+	//lightPos = cameraPos;
 
-/*
-if (angle >= 0)
-{
-text.x = diffuse * text.x * angle + text.x * ambient;
-text.y = diffuse * text.y *angle + text.y * ambient;
-text.z = diffuse * text.z *angle + text.z * ambient;
-}
-else
-{
-text.x = text.x * ambient;
-text.y = text.y * ambient;
-text.z = text.z * ambient;
-}
-*/
+	float lightIntensity = 0.0f;
+	float lightDepthValue = 0.0f;
+	float depthValue = 0.0f;
+	float bias = 0.005f;
 
-//return float4(text, lights[5]);
-//return float4(text, 0.0f);
-//return float4(1.0f, 0.0f, 0.0f, 1.0f); //för planet
-//return float4(input.Norm,1);
+	float3 outVec = normalize(lightPos.xyz - pos.xyz);
+
+	lightPos = mul(float4(pos, 1.0f), lightWVP);
+
+	float3 viewDir = normalize(cameraPos.xyz - pos.xyz);
+
+	float shineFactor = 5.0f;
+	float lightSpecular = 0.65f;
+
+	lightIntensity = saturate(dot(normal, outVec));
+
+
+	shadowUV.x = ((lightPos.x / lightPos.w) / 2.0f) + 0.5f;
+	shadowUV.y = ((lightPos.y / lightPos.w) / -2.0f) + 0.5f;
+
+	if (saturate(shadowUV.x) != shadowUV.x || saturate(shadowUV.y) != shadowUV.y)
+	{
+		lightIntensity = saturate(dot(normal.xyz, outVec.xyz));
+	}
+	else
+	{
+		//pixel is in shadow map
+		lightIntensity = 0;
+
+		//calculate the depth of the light
+		lightDepthValue = lightPos.z / lightPos.w;
+
+		//sample the shadowmap
+		depthValue = shadowMap.Sample(sampAni, shadowUV).r;
+		//depthValue = shadowMap.Sample(pointSampler, shadowUV).r;
+
+		// Subtract the bias from the lightDepthValue.
+		lightDepthValue = lightDepthValue - bias;
+
+		//light sees the pixel
+		if (lightDepthValue <= depthValue)
+		{
+			lightIntensity = saturate(dot(outVec.xyz, normal.xyz));
+			//color = float3(0, 1, 0);
+		}
+		//output.Color = float4(0, 1, 0, 0);
+	}
+
+	float3 diffuseColor = (color.rgb * lightIntensity * 0.8f);
+	float3 ambientColor = (color.rgb * 0.2f);
+
+	//color = saturate((color.rgb * lightIntensity * 0.8f) + (color.rgb * 0.2f));
+	
+	if (lightIntensity > 0.0f)
+	{
+		// Calculate the reflection vector based on the light intensity, normal vector, and light direction.
+		float3 reflection = normalize(2 * lightIntensity * normal.xyz - outVec.xyz);
+		
+		//determine the amount of specular light based on the reflection vector, viewing direction and specular power
+		specular = pow(saturate(dot(reflection, viewDir)), 32.0f);
+	}
+	color = saturate(diffuseColor + ambientColor);
+	color = saturate(color + specular);
+
+
+	return float4(color, 1.0f);
 }

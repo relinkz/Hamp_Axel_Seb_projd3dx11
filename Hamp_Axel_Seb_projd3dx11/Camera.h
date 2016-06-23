@@ -12,6 +12,8 @@
 #include "SimpleMath.h"
 //#include "SimpleMath.inl"
 
+#include "terrain.h"
+
 //#pragma comment (lib, "d3d11.lib")
 //#pragma comment (lib, "d3dcompiler.lib")
 
@@ -47,7 +49,7 @@ public:
 	Camera(int width, int height, float x, float y, float z);
 	~Camera();
 
-	void Update(HWND hWnd);
+	void Update(HWND hWnd, Terrain* terrain);
 
 	Matrix getViewMatrix();
 	Vector3 getCameraPos();

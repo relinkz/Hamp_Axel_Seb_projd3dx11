@@ -37,7 +37,7 @@ Camera::~Camera()
 {
 
 }
-void Camera::Update(HWND hWnd)
+void Camera::Update(HWND hWnd, Terrain* terrain)
 {
 	XMMATRIX rotation;
 	Vector3 lookAtVector;
@@ -136,6 +136,20 @@ void Camera::Update(HWND hWnd)
 	if (GetAsyncKeyState(VK_SPACE))
 	{
 		this->Pos += Vector3(0, 1, 0) * 0.0011f;
+	}
+	else//walking on terrain
+	{
+		this->Pos += Vector3(0, -1, 0) * 0.0011f;
+		
+		float newY = terrain->getY(this->Pos.x, this->Pos.z);
+
+		if (newY > this->Pos.y - 1)
+		//if (0 > newY)
+		{
+			this->Pos.y = newY + 1;
+		}
+
+
 	}
 	//ctrl
 	if (GetAsyncKeyState(VK_CONTROL))

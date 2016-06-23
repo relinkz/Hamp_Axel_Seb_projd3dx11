@@ -1,11 +1,3 @@
-cbuffer world
-{
-	float4x4 worldViewProj;
-	float4x4 eyeSpace;
-	float4x4 lightViewMatrix;
-	float4x4 lightProjectionMatrix;
-};
-
 
 Texture2D txDiffuse : register(t0);
 Texture2D normalMap : register(t1);
@@ -35,21 +27,22 @@ defPixelOutput main(in defPixelInput input) : SV_TARGET
 	float3 normalTexture;
 	defPixelOutput output;
 
-	output.Color = float4(txDiffuse.Sample(sampAni, input.Tex).xyz, 0.0f);
-	normalTexture = normalMap.Sample(sampAni, input.Tex).xyz;
+	output.Color = float4(txDiffuse.Sample(sampAni, input.Tex).xyz, 0.0f);  //sample the DiffuseMap
+	normalTexture = normalMap.Sample(sampAni, input.Tex).xyz;				//sample the NormalMap
 	
 
 	normalTexture = (normalTexture * 2.0f) - 1.0f;
-	//normalTexture = normalize(normalTexture);
+	//creates the TBN matrix used to transform the normal that we read from the Texture to the Direction the pixel is facing
 	float3 objectNormal = normalize(input.Normal);
 	float3 tangent = normalize(input.Tangent - (dot(input.Tangent, objectNormal) * objectNormal));
 	float3 B = normalize(cross(objectNormal, input.Tangent));
 
 	float3x3 TBN = float3x3(input.Tangent, B, objectNormal);
 
-	float3 newNormal = normalize(mul(normalTexture, TBN));
+	float3 newNormal = normalize(mul(normalTexture, TBN)); //transform the normal
 	
 	output.Normal = float4(newNormal, 0.0f);
+	//output.Normal = float4(input.Normal, 0.0f);
 
 	output.Pos = input.PosView;
 	output.Depth.xyz = input.PosWVP.z;
