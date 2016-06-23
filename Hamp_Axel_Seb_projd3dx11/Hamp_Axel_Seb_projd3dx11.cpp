@@ -9,7 +9,6 @@
 #include "LightHandler.h"
 #include "QuadTree.h"
 #include "shadowShaderClass.h"
-#include "InputHandler.h"
 
 
 HWND InitWindow(HINSTANCE hInstance);
@@ -73,7 +72,6 @@ ID3D11PixelShader* pDeferredShader = nullptr;
 Camera WorldCamera;
 Object worldObject;
 ShadowShaderClass shadowMap;
-InputHandler inputHandler;
 
 
 struct vertex

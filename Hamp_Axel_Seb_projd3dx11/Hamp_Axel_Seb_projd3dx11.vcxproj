@@ -156,13 +156,11 @@
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Hamp_Axel_Seb_projd3dx11.cpp" />
-    <ClCompile Include="InputHandler.cpp" />
     <ClCompile Include="LightHandler.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="Parser.cpp" />
     <ClCompile Include="QuadTree.cpp" />
-    <ClCompile Include="shadowMap.cpp" />
     <ClCompile Include="ShadowShaderClass.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -226,14 +224,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
-    <ClInclude Include="InputHandler.h" />
     <ClInclude Include="light.h" />
     <ClInclude Include="LightHandler.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Object.h" />
     <ClInclude Include="Parser.h" />
     <ClInclude Include="QuadTree.h" />
-    <ClInclude Include="shadowMap.h" />
     <ClInclude Include="ShadowShaderClass.h" />
   </ItemGroup>
   <ItemGroup>
