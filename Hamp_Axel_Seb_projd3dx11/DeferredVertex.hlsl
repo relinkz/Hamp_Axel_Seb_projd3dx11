@@ -36,6 +36,8 @@ VS_OUT VS_main(VS_IN input)
 	//output.Norm = normalize(output.Norm);
 
 	output.Tex = input.Tex;
+
+	//give the vertex it's id
 	output.objID.x = input.objID;
 	//output.objID = 1;
 

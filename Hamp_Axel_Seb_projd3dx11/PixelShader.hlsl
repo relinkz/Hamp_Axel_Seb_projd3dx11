@@ -63,7 +63,7 @@ float4 main(PS_IN input) : SV_TARGET
 	//works on my computer
 	//id = IDMap.Load(int3((input.UVCoord.x * 640), (input.UVCoord.y * 480), 0));
 	
-	id = IDMap.Sample(sampAni, input.UVCoord).xyz;
+	
 
 	//sample the NormalMap from DeferredRendering
 	//id = IDMap.Sample(sampAni, saturate(mousePos)).xyz;
@@ -148,8 +148,10 @@ float4 main(PS_IN input) : SV_TARGET
 	//uint idtemp = 0;
 	float4 idtemp = float4(0, 0, 0, 0);
 
-	//idtemp = IDMap.Load(int3(427,402, 0));
-	//idtemp = IDMap.Load(int3(mousePos.x, mousePos.y, 0));
+	//sample the specific pixel that are rendereds id. This is used further
+	id = IDMap.Sample(sampAni, input.UVCoord).xyz;
+	
+	//convert the mousePos to UV-coordinates
 	idtemp = IDMap.Sample(sampAni, float2(mousePos.x / 640, mousePos.y / 480));
 
 	//if the sampled mousepos has the same id as the rendering pixel,
