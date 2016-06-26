@@ -96,7 +96,7 @@ vertex finalShit[6];
 vector<Object> objects;
 vector<Object*> objectsToDraw;
 
-int nrOfObjects = 0;
+//int nrOfObjects = 0;
 Terrain* terrain = nullptr;
 
 QuadTree quadTree(Vector3(0, 0, 0), Vector3(10, 0, 10), 0, 10, 0, 10, 0);
@@ -402,7 +402,6 @@ void createObjects()
 	terrain = new Terrain();
 	nrOfVertexDrawn += terrain->getVertecies().size();
 	objects.push_back(Object(terrain->getVertecies(), Vector3(0, 0, 0), gDevice, "grassTexture.png", "cube_box_NormalMap.png")); //måste vara på första pos i vektorn
-	nrOfObjects++;
 
 	//nrOfVertexDrawn = triangleVertices.size();
 	//worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice, fromFile.getImageFile());
@@ -459,14 +458,13 @@ void createObjects()
 
 	for (int i = 0; i < 5; i++)
 	{
-		objects.push_back(Object(triangleVertices, Vector3(rand() % 6, 0, 6), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
-		nrOfObjects++;
+		objects.push_back(Object(triangleVertices, Vector3(i+1, 0, 2), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
 	}
 	
 
 	//worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice);
-	objects.push_back(Object(triangleVertices, Vector3((1.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
-	objects.push_back(Object(triangleVertices, Vector3((3.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
+	//objects.push_back(Object(triangleVertices, Vector3((1.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
+	//objects.push_back(Object(triangleVertices, Vector3((3.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
 
 	//creating the floor
 	/*for (int i = 0; i < 10; i++)
@@ -483,7 +481,7 @@ void createObjects()
 	for (int i = 1; i < objects.size(); i++)
 	{
 		float highest = 0;
-		for (int j = 0; j < 4; j++)//selecting the highest pos in the square
+		for (int j = 0; j < objects.size(); j++)//making sure that boxes are placed over the terrain
 		{
 			float compare = terrain->getY(
 				(int)floorf(objects[i].getPosition().x + j),
@@ -658,7 +656,7 @@ void FirstRenderCall()
 
 void gameLogic()
 {
-	for (int i = 1; i < nrOfObjects; i++)
+	for (int i = 1; i < objects.size(); i++)
 	{
 
 		if (WorldCamera.getCameraPos().x >= objects[i].getPosition().x - 1 && WorldCamera.getCameraPos().x <= objects[i].getPosition().x + 1
@@ -666,7 +664,6 @@ void gameLogic()
 			&& WorldCamera.getCameraPos().y >= objects[i].getPosition().y && WorldCamera.getCameraPos().y - 1<= objects[i].getPosition().y)
 		{
 			objects.erase(objects.begin() + i);
-			nrOfObjects--;
 			if (objects.size() == 1)
 			{
 				//win message popup
