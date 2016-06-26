@@ -162,7 +162,6 @@
     <ClCompile Include="Parser.cpp" />
     <ClCompile Include="Terrain.cpp" />
     <ClCompile Include="QuadTree.cpp" />
-    <ClCompile Include="shadowMap.cpp" />
     <ClCompile Include="ShadowShaderClass.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -233,7 +232,6 @@
     <ClInclude Include="Parser.h" />
     <ClInclude Include="Terrain.h" />
     <ClInclude Include="QuadTree.h" />
-    <ClInclude Include="shadowMap.h" />
     <ClInclude Include="ShadowShaderClass.h" />
   </ItemGroup>
   <ItemGroup>

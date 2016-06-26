@@ -11,6 +11,7 @@ struct VS_IN
 	float3 Pos	: POSITION;
 	float3 Norm	: NORMAL;
 	float2 Tex	: TEXCOORD;
+	uint objID : ID;
 };
 
 struct VS_OUT
@@ -19,6 +20,7 @@ struct VS_OUT
 	float3 Norm : NORMAL;
 	float2 Tex	: TEXCOORD;
 	float4 PosView : POSITION;
+	float4 objID : ID;
 };
 //-----------------------------------------------------------------------------------------
 // VertexShader: VSScene
@@ -34,6 +36,10 @@ VS_OUT VS_main(VS_IN input)
 	//output.Norm = normalize(output.Norm);
 
 	output.Tex = input.Tex;
+
+	//give the vertex it's id
+	output.objID.x = input.objID;
+	//output.objID = 1;
 
 	return output;
 }

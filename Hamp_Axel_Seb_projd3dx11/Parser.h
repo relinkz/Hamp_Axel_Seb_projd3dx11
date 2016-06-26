@@ -21,6 +21,7 @@ struct TriangleVertex
 	float x, y, z;
 	float nx, ny, nz;
 	float u, v;
+	int ID;
 };
 
 class Parser
