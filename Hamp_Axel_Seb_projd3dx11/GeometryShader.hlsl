@@ -14,10 +14,21 @@ struct VS_OUT
 	float2 Tex : TEXCOORD;
 	float4 PosView : POSITION;
 	float3 Tangent : TANGENT;
+	uint objID : ID;
+
+};
+
+struct VS_IN
+{
+	float4 Pos : SV_POSITION;
+	float3 Norm : NORMAL;
+	float2 Tex : TEXCOORD;
+	float4 PosView : POSITION;
+	uint objID : ID;
 };
 
 [maxvertexcount(7)]
-void main(triangle VS_OUT input[3], inout TriangleStream< VS_OUT > data)
+void main(triangle VS_IN input[3], inout TriangleStream< VS_OUT > data)
 {
 
 	float4 pos = float4(0, -2, 0, 0);
@@ -25,14 +36,14 @@ void main(triangle VS_OUT input[3], inout TriangleStream< VS_OUT > data)
 	float4 toCamera = cameraPos - input[0].PosView;
 	toCamera = normalize(toCamera);
 
+	//input[1].objID = input[0].objID;
+	//input[2].objID = input[0].objID;
+
 	float angle = dot(toCamera, input[0].Norm);
+	//backface culling
 	if (angle > -0.1f)
 	{
-
-		/*float4 normal = float4(cross(input[1].PosView - input[0].PosView, input[2].PosView - input[0].PosView), 0.0f);
-
-		normal = normalize(normal);*/
-
+		//calculate the Tangent to be used in NormalMapping
 		float3 edge1 = normalize(input[1].PosView - input[0].PosView);
 		float3 edge2 = normalize(input[2].PosView - input[0].PosView);
 
@@ -55,12 +66,11 @@ void main(triangle VS_OUT input[3], inout TriangleStream< VS_OUT > data)
 			output[i].Norm = input[i].Norm;
 			output[i].PosView = input[i].PosView;
 			output[i].Tangent = tangent;
+			output[i].objID = input[i].objID;
 			data.Append(output[i]);
 
 
 		}
 		data.RestartStrip();
 	}
-
-
 }

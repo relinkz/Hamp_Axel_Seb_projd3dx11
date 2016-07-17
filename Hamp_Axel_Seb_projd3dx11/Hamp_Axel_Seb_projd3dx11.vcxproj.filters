@@ -51,10 +51,10 @@
     <ClCompile Include="Material.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="QuadTree.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Terrain.cpp">
+	<Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="shadowMap.cpp">
+    <ClCompile Include="QuadTree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ShadowShaderClass.cpp">
@@ -103,10 +103,10 @@
     <ClInclude Include="Material.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Terrain.h">
+	<Filter>Header Files</Filter>
+	  </ClInclude>
     <ClInclude Include="QuadTree.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="shadowMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ShadowShaderClass.h">
