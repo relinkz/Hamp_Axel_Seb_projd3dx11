@@ -35,7 +35,8 @@ Object::Object(vector<TriangleVertex>fromParser, Vector3 worldPos, ID3D11Device*
 
 Object::Object(vector<TriangleVertex> fromParser, Vector3 worldPos, ID3D11Device * gDevice, string srcImage, string normalMap, int objID)
 {
-	this->vertexSize = sizeof(TriangleVertex);
+	
+	this->vertexSize = fromParser.size();
 	this->objID = objID;
 
 	for (int i = 0; i < this->vertexSize; i++)

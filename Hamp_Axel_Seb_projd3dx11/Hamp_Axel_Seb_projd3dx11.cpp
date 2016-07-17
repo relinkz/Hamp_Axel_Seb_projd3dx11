@@ -418,15 +418,14 @@ void createObjects()
 	//create terrain
 	terrain = new Terrain();
 	nrOfVertexDrawn += terrain->getVertecies().size();
-	objects.push_back(Object(terrain->getVertecies(), Vector3(0, 0, 0), gDevice, "grassTexture.png", "cube_box_NormalMap.png", objNr)); //måste vara på första pos i vektorn
-	nrOfObjects++;
+	objects.push_back(Object(terrain->getVertecies(), Vector3(0, 0, 0), gDevice, "grassTexture.jpg", "", objNr++)); //måste vara på första pos i vektorn
 
 	//nrOfVertexDrawn = triangleVertices.size();
 	//worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice, fromFile.getImageFile());
 
 	//many boxes many wow
-	for (int x = 0; x < 6; x++)
-	nrOfVertexDrawn = triangleVertices.size();
+	//for (int x = 0; x < 6; x++)//dessa rader verkar inte göra något
+	//nrOfVertexDrawn = triangleVertices.size();
 
 	//creates the quad for DeferredRendering
 	finalShit[0] = { -1.0f,  1.0f, 0.0f, 0.0f,0.0f };
@@ -473,8 +472,7 @@ void createObjects()
 			}
 		}
 	}*/
-	int maxZ = terrain->getLength();
-	int maxX = terrain->getWidth();
+	
 /*
 	for (int i = 0; i < 5; i++)
 	{
@@ -484,7 +482,7 @@ void createObjects()
 */
 
 	objects.push_back(Object(triangleVertices, Vector3((1.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
-	objects.push_back(Object(triangleVertices, Vector3((3.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png",objNr++));
+	objects.push_back(Object(triangleVertices, Vector3((3.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 
 	//creating the floor
 	/*for (int i = 0; i < 10; i++)
@@ -496,7 +494,8 @@ void createObjects()
 			objects.push_back(Object(triangleVertices, Vector3((x), (-2.0f), (y)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 		}
 	}*/
-
+	int maxZ = terrain->getLength();
+	int maxX = terrain->getWidth();
 
 	for (int i = 1; i < objects.size(); i++)
 	{

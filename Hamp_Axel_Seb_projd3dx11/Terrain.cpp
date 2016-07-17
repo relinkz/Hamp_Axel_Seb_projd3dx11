@@ -32,30 +32,49 @@ Terrain::Terrain(int width, int length)
 	{
 		for (int j = 0; j < this->TerrainLength - 1; j++)
 		{
-			input.x = i + 0;
-			input.z = j + 0;
-			this->vertecies.push_back(input);
-			this->connectedPoints[input.x][input.z].push_back(index++);
 
-			input.x = i + 0;
-			input.z = j + 1;
-			this->vertecies.push_back(input);
-			this->connectedPoints[input.x][input.z].push_back(index++);
-
-			input.x = i + 1;
-			input.z = j + 1;
-			this->vertecies.push_back(input);
-			this->connectedPoints[input.x][input.z].push_back(index++);
+			input.u = 0;
+			input.v = 0;
 
 			input.x = i + 0;
 			input.z = j + 0;
 			this->vertecies.push_back(input);
 			this->connectedPoints[input.x][input.z].push_back(index++);
 
+			input.u = 0;
+			input.v = 1;
+
+			input.x = i + 0;
+			input.z = j + 1;
+			this->vertecies.push_back(input);
+			this->connectedPoints[input.x][input.z].push_back(index++);
+
+			input.u = 1;
+			input.v = 1;
+
 			input.x = i + 1;
 			input.z = j + 1;
 			this->vertecies.push_back(input);
 			this->connectedPoints[input.x][input.z].push_back(index++);
+
+			input.u = 0;
+			input.v = 0;
+
+			input.x = i + 0;
+			input.z = j + 0;
+			this->vertecies.push_back(input);
+			this->connectedPoints[input.x][input.z].push_back(index++);
+
+			input.u = 1;
+			input.v = 1;
+
+			input.x = i + 1;
+			input.z = j + 1;
+			this->vertecies.push_back(input);
+			this->connectedPoints[input.x][input.z].push_back(index++);
+
+			input.u = 1;
+			input.v = 0;
 
 			input.x = i + 1;
 			input.z = j + 0;
