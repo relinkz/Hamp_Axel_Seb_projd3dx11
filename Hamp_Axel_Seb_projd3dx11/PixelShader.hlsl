@@ -141,7 +141,7 @@ float4 main(PS_IN input) : SV_TARGET
 	}
 
 	float3 diffuseColor = (color.rgb * lightIntensity * 0.8f);
-	float3 ambientColor = (color.rgb * 0.2f);
+	float3 ambientColor = (color.rgb * 0.5f);
 
 	//color = saturate((color.rgb * lightIntensity * 0.8f) + (color.rgb * 0.2f));
 	
