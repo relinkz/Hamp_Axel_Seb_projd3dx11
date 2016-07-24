@@ -39,12 +39,12 @@ bool ShadowShaderClass::initialize(ID3D11Device* gDevice, HWND hWind, Vector3 li
 	//creating matrices, identityMatrix
 	this->worldMatrix = Matrix();
 	//rotating the world in to the lights view
-	this->lightPos = Vector3(0, 10, 0);
+	this->lightPos = lightPos;
 
 	this->viewMatrix = Matrix(DirectX::XMMatrixLookAtLH(
 		this->lightPos,	    //lights position
-		Vector3(1,-1,0),	//Look at target
-		Vector3(0,1,0)		//Upvector
+		lookAt,	//Look at target
+		upVector		//Upvector
 		));
 	//adding projection
 

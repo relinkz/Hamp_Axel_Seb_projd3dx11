@@ -105,6 +105,7 @@ struct worldMatrixBuffer2
 vertex finalShit[6];
 vector<Object> objects;
 vector<Object*> objectsToDraw;
+Object terrainObj;
 
 int nrOfObjects = 0;
 Terrain* terrain = nullptr;
@@ -130,7 +131,7 @@ struct newPosLight
 
 newPosLight light
 {
-	Vector3(0,0,-2),
+	Vector3(10,20,0),
 	0.0f,
 	0.2f,
 	0.8f,
@@ -417,10 +418,16 @@ void createObjects()
 
 	//create terrain
 	terrain = new Terrain();
-	nrOfVertexDrawn += terrain->getVertecies().size();
-	objects.push_back(Object(terrain->getVertecies(), Vector3(0, 0, 0), gDevice, "grassTexture.jpg", "", objNr++)); //måste vara på första pos i vektorn
+	int terrainVertices = 0;
+	terrainVertices = nrOfVertexDrawn + terrain->getVertecies().size();
+	terrainObj = Object(terrain->getVertecies(), Vector3(0, 0, 0), gDevice, "grassTexture.jpg", "", objNr++);
 
-	//nrOfVertexDrawn = triangleVertices.size();
+	//nrOfVertexDrawn += terrain->getVertecies().size();
+
+
+	//objects.push_back(Object(terrain->getVertecies(), Vector3(0, 0, 0), gDevice, "grassTexture.jpg", "", objNr++)); //måste vara på första pos i vektorn
+
+	nrOfVertexDrawn = triangleVertices.size();
 	//worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice, fromFile.getImageFile());
 
 	//many boxes many wow
@@ -481,9 +488,14 @@ void createObjects()
 	}
 */
 
-	objects.push_back(Object(triangleVertices, Vector3((1.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
-	objects.push_back(Object(triangleVertices, Vector3((3.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
+	//objects.push_back(Object(triangleVertices, Vector3((5.0f), (5.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
+	//objects.push_back(Object(triangleVertices, Vector3((10.0f), (5.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
+	//objects.push_back(Object(triangleVertices, light.pos, gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 
+	objects.push_back(Object(triangleVertices, Vector3((5.0f), (5.0f), (1.0f)), gDevice, fromFile.getImageFile(), "", objNr++));
+	objects.push_back(Object(triangleVertices, Vector3((10.0f), (5.0f), (1.0f)), gDevice, fromFile.getImageFile(), "", objNr++));
+	objects.push_back(Object(triangleVertices, light.pos, gDevice, fromFile.getImageFile(), "", objNr++));
+	
 	//creating the floor
 	/*for (int i = 0; i < 10; i++)
 	{
@@ -847,7 +859,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 		try
 		{
-			shadowMap.initialize(gDevice, wndHandle, Vector3(0,10,0), Vector3(1,-1,0), Vector3(0,1,0));
+			shadowMap.initialize(gDevice, wndHandle, light.pos, Vector3(0,-1,0), Vector3(0,1,0));
 
 		}
 		catch (char* error)

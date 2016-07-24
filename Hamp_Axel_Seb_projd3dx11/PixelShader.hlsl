@@ -6,7 +6,7 @@ cbuffer world : register(b0)
 	float4x4 lightProjectionMatrix;
 
 	float4 camPos;
-	float4 lightPosition;  //if not directx will scream at me :(
+	float4 lightPosition;  //if not float4 directx will scream at me :(
 };
 cbuffer CameraData : register(b1)
 {
@@ -20,14 +20,14 @@ cbuffer mousePosData : register(b3)
 {
 	float4 mousePos;
 }
-Texture2D positionMap : register(t0);
+
 SamplerState sampAni;
 
-Texture2D normalMap : register(t1);
-
-Texture2D colorMap : register(t2);
-Texture2D shadowMap : register(t3);
-Texture2D IDMap : register(t4);
+Texture2D positionMap	: register(t0);
+Texture2D normalMap		: register(t1);
+Texture2D colorMap		: register(t2);
+Texture2D shadowMap		: register(t3);
+Texture2D IDMap			: register(t4);
 
 
 struct PS_IN
@@ -50,63 +50,52 @@ float4 main(PS_IN input) : SV_TARGET
 	float3 pos;
 	float3 normal;
 	float4 specular;
+	float4 lightPos;
+	
+	float3 id;						//keeping track of an objects id
+	float2 shadowUV;				//texture uv that sample from the shadowmap texture from DeferredRendering
 
-	float3 id;
-	//float3 posLight = float3(cameraPos.x, cameraPos.y, cameraPos.z);	//hardCoded light on the cameraPosition
-	//float3 posLight = float3(2, 2, 0);								//hardCoded light on x = 0, y = 100, z = 0
-	//float3 lightColor = float3(1.0f, 1.0f, 1.0f);
+	float3 vPosToLight;				//this will hold the vector, from the pixel position, to the light position.
+	float3 viewDir;					//this will hold the vector, from the pixel position, to the camera position
+
+	float shineFactor;				//variable to create a illution of shinyness
+	float lightSpecular;			//unknown, i think light normal?
+
+	//for shadowmapping
+	float lightIntensity = 0.0f;	//brightness, the higher, the more lightning applies
+	float lightDepthValue = 0.0f;	//how far away an objects pixel is from the light
+	float depthValue = 0.0f;		//how far away an objects pixel is from the camera
+	float bias = 0.005f;			//a variable used to stabalize trash values
+
+	shadowUV = float2(0, 0); 
+	shadowUV = input.UVCoord;
+	specular = float4(0.0f, 0.0f, 0.0f, 0.0f);	//initialize the specular color
+	lightPos = lightPosition;					//can remove this
 
 	color = colorMap.Sample(sampAni, input.UVCoord).xyz;	//sample the colorMap from DeferredRendering
 	pos = positionMap.Sample(sampAni, input.UVCoord).xyz;	//sample the PositionMap from DeferredRendering
-	normal = normalMap.Sample(sampAni, input.UVCoord).xyz;
-	
-	//works on my computer
-	//id = IDMap.Load(int3((input.UVCoord.x * 640), (input.UVCoord.y * 480), 0));
-	
+	normal = normalMap.Sample(sampAni, input.UVCoord).xyz;  //sample the normalMap from DeferredRendering											
+	normal = normalize(normal); 
 	
 
-	//sample the NormalMap from DeferredRendering
-	//id = IDMap.Sample(sampAni, saturate(mousePos)).xyz;
-															//initialize the specular color
-	specular = float4(0.0f, 0.0f, 0.0f, 0.0f);
-
-	normal = normalize(normal);
-
-	float2 shadowUV = float2(0, 0);
-
-	shadowUV = input.UVCoord;
-
-//if (angle >= 0)
-//{
-//	text.x = diffuse * text.x * angle + text.x * ambient;
-//	text.y = diffuse * text.y * angle + text.y * ambient;
-//	text.z = diffuse * text.z * angle + text.z * ambient;
-//}
-//else
-//{
-//	text.x = text.x * ambient;
-//	text.y = text.y * ambient;
-//	text.z = text.z * ambient;
-//}
-
-	float4 lightPos = lightPosition;
-	//lightPos = cameraPos;
-
-	float lightIntensity = 0.0f;
-	float lightDepthValue = 0.0f;
-	float depthValue = 0.0f;
-	float bias = 0.005f;
-
+	//float4 lightPos = lightPosition;
 	float3 outVec = normalize(lightPos.xyz - pos.xyz);
+	vPosToLight = lightPos.xyz - pos.xyz;
+	vPosToLight = normalize(vPosToLight);
 
+	//adding perspective into the lights position i think
 	lightPos = mul(float4(pos, 1.0f), lightWVP);
 
-	float3 viewDir = normalize(cameraPos.xyz - pos.xyz);
+	viewDir = cameraPos.xyz - pos.xyz;
+	viewDir = normalize(viewDir);
 
-	float shineFactor = 5.0f;
-	float lightSpecular = 0.65f;
+	shineFactor = 5.0f;
+	lightSpecular = 0.65f;
 
-	lightIntensity = saturate(dot(normal, outVec));
+	//lightIntensity = saturate(dot(normal, outVec));
+	lightIntensity = dot(normal, vPosToLight);
+	lightIntensity = saturate(lightIntensity);
+
 
 
 	shadowUV.x = ((lightPos.x / lightPos.w) / 2.0f) + 0.5f;
@@ -140,7 +129,7 @@ float4 main(PS_IN input) : SV_TARGET
 		//output.Color = float4(0, 1, 0, 0);
 	}
 
-	float3 diffuseColor = (color.rgb * lightIntensity * 0.8f);
+	float3 diffuseColor = (color.rgb * lightIntensity*2 * 0.8f);
 	float3 ambientColor = (color.rgb * 0.5f);
 
 	//color = saturate((color.rgb * lightIntensity * 0.8f) + (color.rgb * 0.2f));
