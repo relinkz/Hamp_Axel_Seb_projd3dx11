@@ -137,6 +137,7 @@ void Camera::Update(HWND hWnd, Terrain* terrain)
 	{
 		this->Pos += Vector3(0, 1, 0) * 0.0011f;
 	}
+	/*
 	else//walking on terrain
 	{
 		this->Pos += Vector3(0, -1, 0) * 0.0011f;
@@ -149,8 +150,8 @@ void Camera::Update(HWND hWnd, Terrain* terrain)
 			this->Pos.y = newY + 1;
 		}
 
-
 	}
+	*/
 	//ctrl
 	if (GetAsyncKeyState(VK_CONTROL))
 	{
@@ -230,7 +231,8 @@ Vector3 Camera::getLookUp() const
 }
 void Camera::setDefaultValue()
 {
-	this->Pos = Vector3(0, 0, 0);
+	this->Pos = Vector3(0, 0, -2);
+
 	this->lookAtPoint = Vector3(0, 0, 1);
 	this->lookUpPoint = Vector3(0, 1, 0);
 	this->lookRightPoint = Vector3(1, 0, 0);

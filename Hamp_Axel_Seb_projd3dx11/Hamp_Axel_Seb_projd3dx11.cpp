@@ -76,6 +76,12 @@ Object worldObject;
 ShadowShaderClass shadowMap;
 
 
+struct mesh
+{
+	int nrOfVertex;
+	Object obj;
+};
+
 struct vertex
 {
 	float x;
@@ -102,6 +108,12 @@ struct worldMatrixBuffer2
 	XMFLOAT4 cameraPos;
 	XMFLOAT4 lightPos;
 };
+
+
+//structs to separate the meshes so that the correct amount of drawcall are used
+mesh terrainData;
+mesh boxData;
+
 vertex finalShit[6];
 vector<Object> objects;
 vector<Object*> objectsToDraw;
@@ -110,7 +122,7 @@ Object terrainObj;
 int nrOfObjects = 0;
 Terrain* terrain = nullptr;
 
-QuadTree quadTree(Vector3(0, 0, 0), Vector3(10, 0, 10), 0, 10, 0, 10, 0);
+QuadTree quadTree(Vector3(0, 0, 0), Vector3(10, 0, 10), 0, 10, 1, 10, 0);
 
 int nrOfVertexDrawn = 0;
 
@@ -131,7 +143,7 @@ struct newPosLight
 
 newPosLight light
 {
-	Vector3(10,20,0),
+	Vector3(5,10,-5),
 	0.0f,
 	0.2f,
 	0.8f,
@@ -152,7 +164,7 @@ struct mouseData
 SimpleMath::Matrix* viewSpace = nullptr;
 SimpleMath::Matrix* projectionSpace = nullptr;
 SimpleMath::Matrix* worldSpace = nullptr; // need one worldSpace for each object in the world
-Vector3 cameraPos = Vector3(0, 0, 20);
+Vector3 cameraPos = Vector3(0, 0, 0);
 SimpleMath::Matrix* worldViewProj = nullptr;
 Matrix* lightViewMatrix = nullptr;
 Matrix* lightProjectionMatrix = nullptr;
@@ -208,9 +220,16 @@ void createWorldMatrices()
 	 {
 		 *worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix
 	 };
+	 cameraPos;
+	 Vector4 cPos;
+	 Vector4 lPos;
+
+	 cPos = Vector4(cameraPos.x, cameraPos.y, cameraPos.z, 1);
+	 lPos = Vector4(light.pos.x, light.pos.y, light.pos.z, 1);
+
 	 worldMatrixBuffer2 buffer2
 	 {
-		 *worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix, Vector4(0,10,0,0), Vector4(0,10,0,0)
+		 *worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix, cPos, lPos
 	 };
 
 	 //buffers
@@ -386,8 +405,10 @@ void createObjects()
 	unsigned int objNr = 1;
 	srand(1000);
 	Parser fromFile;
+
 	fromFile.progressFile("obj2.txt");
 	fromFile.loadMaterial("box.mtl");
+
 	int nrOfVert = 0;
 	int counter = 0;
 	vector<TriangleVertex> triangleVertices;
@@ -417,22 +438,15 @@ void createObjects()
 	}
 
 	//create terrain
+	
 	terrain = new Terrain();
-	int terrainVertices = 0;
-	terrainVertices = nrOfVertexDrawn + terrain->getVertecies().size();
-	terrainObj = Object(terrain->getVertecies(), Vector3(0, 0, 0), gDevice, "grassTexture.jpg", "", objNr++);
+	terrainData.nrOfVertex = terrain->getVertecies().size();
+	terrainData.obj = Object(terrain->getVertecies(), Vector3(0, 0, 0), gDevice, "grassTexture.jpg", "", objNr++);
 
-	//nrOfVertexDrawn += terrain->getVertecies().size();
-
-
-	//objects.push_back(Object(terrain->getVertecies(), Vector3(0, 0, 0), gDevice, "grassTexture.jpg", "", objNr++)); //måste vara på första pos i vektorn
 
 	nrOfVertexDrawn = triangleVertices.size();
-	//worldObject = Object(triangleVertices, Vector3(0.0f, 0.0f, 0.0f), gDevice, fromFile.getImageFile());
 
-	//many boxes many wow
-	//for (int x = 0; x < 6; x++)//dessa rader verkar inte göra något
-	//nrOfVertexDrawn = triangleVertices.size();
+	
 
 	//creates the quad for DeferredRendering
 	finalShit[0] = { -1.0f,  1.0f, 0.0f, 0.0f,0.0f };
@@ -455,57 +469,12 @@ void createObjects()
 	data.pSysMem = finalShit;
 
 	HRESULT hr = gDevice->CreateBuffer(&bufferDesc, &data, &quadVertexBuffer);
-	
 
-/*
-<<<<<<< HEAD
-
-	//creates all the Objects
-	/*int xMax = 6;
-	int yMax = 3;
-	int zMax = 6;
-	for (int x = 0; x < xMax; x++)
-	{
-		for (int y = 0; y < yMax; y++)
-		{
-			for (int z = 0; z < zMax; z++)
-			{
-				if (x == 0 || x == xMax - 1 || y == 0 || y == yMax - 1 || z == 0 || z == zMax - 1)
-				{
-					//creates an object
-					objects.push_back(Object(triangleVertices, Vector3((2.0f * x), (2.0f * y), (2.0f * z)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
-					nrOfObjects++;
-				}
-			}
-		}
-	}*/
+	objects.push_back(Object(triangleVertices, Vector3((0.0f), (0.0f), (0.0f)), gDevice, fromFile.getImageFile(), "", objNr++));
+	//objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (10.0f)), gDevice, fromFile.getImageFile(), "", objNr++));
+	//objects.push_back(Object(triangleVertices, light.pos, gDevice, fromFile.getImageFile(), "", objNr++));
 	
 /*
-	for (int i = 0; i < 5; i++)
-	{
-		objects.push_back(Object(triangleVertices, Vector3(rand() % 6, 0, 6), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png"));
-		nrOfObjects++;
-	}
-*/
-
-	//objects.push_back(Object(triangleVertices, Vector3((5.0f), (5.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
-	//objects.push_back(Object(triangleVertices, Vector3((10.0f), (5.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
-	//objects.push_back(Object(triangleVertices, light.pos, gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
-
-	objects.push_back(Object(triangleVertices, Vector3((5.0f), (5.0f), (1.0f)), gDevice, fromFile.getImageFile(), "", objNr++));
-	objects.push_back(Object(triangleVertices, Vector3((10.0f), (5.0f), (1.0f)), gDevice, fromFile.getImageFile(), "", objNr++));
-	objects.push_back(Object(triangleVertices, light.pos, gDevice, fromFile.getImageFile(), "", objNr++));
-	
-	//creating the floor
-	/*for (int i = 0; i < 10; i++)
-	{
-		float x = i;
-		for (int j = 0; j < 10; j++)
-		{
-			float y = j;
-			objects.push_back(Object(triangleVertices, Vector3((x), (-2.0f), (y)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
-		}
-	}*/
 	int maxZ = terrain->getLength();
 	int maxX = terrain->getWidth();
 
@@ -528,7 +497,7 @@ void createObjects()
 	}
 
 
-
+	*/
 	
 
 	quadTree.setTreeData(objects); //splits all the objects into the quads in the quadtree
@@ -572,7 +541,7 @@ void UpdateCameraBuffer()
 	//-----
 }
 
-void Render(Object object1)
+void Render(Object object1, int nrOfVertexToDraw)
 {
 
 	*worldSpace = object1.getWorldMatrix();		//get the worldMatrix of the object that we will render
@@ -633,7 +602,7 @@ void Render(Object object1)
 	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);	//set the constant buffer for the DeferredVertexShader
 
 
-	gDeviceContext->Draw(nrOfVertexDrawn,0);	//render the object
+	gDeviceContext->Draw(nrOfVertexToDraw,0);	//render the object
 }
 
 void FirstRenderCall()
@@ -672,15 +641,20 @@ void FirstRenderCall()
 	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	//set the topology
 	gDeviceContext->IASetInputLayout(gVertexLayout);								//set the input layout
 
-
-	gDeviceContext->Draw(nrOfVertexDrawn, 0);
+	//donno why this is here
+	//gDeviceContext->Draw(nrOfVertexDrawn, 0);
 
 	//renders all the individual objects and stores their values in the RTVs
+
+	//render terrain
+
+	//Render(terrainData.obj, terrainData.nrOfVertex);
+
 	for (int i = 0; i < objectsToDraw.size(); i++)
 	{
 		if (objectsToDraw.at(i) != nullptr)
 		{
-			Render(*objectsToDraw.at(i));
+			Render(*objectsToDraw.at(i), nrOfVertexDrawn);
 		}
 	}
 	//FIRST RENDER CALL DONE
@@ -857,9 +831,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 		ShowWindow(wndHandle, nCmdShow);
 
+		Vector3 lookAt = Vector3(0, -1, 0);
+
+		Vector3 upVector = Vector3(0, 1, 0);
+
 		try
 		{
-			shadowMap.initialize(gDevice, wndHandle, light.pos, Vector3(0,-1,0), Vector3(0,1,0));
+			shadowMap.initialize(gDevice, wndHandle, light.pos, lookAt, upVector);
 
 		}
 		catch (char* error)
@@ -885,6 +863,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 				FirstRenderCall(); //DO THE FIRST RENDER CALL THAT RENDERS ALL THE OBJECTS AND STORES THEIR VALUES IN THE RTVs
 
 				gameLogic();
+
+				//shadowMap.updateBuffer(terrainData.obj, gDeviceContext);
+				//shadowMap.render(terrainData.obj, terrainData.nrOfVertex, gDevice, gDeviceContext);
 
 				for (int i = 0; i < objectsToDraw.size(); i++)
 				{

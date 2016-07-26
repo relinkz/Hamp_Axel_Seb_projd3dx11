@@ -189,7 +189,12 @@ XMVECTOR Terrain::getNewNormal(int first, int second, int third)
 	XMVECTOR v1 = XMLoadFloat3(&XMFLOAT3(this->vertecies[first].x, this->vertecies[first].y, this->vertecies[first].z));
 	XMVECTOR v2 = XMLoadFloat3(&XMFLOAT3(this->vertecies[second].x, this->vertecies[second].y, this->vertecies[second].z));
 	XMVECTOR v3 = XMLoadFloat3(&XMFLOAT3(this->vertecies[third].x, this->vertecies[third].y, this->vertecies[third].z));
-	return XMVector3Cross(XMVectorSubtract(v2, v1), XMVectorSubtract(v3, v1));
+	
+
+	XMVECTOR result = XMVector3Cross(XMVectorSubtract(v2, v1), XMVectorSubtract(v3, v1));
+	result = XMVector3Normalize(result);
+	
+	return result;
 }
 
 std::vector<TriangleVertex> Terrain::getVertecies() const
