@@ -129,7 +129,7 @@ float4 main(PS_IN input) : SV_TARGET
 		//output.Color = float4(0, 1, 0, 0);
 	}
 
-	float3 diffuseColor = (color.rgb * lightIntensity*2 * 0.8f);
+	float3 diffuseColor = (color.rgb * lightIntensity * 0.8f);
 	float3 ambientColor = (color.rgb * 0.5f);
 
 	//color = saturate((color.rgb * lightIntensity * 0.8f) + (color.rgb * 0.2f));
@@ -137,7 +137,7 @@ float4 main(PS_IN input) : SV_TARGET
 	if (lightIntensity > 0.0f)
 	{
 		// Calculate the reflection vector based on the light intensity, normal vector, and light direction.
-		float3 reflection = normalize(2 * lightIntensity * normal.xyz - outVec.xyz);
+		float3 reflection = normalize(lightIntensity * normal.xyz - outVec.xyz);
 		
 		//determine the amount of specular light based on the reflection vector, viewing direction and specular power
 		specular = pow(saturate(dot(reflection, viewDir)), 32.0f);

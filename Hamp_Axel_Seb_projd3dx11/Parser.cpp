@@ -57,8 +57,8 @@ void Parser::progressFile(const string& dest) throw(...)
 			else if (data == "vn")
 			{
 				file >> vertexNormals[0];
-				file >> vertexNormals[2];
 				file >> vertexNormals[1];
+				file >> vertexNormals[2];
 
 				this->vertexNormals.push_back(Vector3(vertexNormals[0], vertexNormals[1], vertexNormals[2]));
 			}

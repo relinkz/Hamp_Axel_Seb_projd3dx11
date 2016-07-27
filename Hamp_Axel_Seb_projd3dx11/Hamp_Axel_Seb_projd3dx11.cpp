@@ -143,7 +143,7 @@ struct newPosLight
 
 newPosLight light
 {
-	Vector3(5,10,-5),
+	Vector3(10,20,10),
 	0.0f,
 	0.2f,
 	0.8f,
@@ -470,9 +470,9 @@ void createObjects()
 
 	HRESULT hr = gDevice->CreateBuffer(&bufferDesc, &data, &quadVertexBuffer);
 
-	objects.push_back(Object(triangleVertices, Vector3((0.0f), (0.0f), (0.0f)), gDevice, fromFile.getImageFile(), "", objNr++));
-	//objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (10.0f)), gDevice, fromFile.getImageFile(), "", objNr++));
-	//objects.push_back(Object(triangleVertices, light.pos, gDevice, fromFile.getImageFile(), "", objNr++));
+	objects.push_back(Object(triangleVertices, Vector3((0.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "", objNr++));
+	objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "", objNr++));
+	objects.push_back(Object(triangleVertices, light.pos, gDevice, fromFile.getImageFile(), "", objNr++));
 	
 /*
 	int maxZ = terrain->getLength();
@@ -648,7 +648,7 @@ void FirstRenderCall()
 
 	//render terrain
 
-	//Render(terrainData.obj, terrainData.nrOfVertex);
+	Render(terrainData.obj, terrainData.nrOfVertex);
 
 	for (int i = 0; i < objectsToDraw.size(); i++)
 	{
