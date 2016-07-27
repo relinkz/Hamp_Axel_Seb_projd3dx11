@@ -470,9 +470,9 @@ void createObjects()
 
 	HRESULT hr = gDevice->CreateBuffer(&bufferDesc, &data, &quadVertexBuffer);
 
-	objects.push_back(Object(triangleVertices, Vector3((0.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "", objNr++));
-	objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "", objNr++));
-	objects.push_back(Object(triangleVertices, light.pos, gDevice, fromFile.getImageFile(), "", objNr++));
+	objects.push_back(Object(triangleVertices, Vector3((0.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap", objNr++));
+	objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap", objNr++));
+	//objects.push_back(Object(triangleVertices, light.pos, gDevice, fromFile.getImageFile(), "cube_box_NormalMap", objNr++));
 	
 /*
 	int maxZ = terrain->getLength();
