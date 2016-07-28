@@ -192,11 +192,11 @@ void createWorldMatrices()
 	 worldViewProj = &worldViewProj->Transpose();
 	 eyeSpace = &eyeSpace->Transpose();
 	
-
 	 worldMatrixBuffer buffer
 	 {
-		 *worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix
+		*worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix
 	 };
+
 	 worldMatrixBuffer2 buffer2
 	 {
 		 *worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix, Vector4(0,10,0,0), Vector4(0,10,0,0)
@@ -216,13 +216,19 @@ void createWorldMatrices()
 
 	HRESULT test = gDevice->CreateBuffer(&viewSpaceDesc, &testa, &worldSpaceBuffer);	//creates the worldSpaceBuffer
 
-	viewSpaceDesc.ByteWidth = sizeof(worldMatrixBuffer2);
 
+	viewSpaceDesc.ByteWidth = sizeof(worldMatrixBuffer2);
 	D3D11_SUBRESOURCE_DATA testa2;
 	testa2.pSysMem = &buffer2;
 
 	test = gDevice->CreateBuffer(&viewSpaceDesc, &testa2, &worldSpaceBuffer2);	//creates the worldSpaceBuffer
 
+	
+	
+	/*
+	Creating the camera buffer
+
+	*/
 	cameraData cameraBufferData
 	{
 		WorldCamera.getCameraPos()
@@ -428,7 +434,7 @@ void createObjects()
 	HRESULT hr = gDevice->CreateBuffer(&bufferDesc, &data, &quadVertexBuffer);
 	unsigned int objNr = 1;
 
-	objects.push_back(Object(triangleVertices, Vector3((1.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "unNormalNormalmap.png", objNr++));
+	objects.push_back(Object(triangleVertices, Vector3((1.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 	objects.push_back(Object(triangleVertices, Vector3((3.0f), (0.0f), (1.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png",objNr++));
 
 	//creating the floor
