@@ -441,7 +441,7 @@ void createObjects()
 	
 	terrain = new Terrain();
 	terrainData.nrOfVertex = terrain->getVertecies().size();
-	terrainData.obj = Object(terrain->getVertecies(), Vector3(0, 0, 0), gDevice, "grassTexture.jpg", "", objNr++);
+	terrainData.obj = Object(terrain->getVertecies(), Vector3(0, 0, 0), gDevice, "grassTexture.jpg", "cube_box_NormalMap.png", objNr++);
 
 
 	nrOfVertexDrawn = triangleVertices.size();
@@ -470,8 +470,8 @@ void createObjects()
 
 	HRESULT hr = gDevice->CreateBuffer(&bufferDesc, &data, &quadVertexBuffer);
 
-	objects.push_back(Object(triangleVertices, Vector3((0.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap", objNr++));
-	objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap", objNr++));
+	objects.push_back(Object(triangleVertices, Vector3((0.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
+	objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 	//objects.push_back(Object(triangleVertices, light.pos, gDevice, fromFile.getImageFile(), "cube_box_NormalMap", objNr++));
 	
 /*
