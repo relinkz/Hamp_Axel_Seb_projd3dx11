@@ -45,8 +45,11 @@ defPixelOutput main(in defPixelInput input) : SV_TARGET
 
 	float3 newNormal = normalize(mul(normalTexture, TBN)); //transform the normal
 	
-	output.Normal = float4(newNormal, 0.0f);
-	//output.Normal = float4(input.Normal, 0.0f);
+	/*
+	*/
+
+	output.Normal = float4(newNormal, 0.0f);	  //with normalmap
+	//output.Normal = float4(input.Normal, 0.0f); //without normalmap
 
 	output.Pos = input.PosView;
 	output.Depth.xyz = input.PosWVP.z;

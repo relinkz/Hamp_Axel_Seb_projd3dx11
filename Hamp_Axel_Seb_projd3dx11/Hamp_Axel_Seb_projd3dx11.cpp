@@ -441,7 +441,7 @@ void createObjects()
 	
 	terrain = new Terrain();
 	terrainData.nrOfVertex = terrain->getVertecies().size();
-	terrainData.obj = Object(terrain->getVertecies(), Vector3(0, 0, 0), gDevice, "grassTexture.jpg", "cube_box_NormalMap.png", objNr++);
+	terrainData.obj = Object(terrain->getVertecies(), Vector3(0, 0, 0), gDevice, "grassTexture.jpg", "noNormalMap.png", objNr++);
 
 
 	nrOfVertexDrawn = triangleVertices.size();
