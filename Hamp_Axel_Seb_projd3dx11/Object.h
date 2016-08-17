@@ -33,6 +33,8 @@ private:
 	ID3D11Texture2D*			objectIndexTexture;
 	ID3D11ShaderResourceView*	objectIndexSRV;
 
+	bool shouldRender;
+
 
 	short int vertexSize;
 
@@ -58,6 +60,10 @@ public:
 	Vector3 getPosition()							const;
 	void setPosY(float newY);
 	ID3D11ShaderResourceView* getNormalMapSRV()		const;
+	
+	bool getShouldRender() const;
+	void swapRender();
+
 };
 
 #endif

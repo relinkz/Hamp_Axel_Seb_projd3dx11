@@ -49,7 +49,7 @@ public:
 	Camera(int width, int height, float x, float y, float z);
 	~Camera();
 
-	void Update(HWND hWnd, Terrain* terrain);
+	void Update(HWND hWnd, Terrain* terrain, float dt);
 
 	Matrix getViewMatrix();
 	Vector3 getCameraPos();

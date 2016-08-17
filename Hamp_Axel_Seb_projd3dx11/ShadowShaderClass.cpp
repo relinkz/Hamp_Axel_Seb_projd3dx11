@@ -176,6 +176,7 @@ void ShadowShaderClass::updateBuffer(Object & toDraw, ID3D11DeviceContext* gDevi
 
 	HRESULT test = gDeviceContext->Map(this->shadow_constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &lightViewSpaceData);
 	memcpy(lightViewSpaceData.pData, &updatedBuffer, sizeof(updatedBuffer));
+	
 	gDeviceContext->Unmap(this->shadow_constantBuffer, 0);
 }
 

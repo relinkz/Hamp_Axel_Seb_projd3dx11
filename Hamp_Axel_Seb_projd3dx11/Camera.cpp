@@ -37,7 +37,7 @@ Camera::~Camera()
 {
 
 }
-void Camera::Update(HWND hWnd, Terrain* terrain)
+void Camera::Update(HWND hWnd, Terrain* terrain, float dt)
 {
 	XMMATRIX rotation;
 	Vector3 lookAtVector;
@@ -59,9 +59,11 @@ void Camera::Update(HWND hWnd, Terrain* terrain)
 	upDown = this->lookUpPoint - Vector3(0, 0, 0);
 	upDown.Normalize();
 
+	float rotationPerFrame = 1.0f;
+
 	if (GetAsyncKeyState(VK_LEFT))
 	{
-		rotation = DirectX::XMMatrixRotationY(-0.001f);
+		rotation = DirectX::XMMatrixRotationY(-rotationPerFrame* dt);
 		//this->lookAtPoint = DirectX::XMVector3Transform(this->lookAtPoint, rotation);
 		//this->lookRightPoint = DirectX::XMVector3Transform(this->lookRightPoint, rotation);
 		rotatePoint(this->lookAtPoint, rotation);
@@ -74,7 +76,7 @@ void Camera::Update(HWND hWnd, Terrain* terrain)
 	}
 	else if (GetAsyncKeyState(VK_RIGHT))
 	{
-		rotation = DirectX::XMMatrixRotationY(0.001f);
+		rotation = DirectX::XMMatrixRotationY(rotationPerFrame* dt);
 		//this->lookAtPoint = DirectX::XMVector3Transform(this->lookAtPoint, rotation);
 		//this->lookRightPoint = DirectX::XMVector3Transform(this->lookRightPoint, rotation);
 		rotatePoint(this->lookAtPoint, rotation);
@@ -94,8 +96,8 @@ void Camera::Update(HWND hWnd, Terrain* terrain)
 
 	if (this->yRotation > -3.14f / 3 && (GetAsyncKeyState(VK_UP)))
 	{
-		rotation = DirectX::XMMatrixRotationAxis(leftRight, -0.001f);
-		this->yRotation += -0.001f;
+		rotation = DirectX::XMMatrixRotationAxis(leftRight, -rotationPerFrame* dt);
+		this->yRotation += -rotationPerFrame* dt;
 		//this->lookAtPoint = DirectX::XMVector3Transform(this->lookAtPoint, rotation);
 		//this->lookUpPoint = DirectX::XMVector3Transform(this->lookUpPoint, rotation);
 		rotatePoint(this->lookAtPoint, rotation);
@@ -108,8 +110,8 @@ void Camera::Update(HWND hWnd, Terrain* terrain)
 	}
 	else if (this->yRotation < 3.14f / 3 && (GetAsyncKeyState(VK_DOWN)))
 	{
-		rotation = DirectX::XMMatrixRotationAxis(leftRight, 0.001f);
-		this->yRotation += 0.001f;
+		rotation = DirectX::XMMatrixRotationAxis(leftRight, rotationPerFrame* dt);
+		this->yRotation += rotationPerFrame* dt;
 		//this->lookAtPoint = DirectX::XMVector3Transform(this->lookAtPoint, rotation);
 		//this->lookUpPoint = DirectX::XMVector3Transform(this->lookUpPoint, rotation);
 		rotatePoint(this->lookAtPoint, rotation);
@@ -135,7 +137,7 @@ void Camera::Update(HWND hWnd, Terrain* terrain)
 	//spacebar
 	if (GetAsyncKeyState(VK_SPACE))
 	{
-		this->Pos += Vector3(0, 1, 0) * 0.0011f;
+		this->Pos += Vector3(0, 1, 0) * dt;
 	}
 	/*
 	else//walking on terrain
@@ -155,32 +157,33 @@ void Camera::Update(HWND hWnd, Terrain* terrain)
 	//ctrl
 	if (GetAsyncKeyState(VK_CONTROL))
 	{
-		this->Pos += Vector3(0, 1, 0) * -0.0011f;
+		this->Pos += Vector3(0, 1, 0) * -dt;
 	}
 	//0x57 = W
 	if (GetAsyncKeyState(0x57))
 	{
-		this->Pos += lookAtVector * 0.0011f;
+		this->Pos += lookAtVector * dt;
 	}
 	//0x53 = S
 	if (GetAsyncKeyState(0x53))
 	{
-		this->Pos += lookAtVector * -0.0011f;
+		this->Pos += lookAtVector * -dt;
 	}
 	//0x44 = D
 	if (GetAsyncKeyState(0x44))
 	{
-		this->Pos += leftRight * 0.0011f;
+		this->Pos += leftRight * dt;
 	}
 	//0x41 = A
 	if (GetAsyncKeyState(0x41))
 	{
-		this->Pos += leftRight * -0.0011f;
+		this->Pos += leftRight * -dt;
 	}
 	//0x52 = R
 	if (GetAsyncKeyState(0x52))
 	{
 		setDefaultValue();
+
 		this->viewFustrumPlanes.clear();
 		this->setUpViewFustrumPlanes();
 	}

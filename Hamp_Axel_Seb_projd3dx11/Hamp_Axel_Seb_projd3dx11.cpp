@@ -12,7 +12,8 @@
 #include "QuadTree.h"
 #include "shadowShaderClass.h"
 
-
+long float currentTime = 0;
+long float oldTime = 0;
 HWND InitWindow(HINSTANCE hInstance);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
@@ -24,6 +25,7 @@ HRESULT CreateDirect3DContext(HWND wndHandle);
 IDXGISwapChain* gSwapChain = nullptr;
 ID3D11Device* gDevice = nullptr;
 ID3D11DeviceContext* gDeviceContext = nullptr;
+
 ID3D11RenderTargetView *deferredViews[5];
 
 ID3D11RenderTargetView* gBackbufferRTV = nullptr;
@@ -33,32 +35,35 @@ TriangleVertex* quadTiangle;
 
 //dephbuffer
 ID3D11DepthStencilView* gDepthBuffer = nullptr;
+
 ID3D11Texture2D* pDepthStencil = nullptr;
-
 ID3D11Texture2D* NormalStencil = nullptr;
-ID3D11RenderTargetView* NormalRTV = nullptr;
-
 ID3D11Texture2D* ColorStencil = nullptr;
-ID3D11RenderTargetView* ColorRTV = nullptr;
-
 ID3D11Texture2D* PositionStencil = nullptr;
-ID3D11RenderTargetView* PositionRTV = nullptr;
+
+ID3D11ShaderResourceView* Position = nullptr;
+ID3D11ShaderResourceView* Normal = nullptr;
+ID3D11ShaderResourceView* ColorSRV = nullptr;
+ID3D11ShaderResourceView* shadowMapSRV = nullptr;
+ID3D11ShaderResourceView* ObjectIndexSRV = nullptr;
 
 ID3D11Texture2D* LightDepthStencil = nullptr;
 ID3D11RenderTargetView* LightDepthRTV = nullptr;
 
 ID3D11Texture2D* ObjectIndexStencil= nullptr;
-ID3D11RenderTargetView* ObjectIndexRTV = nullptr;
 
 ID3D11Buffer* gVertexBuffer = nullptr;
 ID3D11Buffer* quadVertexBuffer = nullptr;
 ID3D11Buffer* gIndexBuffer = nullptr;
 ID3D11Buffer* gGeometryBuffer = nullptr;
-ID3D11Buffer* testBuffer = nullptr;
+
 ID3D11Buffer* lightBuffer = nullptr;
 ID3D11Buffer* cameraBuffer = nullptr;
 ID3D11Buffer* mouseBuffer = nullptr;
 
+/*
+2 används
+*/
 ID3D11Buffer* worldSpaceBuffer = nullptr;
 ID3D11Buffer* worldSpaceBuffer2 = nullptr;
 
@@ -114,7 +119,7 @@ struct worldMatrixBuffer2
 mesh terrainData;
 mesh boxData;
 
-vertex finalShit[6];
+vertex quad[6];
 vector<Object> objects;
 vector<Object*> objectsToDraw;
 Object terrainObj;
@@ -215,7 +220,9 @@ void createWorldMatrices()
 	 worldViewProj = &worldViewProj->Transpose();
 	 eyeSpace = &eyeSpace->Transpose();
 	
-
+/*
+CREATING AND INITIALIZING CONSTANT BUFFERS-----------------
+*/
 	 worldMatrixBuffer buffer
 	 {
 		 *worldViewProj, *eyeSpace, *lightViewMatrix , *lightProjectionMatrix
@@ -449,29 +456,31 @@ void createObjects()
 	
 
 	//creates the quad for DeferredRendering
-	finalShit[0] = { -1.0f,  1.0f, 0.0f, 0.0f,0.0f };
-	finalShit[1] = {  1.0f, -1.0f, 0.0f, 1.0f,1.0f };
-	finalShit[2] = { -1.0f, -1.0f, 0.0f, 0.0f,1.0f };
+	quad[0] = { -1.0f,  1.0f, 0.0f, 0.0f,0.0f };
+	quad[1] = {  1.0f, -1.0f, 0.0f, 1.0f,1.0f };
+	quad[2] = { -1.0f, -1.0f, 0.0f, 0.0f,1.0f };
 	//				  1.0	 1.0
-	finalShit[3] = { -1.0f,  1.0f, 0.0f, 0.0f,0.0f };
-	finalShit[4] = {  1.0f,  1.0f, 0.0f, 1.0f,0.0f };
-	finalShit[5] = {  1.0f, -1.0f, 0.0f, 1.0f,1.0f };
+	quad[3] = { -1.0f,  1.0f, 0.0f, 0.0f,0.0f };
+	quad[4] = {  1.0f,  1.0f, 0.0f, 1.0f,0.0f };
+	quad[5] = {  1.0f, -1.0f, 0.0f, 1.0f,1.0f };
 	//creates the vertexBuffer for the quad
 	D3D11_BUFFER_DESC bufferDesc;
 	memset(&bufferDesc, 0, sizeof(bufferDesc));
 	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bufferDesc.Usage = D3D11_USAGE_DEFAULT;
 
-	bufferDesc.ByteWidth = sizeof(finalShit);
+	bufferDesc.ByteWidth = sizeof(quad);
 	
 	D3D11_SUBRESOURCE_DATA data;
 	memset(&data, 0, sizeof(data));
-	data.pSysMem = finalShit;
+	data.pSysMem = quad;
 
 	HRESULT hr = gDevice->CreateBuffer(&bufferDesc, &data, &quadVertexBuffer);
 
 	objects.push_back(Object(triangleVertices, Vector3((0.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 	objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
+	
+	nrOfObjects = 2;
 	//objects.push_back(Object(triangleVertices, light.pos, gDevice, fromFile.getImageFile(), "cube_box_NormalMap", objNr++));
 	
 /*
@@ -562,7 +571,6 @@ void Render(Object object1, int nrOfVertexToDraw)
 	D3D11_MAPPED_SUBRESOURCE viewSpaceData;
 	memset(&viewSpaceData, 0, sizeof(viewSpaceData));
 
-
 	HRESULT test = gDeviceContext->Map(worldSpaceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &viewSpaceData);
 	
 	memcpy(viewSpaceData.pData, &updateWorldMatrices, sizeof(updateWorldMatrices));
@@ -609,7 +617,7 @@ void FirstRenderCall()
 {
 	//THIS IS THE START OF THE FIRST RENDERCALL
 	HRESULT hr;
-	float clearColor[] = { 0, 0, 0, 1 };
+	float clearColor[4] = { 0, 0, 0, 1 };
 	//float whiteColor[] = { 1, 1, 1, 1 };
 	//float grayColor[] = { 0.5, 0.5, 0.5 , 1 };
 
@@ -621,7 +629,7 @@ void FirstRenderCall()
 	gDeviceContext->ClearRenderTargetView(deferredViews[4], clearColor);
 
 	//clear depthbuffer
-	gDeviceContext->ClearDepthStencilView(gDepthBuffer, D3D11_CLEAR_DEPTH, 1, 0);
+	gDeviceContext->ClearDepthStencilView(gDepthBuffer, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1, 0);
 
 	//get all the object in the part of the quad tree that the camera is in (must be used)
 	objectsToDraw = quadTree.getObjectsToDraw(WorldCamera.getCameraPos()); 
@@ -637,7 +645,7 @@ void FirstRenderCall()
 	gDeviceContext->GSSetShader(gGeometryShader, NULL, 0);
 	gDeviceContext->PSSetShader(pDeferredShader, NULL, 0);
 
-	//gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);					//give the worldSpaceBuffer to the PixelShader
+	//gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer);				//give the worldSpaceBuffer to the PixelShader
 	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	//set the topology
 	gDeviceContext->IASetInputLayout(gVertexLayout);								//set the input layout
 
@@ -652,7 +660,7 @@ void FirstRenderCall()
 
 	for (int i = 0; i < objectsToDraw.size(); i++)
 	{
-		if (objectsToDraw.at(i) != nullptr)
+		if (objectsToDraw.at(i) != nullptr && objectsToDraw.at(i)->getShouldRender() == true)
 		{
 			Render(*objectsToDraw.at(i), nrOfVertexDrawn);
 		}
@@ -662,20 +670,42 @@ void FirstRenderCall()
 
 void gameLogic()
 {
-	for (int i = 1; i < nrOfObjects; i++)
-	{
+	int objectsHit = 0;
 
-		if (WorldCamera.getCameraPos().x >= objects[i].getPosition().x - 1 && WorldCamera.getCameraPos().x <= objects[i].getPosition().x + 1
-			&& WorldCamera.getCameraPos().z >= objects[i].getPosition().z - 1 && WorldCamera.getCameraPos().z <= objects[i].getPosition().z + 1
-			&& WorldCamera.getCameraPos().y >= objects[i].getPosition().y && WorldCamera.getCameraPos().y - 1<= objects[i].getPosition().y)
+	for (int i = 0; i < nrOfObjects; i++)
+	{
+		if (objects.at(i).getShouldRender() == false)
 		{
-			objects.erase(objects.begin() + i);
-			nrOfObjects--;
-			if (objects.size() == 1)
-			{
-				//win message popup
-				MessageBox(NULL, L"You won", L"You won", MB_OK);
-			}
+			objectsHit++;
+		}
+		//if (WorldCamera.getCameraPos().x >= objects[i].getPosition().x - 1 && WorldCamera.getCameraPos().x <= objects[i].getPosition().x + 1
+		//	&& WorldCamera.getCameraPos().z >= objects[i].getPosition().z - 1 && WorldCamera.getCameraPos().z <= objects[i].getPosition().z + 1
+		//	&& WorldCamera.getCameraPos().y >= objects[i].getPosition().y && WorldCamera.getCameraPos().y - 1<= objects[i].getPosition().y)
+		//{
+		//	objects.erase(objects.begin() + i);
+		//	nrOfObjects--;
+		//	if (objects.size() == 1)
+		//	{
+		//		//win message popup
+		//		MessageBox(NULL, L"You won", L"You won", MB_OK);
+		//	}
+		//}
+		Vector3 camPos = WorldCamera.getCameraPos();
+		Vector3 objPos = objects.at(i).getPosition();
+
+		float xDiff = abs(camPos.x - objPos.x);
+		float yDiff = abs(camPos.y - objPos.y);
+		float zDiff = abs(camPos.z - objPos.z);
+
+		if ((xDiff + yDiff + zDiff) < 3.0f)
+		{
+			//objects.erase(objects.begin()+i);
+			//nrOfObjects--;
+			objects.at(i).swapRender();
+		}
+		if (objectsHit == nrOfObjects)
+		{
+			MessageBox(NULL, L"You won", L"You won", MB_OK);
 		}
 	}
 	
@@ -687,24 +717,12 @@ void SecondRenderCall()
 	//THIS IS THE START OF THE SECOND REDENR CALL
 	//sets the OutputMerger to use the RTV that is linked to the backbuffer
 	gDeviceContext->OMSetRenderTargets(1, &deferredViews[0], nullptr);
+	
 
 	//enable the shaders taht will be used (no Geometry shader here)
 	gDeviceContext->VSSetShader(quadVertexShader, NULL, 0);
 	gDeviceContext->PSSetShader(gPixelShader, NULL, 0);
 	gDeviceContext->GSSetShader(nullptr, nullptr, 0);
-
-	ID3D11ShaderResourceView* Position = nullptr;
-	ID3D11ShaderResourceView* Normal = nullptr;
-	ID3D11ShaderResourceView* Color = nullptr;
-	ID3D11ShaderResourceView* shadowMapSRV = nullptr;
-	ID3D11ShaderResourceView* ObjectIndexSRV = nullptr;
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
-	memset(&SRVDesc, 0, sizeof(SRVDesc));
-	SRVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
-	SRVDesc.Texture2D.MipLevels = 1;
-	SRVDesc.Texture2D.MostDetailedMip = 0;
 
 	gDeviceContext->PSSetConstantBuffers(0, 1, &worldSpaceBuffer2);
 
@@ -717,20 +735,15 @@ void SecondRenderCall()
 	gDeviceContext->PSSetConstantBuffers(2, 1, &shadowCB);
 
 	gDeviceContext->PSSetConstantBuffers(3, 1, &mouseBuffer);
-
-	hr = gDevice->CreateShaderResourceView(PositionStencil, &SRVDesc, &Position);	//turn the RTV that stores the Positions into a 
+	
 	gDeviceContext->PSSetShaderResources(0, 1, &Position);							//ShaderResouresView and send it to the PixelShader
-
-	hr = gDevice->CreateShaderResourceView(NormalStencil, &SRVDesc, &Normal);		//turn the RTV that stores the Normals into a 
 	gDeviceContext->PSSetShaderResources(1, 1, &Normal);							//ShaderResouresView and send it to the PixelShader
-
-	hr = gDevice->CreateShaderResourceView(ColorStencil, &SRVDesc, &Color);			//turn the RTV that stores the Colors into a 
-	gDeviceContext->PSSetShaderResources(2, 1, &Color);								//ShaderResouresView and send it to the PixelShader
+	gDeviceContext->PSSetShaderResources(2, 1, &ColorSRV);								//ShaderResouresView and send it to the PixelShader
 
 	shadowMapSRV = shadowMap.getShaderResourceView();
 	gDeviceContext->PSSetShaderResources(3, 1, &shadowMapSRV);
 
-	hr = gDevice->CreateShaderResourceView(ObjectIndexStencil, &SRVDesc, &ObjectIndexSRV);
+	
 	gDeviceContext->PSSetShaderResources(4, 1, &ObjectIndexSRV);
 	
 	/*
@@ -814,6 +827,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	MSG msg = { 0 };
 	HWND wndHandle = InitWindow(hInstance); //1. Skapa fönster
+	
+
 
 	if (wndHandle)
 	{
@@ -846,10 +861,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 			system("PAUSE");
 		}
 
+		oldTime = GetCurrentTime();
 
 		while (WM_QUIT != msg.message)
 		{
-			WorldCamera.Update(wndHandle, terrain); //update worldcamera
+			currentTime = GetCurrentTime();
+			float dt = (currentTime - oldTime) / 1000;
+
+			WorldCamera.Update(wndHandle, terrain, dt); //update worldcamera
 			if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 			{
 				TranslateMessage(&msg);
@@ -880,11 +899,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 
 				SecondRenderCall(); //DO THE SECOND RENDERCALL THAT RENDERS TO A QUAD
-		
+				
 				gSwapChain->Present(0, 0); //9. Växla front- och back-buffer
 				
 				shadowMap.clearDepthBuffer(gDeviceContext);
 			}
+			oldTime = currentTime;
 		}
 
 		gVertexBuffer->Release();
@@ -1049,6 +1069,18 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		hr = gDevice->CreateRenderTargetView(NormalStencil, &desc, &deferredViews[2]);		//connects the Textured2D with a RTV deferredView[2] = NormalTexture
 		hr = gDevice->CreateRenderTargetView(ColorStencil, &desc, &deferredViews[3]);		//connects the Textured2D with a RTV deferredView[3] = ColorTexture
 		hr = gDevice->CreateRenderTargetView(ObjectIndexStencil, &desc, &deferredViews[4]);
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
+		memset(&SRVDesc, 0, sizeof(SRVDesc));
+		SRVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
+		SRVDesc.Texture2D.MipLevels = 1;
+		SRVDesc.Texture2D.MostDetailedMip = 0;
+
+		hr = gDevice->CreateShaderResourceView(PositionStencil, &SRVDesc, &Position);	//turn the RTV that stores the Positions into a 
+		hr = gDevice->CreateShaderResourceView(NormalStencil, &SRVDesc, &Normal);		//turn the RTV that stores the Normals into a 
+		hr = gDevice->CreateShaderResourceView(ColorStencil, &SRVDesc, &ColorSRV);			//turn the RTV that stores the Colors into a 
+		hr = gDevice->CreateShaderResourceView(ObjectIndexStencil, &SRVDesc, &ObjectIndexSRV);
 
 
 		//desc.Format = DXGI_FORMAT_R32_UINT;

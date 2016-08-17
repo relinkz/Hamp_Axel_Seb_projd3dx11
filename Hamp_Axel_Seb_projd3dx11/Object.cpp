@@ -3,6 +3,7 @@
 
 Object::Object()
 {
+	this->shouldRender = true;
 	this->position		= Vector3(0.0f, 0.0f, 0.0f);
 	this->UV_Coord		= Vector2(0.0f, 0.0f);
 	
@@ -14,6 +15,7 @@ Object::Object()
 
 Object::Object(vector<TriangleVertex>fromParser, Vector3 worldPos, ID3D11Device* gDevice, string srcImage)
 {
+	this->shouldRender = true;
 	this->vertexSize = fromParser.size();
 
 	for (int i = 0; i < this->vertexSize; i++)
@@ -35,7 +37,8 @@ Object::Object(vector<TriangleVertex>fromParser, Vector3 worldPos, ID3D11Device*
 
 Object::Object(vector<TriangleVertex> fromParser, Vector3 worldPos, ID3D11Device * gDevice, string srcImage, string normalMap, int objID)
 {
-	
+	this->shouldRender = true;
+
 	this->vertexSize = fromParser.size();
 	this->objID = objID;
 
@@ -134,6 +137,16 @@ void Object::setPosY(float newY)
 ID3D11ShaderResourceView * Object::getNormalMapSRV() const
 {
 	return this->normalMapSRV;
+}
+
+bool Object::getShouldRender() const
+{
+	return this->shouldRender;
+}
+
+void Object::swapRender()
+{
+	this->shouldRender = false;
 }
 
 
