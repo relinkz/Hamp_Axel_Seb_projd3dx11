@@ -871,9 +871,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 			WorldCamera.Update(wndHandle, terrain, dt); //update worldcamera
 			Vector3 camPos = WorldCamera.getCameraPos();
 			int y = terrain->getY(camPos.x, camPos.z);
-			if (y > camPos.y)
+			if (y + 0.5f > camPos.y)
 			{
-				camPos.y = y;
+				camPos.y = y + 0.5f;
 			}           
 			WorldCamera.setPosition(camPos);
 			if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
