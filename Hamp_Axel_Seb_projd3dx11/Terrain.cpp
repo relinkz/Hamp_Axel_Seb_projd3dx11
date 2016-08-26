@@ -204,6 +204,22 @@ std::vector<TriangleVertex> Terrain::getVertecies() const
 
 float Terrain::getY(int x, int z) const
 {
+	if (x < 0)
+	{
+		x = 0;
+	}
+	if (x >= this->TerrainWidth)
+	{
+		x = this->TerrainWidth - 1;
+	}
+	if (z < 0)
+	{
+		z = 0;
+	}
+	if (z >= this->TerrainWidth)
+	{
+		z = this->TerrainLength - 1;
+	}
 	return this->vertecies[this->connectedPoints[x][z][0]].y;
 }
 

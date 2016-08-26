@@ -259,6 +259,11 @@ POINT Camera::GetMousePos(HWND hWnd)
 	return cursorPos;
 }
 
+void Camera::setPosition(Vector3 pos)
+{
+	this->Pos = pos;
+}
+
 void Camera::setUpViewFustrumPlanes()
 {
 	//top plane pointing up

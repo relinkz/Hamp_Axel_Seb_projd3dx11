@@ -58,6 +58,7 @@ public:
 	Vector3 getLookUp() const;
 
 	POINT GetMousePos(HWND hWnd);
+	void setPosition(Vector3 pos);
 	void setUpViewFustrumPlanes();
 	std::vector<Object*> doFustrumCulling(std::vector<Object*> objects);
 
