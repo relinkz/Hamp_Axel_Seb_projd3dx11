@@ -262,10 +262,11 @@ CREATING AND INITIALIZING CONSTANT BUFFERS-----------------
 
 	test = gDevice->CreateBuffer(&viewSpaceDesc, &testa2, &worldSpaceBuffer2);	//creates the worldSpaceBuffer
 
-	cameraData cameraBufferData
-	{
-		WorldCamera.getCameraPos()
-	};
+	cameraData cameraBufferData;
+
+	cameraBufferData.pos.x = WorldCamera.getCameraPos().x;
+	cameraBufferData.pos.y = WorldCamera.getCameraPos().y;
+	cameraBufferData.pos.z = WorldCamera.getCameraPos().z;
 
 	D3D11_BUFFER_DESC cameraBufferDesc;
 	cameraBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
@@ -531,14 +532,12 @@ void SetViewport()
 void UpdateCameraBuffer()
 {
 	HRESULT hr;
-	cameraData newCameraData //set the cameraData for the camera Buffer
-	{
-		/*Vector4(WorldCamera.getCameraPos().x,
-		WorldCamera.getCameraPos().y,
-			WorldCamera.getCameraPos().z,
-			0.0f)*/
-		WorldCamera.getCameraPos()
-	};
+	cameraData newCameraData; //set the cameraData for the camera Buffer
+
+	newCameraData.pos.x = WorldCamera.getCameraPos().x;
+	newCameraData.pos.y = WorldCamera.getCameraPos().y;
+	newCameraData.pos.z = WorldCamera.getCameraPos().z;
+
 	//update the Camera Buffer
 	D3D11_MAPPED_SUBRESOURCE oldCameraData;
 	memset(&oldCameraData, 0, sizeof(oldCameraData));
@@ -555,44 +554,31 @@ void Render(Object object1, int nrOfVertexToDraw)
 {
 
 	*worldSpace = object1.getWorldMatrix();		//get the worldMatrix of the object that we will render
-
 	*viewSpace = WorldCamera.getViewMatrix();	//get the viewMatrix from the camera
 	*worldViewProj = Matrix((*worldSpace) * (*viewSpace) * (*projectionSpace)); //create the WVP(WorldViewProjection) Matrix
 
 	worldViewProj = &worldViewProj->Transpose(); //transpose the WVP matrix
-
 	worldSpace = &worldSpace->Transpose();		//transpose the world Matrix
 
 	worldMatrixBuffer updateWorldMatrices // set the MatrixBuffer
 	{
 		*worldViewProj, *worldSpace, *lightViewMatrix , *lightProjectionMatrix
 	};
+
 	//update the worldMatrixBuffer
 	Matrix* WVP_Ptr = nullptr;
 	D3D11_MAPPED_SUBRESOURCE viewSpaceData;
 	memset(&viewSpaceData, 0, sizeof(viewSpaceData));
 
+	//insert data
 	HRESULT test = gDeviceContext->Map(worldSpaceBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &viewSpaceData);
-	
 	memcpy(viewSpaceData.pData, &updateWorldMatrices, sizeof(updateWorldMatrices));
 
+	//tell gpu it can access the data again
 	gDeviceContext->Unmap(worldSpaceBuffer, 0);
-	//----------
-
+	//update camera data in buffer
 	UpdateCameraBuffer();
-	//gDeviceContext->Unmap(worldSpaceBuffer, 0);
-
-   // clear the back buffer to a deep blue
-
-	//gDeviceContext->VSSetShader(gVertexShader, nullptr, 0);
-	//gDeviceContext->HSSetShader(nullptr, nullptr, 0);
-	//gDeviceContext->DSSetShader(nullptr, nullptr, 0);
-	//gDeviceContext->GSSetShader(gGeometryShader, nullptr, 0);
-	//gDeviceContext->GSSetShader(nullptr, nullptr, 0);
-
-	/*gDeviceContext->PSSetShader(gPixelShader, nullptr, 0);
-	ID3D11ShaderResourceView* diffuseSRV = object1.getDiffuseMapSRV();
-	gDeviceContext->PSSetShaderResources(0, 1, &diffuseSRV);*/
+	
 	ID3D11ShaderResourceView* diffuseSRV = nullptr;
 	diffuseSRV = object1.getDiffuseMapSRV();							//get the DiffuseMap from the object
 	gDeviceContext->PSSetShaderResources(0, 1, &diffuseSRV);			//send the DiffuseMap to the DeferredPixelShader
@@ -601,16 +587,13 @@ void Render(Object object1, int nrOfVertexToDraw)
 	gDeviceContext->PSSetShaderResources(1, 1, &normalMapSRV);			//send the NormalMap to the DeferredPixelShader
 	gDeviceContext->GSSetConstantBuffers(0, 1, &cameraBuffer);			//send the cameraBuffer to the GeometryShader
 
-	
-
 	UINT32 vertexSize = sizeof(TriangleVertex);
 	UINT32 offset = 0;
 	gVertexBuffer = object1.getVertexBufferPointer();	//get the vertexBuffer from the object
 
 	gDeviceContext->IASetVertexBuffers(0, 1, &gVertexBuffer, &vertexSize, &offset);	//set the vertexBuffer
 	gDeviceContext->VSSetConstantBuffers(0, 1, &worldSpaceBuffer);	//set the constant buffer for the DeferredVertexShader
-
-
+	
 	gDeviceContext->Draw(nrOfVertexToDraw,0);	//render the object
 }
 
@@ -619,7 +602,7 @@ void FirstRenderCall()
 	//THIS IS THE START OF THE FIRST RENDERCALL
 	HRESULT hr;
 	float clearColor[4] = { 0, 0, 0, 1 };
-	//float whiteColor[] = { 1, 1, 1, 1 };
+	float whiteColor[4] = { 1, 1, 1, 1 };
 	//float grayColor[] = { 0.5, 0.5, 0.5 , 1 };
 
 	//clear all the RTV
@@ -630,7 +613,8 @@ void FirstRenderCall()
 	gDeviceContext->ClearRenderTargetView(deferredViews[4], clearColor);
 
 	//clear depthbuffer
-	gDeviceContext->ClearDepthStencilView(gDepthBuffer, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1, 0);
+	//clearing the backbuffer her but nothing happens?
+	gDeviceContext->ClearDepthStencilView(gDepthBuffer, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 1);
 
 	//get all the object in the part of the quad tree that the camera is in (must be used)
 	objectsToDraw = quadTree.getObjectsToDraw(WorldCamera.getCameraPos()); 
@@ -1008,6 +992,10 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 	D3D_DRIVER_TYPE_HARDWARE
 	(Works on Axels Computer)
 
+	firstrendercall () 3ms
+
+	secoundRendercall() 43 ms!!!!!!
+
 	(Problem with Sebastians computer)
 	Strange artifacts, looking like the depthbuffer does not get cleared
 	
@@ -1017,6 +1005,10 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 	D3D_DRIVER_TYPE_WARP
 	Program runs on debug mode on my (Sebastians) computer, in the release the boxes dissapear
 	in geometry shader (todo: find out why?)
+
+	firstrendercall () 9ms
+
+	secoundRendercall() 2,4 ms! 20x faster here! 
 
 	D3D_DRIVER_TYPE_REFERENCE
 	Program fails to render any frame, i think.
@@ -1030,7 +1022,7 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 	D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_11_0;
 
 	HRESULT hr = D3D11CreateDeviceAndSwapChain(NULL,
-		D3D_DRIVER_TYPE_WARP,
+		D3D_DRIVER_TYPE_HARDWARE,
 		NULL,
 		NULL,
 		NULL,
