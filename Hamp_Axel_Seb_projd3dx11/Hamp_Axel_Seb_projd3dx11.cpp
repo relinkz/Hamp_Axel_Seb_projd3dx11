@@ -980,7 +980,7 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;     // use 32-bit color
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;      // how swap chain is to be used
 	scd.OutputWindow = wndHandle;                           // the window to be used
-	scd.SampleDesc.Count = 4;                               // how many multisamples
+	scd.SampleDesc.Count =  1;                               // how many multisamples
 	scd.Windowed = TRUE;                                    // windowed/full-screen mode
 
 															// create a device, device context and swap chain using the information in the scd struct
@@ -1049,7 +1049,7 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		descDepth.MipLevels = 1;
 		descDepth.ArraySize = 4;
 		descDepth.Format = DXGI_FORMAT_D32_FLOAT;
-		descDepth.SampleDesc.Count = 4;
+		descDepth.SampleDesc.Count =  1;
 		descDepth.SampleDesc.Quality = 0;
 		descDepth.Usage = D3D11_USAGE_DEFAULT;
 		descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
@@ -1063,7 +1063,7 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		descDepth2.MipLevels = 1;
 		descDepth2.ArraySize = 1;
 		descDepth2.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-		descDepth2.SampleDesc.Count = 4;
+		descDepth2.SampleDesc.Count =  1;
 		descDepth2.SampleDesc.Quality = 0;
 		descDepth2.Usage = D3D11_USAGE_DEFAULT;
 		descDepth2.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE; //must be used as RenderTargetViews and ShaderResources
