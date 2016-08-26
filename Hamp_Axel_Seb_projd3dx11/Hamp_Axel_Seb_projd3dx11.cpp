@@ -996,8 +996,33 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 	scd.Windowed = TRUE;                                    // windowed/full-screen mode
 
 															// create a device, device context and swap chain using the information in the scd struct
+	
+	/*
+	Driver types
+	Different hardware give the program different outcome.
+
+	D3D_DRIVER_TYPE_HARDWARE
+	(Works on Axels Computer)
+
+	(Problem with Sebastians computer)
+	Strange artifacts, looking like the depthbuffer does not get cleared
+	
+	D3D_DRIVER_TYPE_SOFTWARE
+	Nullpoint exception, viewport fails to be created (todo: find out why)
+
+	D3D_DRIVER_TYPE_WARP
+	Program runs on debug mode on my (Sebastians) computer, in the release the boxes dissapear
+	in geometry shader (todo: find out why?)
+
+	D3D_DRIVER_TYPE_REFERENCE
+	Program fails to render any frame, i think.
+
+	(todo: Program should run in this mode)
+
+	*/														
+	//
 	HRESULT hr = D3D11CreateDeviceAndSwapChain(NULL,
-		D3D_DRIVER_TYPE_WARP,
+		D3D_DRIVER_TYPE_SOFTWARE,
 		NULL,
 		NULL,
 		NULL,
