@@ -29,7 +29,12 @@ Texture2D colorMap		: register(t2);
 Texture2D shadowMap		: register(t3);
 Texture2D IDMap			: register(t4);
 
-
+struct PointLight
+{
+	float4 Pos;
+	float3 Color;
+	float intensity;
+};
 struct PS_IN
 {
 	float4 Pos	: SV_POSITION;
@@ -165,5 +170,32 @@ float4 main(PS_IN input) : SV_TARGET
 			//return float4(color, 0);
 		}
 	}
+
+	//does point light calculations
+	PointLight pl;
+	pl.Pos = float4(2.5f, 13.0f, 5.0f, 0.0f);
+	pl.Color = float3(0.5f, 0.0f, 0.0f);
+	pl.intensity = 1.5f;
+
+	float3 toLightVec = pl.Pos.xyz - pos.xyz;
+	float distance = length(toLightVec);
+	toLightVec = normalize(toLightVec);
+	float angle = dot(toLightVec.xyz, normal.xyz);
+
+	float3 addColor = float3(0.0f, 0.0f, 0.0f);
+	if (angle > 0.0f )
+	{
+
+		addColor.r += (pl.Color.r * pl.intensity * angle)/ distance;
+		addColor.g += (pl.Color.g * pl.intensity * angle)/ distance;
+		addColor.b += (pl.Color.b * pl.intensity * angle)/ distance;
+
+		addColor = saturate(addColor);
+
+		color.r += addColor.r;
+		color.g += addColor.g;
+		color.b += addColor.b;
+	}
+
 	return float4(color, 1.0f);
 }
