@@ -8,6 +8,7 @@
 #include "Camera.h"
 #include "LightHandler.h"
 #include "terrain.h"
+#include <chrono>
 
 #include "QuadTree.h"
 #include "shadowShaderClass.h"
@@ -833,7 +834,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	if (wndHandle)
 	{
 		CreateDirect3DContext(wndHandle); //2. Skapa och koppla SwapChain, Device och Device Context
-
+		
 		SetViewport(); //3. Sätt viewport
 
 		CreateShaders(); //4. Skapa vertex- och pixel-shaders
@@ -883,16 +884,17 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 			}
 			else
 			{
-
 				updateMouseBuffer(wndHandle);
 
+				std::chrono::steady_clock::time_point timer = std::chrono::steady_clock::now();
 				FirstRenderCall(); //DO THE FIRST RENDER CALL THAT RENDERS ALL THE OBJECTS AND STORES THEIR VALUES IN THE RTVs
+				std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+				std::chrono::duration<double>time_span = std::chrono::duration_cast<std::chrono::duration<double>>(end - timer);
 
 				gameLogic();
 
 				//shadowMap.updateBuffer(terrainData.obj, gDeviceContext);
 				//shadowMap.render(terrainData.obj, terrainData.nrOfVertex, gDevice, gDeviceContext);
-
 				for (int i = 0; i < objectsToDraw.size(); i++)
 				{
 					if (objectsToDraw.at(i) != nullptr)
@@ -904,11 +906,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 					}
 				}
 
-
+				timer = std::chrono::steady_clock::now();
 				SecondRenderCall(); //DO THE SECOND RENDERCALL THAT RENDERS TO A QUAD
-				
+				end = std::chrono::steady_clock::now();
+				time_span = std::chrono::duration_cast<std::chrono::duration<double>>(end - timer);
+
 				gSwapChain->Present(0, 0); //9. Växla front- och back-buffer
-				
+
 				shadowMap.clearDepthBuffer(gDeviceContext);
 			}
 			oldTime = currentTime;
@@ -1019,10 +1023,14 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 
 	(todo: Program should run in this mode)
 
+
+	
 	*/														
 	//
+	D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_11_0;
+
 	HRESULT hr = D3D11CreateDeviceAndSwapChain(NULL,
-		D3D_DRIVER_TYPE_SOFTWARE,
+		D3D_DRIVER_TYPE_WARP,
 		NULL,
 		NULL,
 		NULL,
@@ -1031,7 +1039,7 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		&scd,
 		&gSwapChain,
 		&gDevice,
-		NULL,
+		&featureLevel,
 		&gDeviceContext);
 
 	//hr = gDevice->CreateDeferredContext(0, &gDeviceContext); //I have no clue what I am doing
