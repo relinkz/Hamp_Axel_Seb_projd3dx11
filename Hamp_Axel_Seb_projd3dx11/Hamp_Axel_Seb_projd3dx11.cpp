@@ -294,7 +294,7 @@ void CreateShaders()
 		nullptr,		// optional include files
 		"VS_main",		// entry point
 		"vs_4_0",		// shader model (target)
-		D3DCOMPILE_DEBUG,				// shader compile options
+		D3DCOMPILE_OPTIMIZATION_LEVEL3,				// shader compile options
 		0,				// effect compile options
 		&pVS,			// double pointer to ID3DBlob		
 		nullptr			// pointer for Error Blob messages.
@@ -325,7 +325,7 @@ void CreateShaders()
 		nullptr,		// optional include files
 		"main",		// entry point
 		"vs_4_0",		// shader model (target)
-		D3DCOMPILE_DEBUG,				// shader compile options
+		D3DCOMPILE_OPTIMIZATION_LEVEL3,				// shader compile options
 		0,				// effect compile options
 		&pVS2,			// double pointer to ID3DBlob		
 		nullptr			// pointer for Error Blob messages.
@@ -351,7 +351,7 @@ void CreateShaders()
 		nullptr,		// optional include files
 		"main",		// entry point
 		"ps_4_0",		// shader model (target)
-		D3DCOMPILE_DEBUG,				// shader compile options
+		D3DCOMPILE_OPTIMIZATION_LEVEL3,				// shader compile options
 		0,				// effect compile options
 		&pPS,			// double pointer to ID3DBlob		
 		nullptr			// pointer for Error Blob messages.
@@ -367,7 +367,7 @@ void CreateShaders()
 		nullptr,		// optional include files
 		"main",		// entry point
 		"ps_4_0",		// shader model (target)
-		D3DCOMPILE_DEBUG,				// shader compile options
+		D3DCOMPILE_OPTIMIZATION_LEVEL3,				// shader compile options
 		0,				// effect compile options
 		&pPS2,			// double pointer to ID3DBlob		
 		nullptr			// pointer for Error Blob messages.
@@ -383,7 +383,7 @@ void CreateShaders()
 		nullptr,
 		"main",
 		"gs_4_0",
-		D3DCOMPILE_DEBUG,
+		D3DCOMPILE_OPTIMIZATION_LEVEL3,
 		0,
 		&pGS,
 		&errorBlob
@@ -990,7 +990,7 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 
 															// create a device, device context and swap chain using the information in the scd struct
 	HRESULT hr = D3D11CreateDeviceAndSwapChain(NULL,
-		D3D_DRIVER_TYPE_HARDWARE,
+		D3D_DRIVER_TYPE_WARP,
 		NULL,
 		NULL,
 		NULL,
