@@ -858,7 +858,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 			int y = terrain->getY(camPos.x, camPos.z);
 			if (y + 0.5f > camPos.y)
 			{
-				camPos.y = y + 0.5f;
+				//camPos.y = y + 0.5f;
 			}           
 			WorldCamera.setPosition(camPos);
 			if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -875,7 +875,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 				std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 				std::chrono::duration<double>time_span = std::chrono::duration_cast<std::chrono::duration<double>>(end - timer);
 
-				gameLogic();
+				//gameLogic();
 
 				//shadowMap.updateBuffer(terrainData.obj, gDeviceContext);
 				//shadowMap.render(terrainData.obj, terrainData.nrOfVertex, gDevice, gDeviceContext);
