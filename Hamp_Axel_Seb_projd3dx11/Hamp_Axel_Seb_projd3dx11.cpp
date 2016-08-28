@@ -1049,7 +1049,7 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		descDepth.MipLevels = 1;
 		descDepth.ArraySize = 4;
 		descDepth.Format = DXGI_FORMAT_D32_FLOAT;
-		descDepth.SampleDesc.Count =  1;
+		descDepth.SampleDesc.Count =  1; // we had 4
 		descDepth.SampleDesc.Quality = 0;
 		descDepth.Usage = D3D11_USAGE_DEFAULT;
 		descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
@@ -1078,8 +1078,6 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		hr = gDevice->CreateTexture2D(&descDepth2, NULL, &PositionStencil);		//creates the Position Texture2D used in DeferredRendering
 		hr = gDevice->CreateTexture2D(&descDepth2, NULL, &NormalStencil);		//creates the Normal Texture2D used in DeferredRendering
 		hr = gDevice->CreateTexture2D(&descDepth2, NULL, &ColorStencil);		//creates the Color Texture2D used in DeferredRendering
-
-		//descDepth2.Format = DXGI_FORMAT_R32_UINT;
 		
 		hr = gDevice->CreateTexture2D(&descDepth2, nullptr, &ObjectIndexStencil);	//creating the texture
 
@@ -1114,10 +1112,6 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 		hr = gDevice->CreateShaderResourceView(ColorStencil, &SRVDesc, &ColorSRV);			//turn the RTV that stores the Colors into a 
 		hr = gDevice->CreateShaderResourceView(ObjectIndexStencil, &SRVDesc, &ObjectIndexSRV);
 
-
-		//desc.Format = DXGI_FORMAT_R32_UINT;
-		//hr = gDevice->CreateRenderTargetView(ObjectIndexStencil, &desc, &deferredViews[4]);
-
 		pBackBuffer->Release();
 
 		hr = gDevice->CreateDepthStencilView
@@ -1126,10 +1120,8 @@ HRESULT CreateDirect3DContext(HWND wndHandle)
 				&descDSV, // Depth stencil desc
 				&gDepthBuffer
 				);		// [out] Depth stencil view
-							// set the render target as the back buffer
-		gDeviceContext->OMSetRenderTargets(1, &gBackbufferRTV, gDepthBuffer);
-
-	
+							
+		gDeviceContext->OMSetRenderTargets(1, &gBackbufferRTV, gDepthBuffer); // set the render target as the back buffer
 	}
 
 	return hr;
