@@ -30,7 +30,7 @@ public:
 	Parser();
 	virtual ~Parser();
 	void progressFile(const string& dest) throw(...);
-	void loadMaterial(const string& dest) throw(...);
+	
 	
 	/*getters*/
 	int getNrOfTriangleVertices()			const;
@@ -56,6 +56,8 @@ private:
 	list<triangleData>triVertex;
 	list<TriangleVertex>finalVertexes;
 	vector<Vector2>UVtext;
+
+	void loadMaterial() throw(...);
 
 	void loadDataIntoTriangleData(const string& triangleDesc);
 };

@@ -73,7 +73,7 @@ float4 main(PS_IN input) : SV_TARGET
 	float bias = 0.005f;			//a variable used to stabalize trash values
 
 	shadowUV = float2(0, 0); 
-	shadowUV = input.UVCoord;
+
 	specular = float4(0.0f, 0.0f, 0.0f, 0.0f);	//initialize the specular color
 	lightPos = lightPosition;					//can remove this
 
@@ -88,7 +88,7 @@ float4 main(PS_IN input) : SV_TARGET
 	vPosToLight = lightPos.xyz - pos.xyz;
 	vPosToLight = normalize(vPosToLight);
 
-	//adding perspective into the lights position i think
+	//adding perspective into the lights position
 	lightPos = mul(float4(pos, 1.0f), lightWVP);
 
 	viewDir = cameraPos.xyz - pos.xyz;
@@ -97,14 +97,13 @@ float4 main(PS_IN input) : SV_TARGET
 	shineFactor = 5.0f;
 	lightSpecular = 0.65f;
 
-	//lightIntensity = saturate(dot(normal, outVec));
+
 	lightIntensity = dot(normal, vPosToLight);
 	lightIntensity = saturate(lightIntensity);
 
-
-
-	shadowUV.x = ((lightPos.x / lightPos.w) / 2.0f) + 0.5f;
-	shadowUV.y = ((lightPos.y / lightPos.w) / -2.0f) + 0.5f;
+	//Create The texture coordinates for the projecting of the shadowMap
+	shadowUV.x = ((lightPos.x / lightPos.w) / 2.0f) + 0.50f;
+	shadowUV.y = ((lightPos.y / lightPos.w) / -2.0f) + 0.50f;
 
 	if (saturate(shadowUV.x) != shadowUV.x || saturate(shadowUV.y) != shadowUV.y)
 	{
@@ -120,7 +119,6 @@ float4 main(PS_IN input) : SV_TARGET
 
 		//sample the shadowmap
 		depthValue = shadowMap.Sample(sampAni, shadowUV).r;
-		//depthValue = shadowMap.Sample(pointSampler, shadowUV).r;
 
 		// Subtract the bias from the lightDepthValue.
 		lightDepthValue = lightDepthValue - bias;
@@ -129,15 +127,11 @@ float4 main(PS_IN input) : SV_TARGET
 		if (lightDepthValue <= depthValue)
 		{
 			lightIntensity = saturate(dot(outVec.xyz, normal.xyz));
-			//color = float3(0, 1, 0);
 		}
-		//output.Color = float4(0, 1, 0, 0);
 	}
 
 	float3 diffuseColor = (color.rgb * lightIntensity * 0.8f);
 	float3 ambientColor = (color.rgb * 0.2f);
-
-	//color = saturate((color.rgb * lightIntensity * 0.8f) + (color.rgb * 0.2f));
 	
 	if (lightIntensity > 0.0f)
 	{
@@ -151,7 +145,7 @@ float4 main(PS_IN input) : SV_TARGET
 	color = saturate(color + specular);
 	
 	uint3 idColor = uint3(0, 0, 0);
-	//uint idtemp = 0;
+
 	float4 idtemp = float4(0, 0, 0, 0);
 
 	//sample the specific pixel that are rendereds id. This is used further
@@ -172,7 +166,9 @@ float4 main(PS_IN input) : SV_TARGET
 	}
 
 	//does point light calculations
+	//this is for specular highlighting
 	PointLight pl;
+	
 	pl.Pos = float4(2.5f, 13.0f, 5.0f, 0.0f);
 	pl.Color = float3(0.5f, 0.0f, 0.0f);
 	pl.intensity = 1.5f;

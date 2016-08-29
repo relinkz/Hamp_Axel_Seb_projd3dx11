@@ -250,7 +250,7 @@ void Camera::moveViewFustrum(Vector3 move)
 
 void Camera::setDefaultValue()
 {
-	this->Pos = Vector3(0, 0, 0);
+	this->Pos = Vector3(10, 10, 10);
 
 	this->lookAtPoint = Vector3(0, 0, 1);
 	this->lookUpPoint = Vector3(0, 1, 0);

@@ -417,7 +417,8 @@ void createObjects()
 	Parser fromFile;
 
 	fromFile.progressFile("obj2.txt");
-	fromFile.loadMaterial("box.mtl");
+	//fromFile.progressFile("ogreFullG.obj"); crashes in geometry shader
+	//fromFile.loadMaterial("box.mtl");
 
 	int nrOfVert = 0;
 	int counter = 0;

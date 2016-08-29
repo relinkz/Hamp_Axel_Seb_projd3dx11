@@ -75,7 +75,7 @@ void Parser::progressFile(const string& dest) throw(...)
 				file >> this->usemtl;
 
 			}
-
+			//getting the material library
 			else if (data == "mtllib")
 			{
 				file >> this->mtllib;
@@ -93,10 +93,11 @@ void Parser::progressFile(const string& dest) throw(...)
 
 		}
 	}
+	this->loadMaterial();
 	file.close();
 }
 
-void Parser::loadMaterial(const string& dest)
+void Parser::loadMaterial()
 {
 	stringstream errorMessage;
 	stringstream dataStream;
@@ -104,7 +105,7 @@ void Parser::loadMaterial(const string& dest)
 	this->material = Material();
 
 	ifstream file;
-	file.open(dest);
+	file.open(this->mtllib);
 
 	if (file.is_open() == false)
 	{
