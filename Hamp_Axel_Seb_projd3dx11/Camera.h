@@ -56,6 +56,7 @@ public:
 	Vector3 getLookAtPoint();
 	Vector3 getLookRight() const;
 	Vector3 getLookUp() const;
+	void moveViewFustrum(Vector3 move);
 
 	POINT GetMousePos(HWND hWnd);
 	void setPosition(Vector3 pos);

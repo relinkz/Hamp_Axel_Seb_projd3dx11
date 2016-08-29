@@ -138,6 +138,7 @@ void Camera::Update(HWND hWnd, Terrain* terrain, float dt)
 	if (GetAsyncKeyState(VK_SPACE))
 	{
 		this->Pos += Vector3(0, 1, 0) * dt;
+		this->moveViewFustrum(Vector3(0, 1, 0) * dt);
 	}
 	/*
 	else//walking on terrain
@@ -158,26 +159,31 @@ void Camera::Update(HWND hWnd, Terrain* terrain, float dt)
 	if (GetAsyncKeyState(VK_CONTROL))
 	{
 		this->Pos += Vector3(0, 1, 0) * -dt;
+		this->moveViewFustrum(Vector3(0, 1, 0) * -dt);
 	}
 	//0x57 = W
 	if (GetAsyncKeyState(0x57))
 	{
 		this->Pos += lookAtVector * dt;
+		this->moveViewFustrum(lookAtVector * dt);
 	}
 	//0x53 = S
 	if (GetAsyncKeyState(0x53))
 	{
 		this->Pos += lookAtVector * -dt;
+		this->moveViewFustrum(lookAtVector * -dt);
 	}
 	//0x44 = D
 	if (GetAsyncKeyState(0x44))
 	{
 		this->Pos += leftRight * dt;
+		this->moveViewFustrum(leftRight * dt);
 	}
 	//0x41 = A
 	if (GetAsyncKeyState(0x41))
 	{
 		this->Pos += leftRight * -dt;
+		this->moveViewFustrum(leftRight * -dt);
 	}
 	//0x52 = R
 	if (GetAsyncKeyState(0x52))
@@ -232,6 +238,16 @@ Vector3 Camera::getLookUp() const
 {
 	return this->lookUpPoint;
 }
+
+void Camera::moveViewFustrum(Vector3 move)
+{
+	for (int i = 0; i < this->viewFustrumPlanes.size(); i++)
+	{
+		this->viewFustrumPlanes.at(i).pos += move;
+	}
+
+}
+
 void Camera::setDefaultValue()
 {
 	this->Pos = Vector3(0, 0, 0);
@@ -302,23 +318,36 @@ void Camera::setUpViewFustrumPlanes()
 		Vector3(0, 0, 0), Vector3(0, 0, -1)
 	};
 	viewFustrumPlanes.push_back(backward);
+
+
+	//Matrix moveToCameraPos;
+	//moveToCameraPos = Matrix(XMMatrixTranslation(this->Pos.x, this->Pos.y, this->Pos.z));
+	//for (int i = 0; i < this->viewFustrumPlanes.size(); i++)
+	//{
+	//
+	//	Vector3 temp = XMVector3Transform(viewFustrumPlanes.at(i).pos, moveToCameraPos);
+	//	viewFustrumPlanes.at(i).pos = temp;
+	//}
+
+	//Vector3 objectToPlane = temp - objects.at(a)->getPosition();
 }
 
 
 std::vector<Object*> Camera::doFustrumCulling(std::vector<Object*> objects)
 {
 	vector<Object*> objectsToDraw;
-	Matrix moveToCameraPos;
-	moveToCameraPos = Matrix(XMMatrixTranslation(this->Pos.x, this->Pos.y, this->Pos.z));
+	//Matrix moveToCameraPos;
+	//moveToCameraPos = Matrix(XMMatrixTranslation(this->Pos.x, this->Pos.y, this->Pos.z));
 
 	for (int a = 0; a < objects.size(); a++)
 	{
 		bool result = true;
 		for (int i = 0; i < viewFustrumPlanes.size() && result == true; i++)
 		{
-			Vector3 temp = XMVector3Transform(viewFustrumPlanes.at(i).pos, moveToCameraPos);
+			//Vector3 temp = XMVector3Transform(viewFustrumPlanes.at(i).pos, moveToCameraPos);
 
-			Vector3 objectToPlane = temp - objects.at(a)->getPosition();
+			//Vector3 objectToPlane = temp - objects.at(a)->getPosition();
+			Vector3 objectToPlane = viewFustrumPlanes.at(i).pos - objects.at(a)->getPosition();
 			objectToPlane.Normalize();
 
 			float dot = objectToPlane.Dot(viewFustrumPlanes.at(i).normal);
@@ -334,5 +363,6 @@ std::vector<Object*> Camera::doFustrumCulling(std::vector<Object*> objects)
 		}
 
 	}
+
 	return objectsToDraw;
 }
