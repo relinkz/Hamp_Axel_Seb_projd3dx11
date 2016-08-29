@@ -14,6 +14,9 @@
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dcompiler.lib")
 
+//set shadowmaps resulution here
+float const SM_WIDTH = 640.0;
+float const SM_HEIGHT = 480.0;
 
 using namespace std;
 class ShadowShaderClass

@@ -147,9 +147,10 @@ struct newPosLight
 	float strength;
 };
 
+//the lights position
 newPosLight light
 {
-	Vector3(10,20,10),
+	Vector3(10,20, 5),
 	0.0f,
 	0.2f,
 	0.8f,
@@ -479,37 +480,15 @@ void createObjects()
 
 	HRESULT hr = gDevice->CreateBuffer(&bufferDesc, &data, &quadVertexBuffer);
 
-	objects.push_back(Object(triangleVertices, Vector3((0.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
+	objects.push_back(Object(triangleVertices, Vector3((10.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
+	objects.push_back(Object(triangleVertices, Vector3((10.0f), (10.0f), (7.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
+
 	objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
-	
-	nrOfObjects = 2;
-	//objects.push_back(Object(triangleVertices, light.pos, gDevice, fromFile.getImageFile(), "cube_box_NormalMap", objNr++));
-	
-/*
-	int maxZ = terrain->getLength();
-	int maxX = terrain->getWidth();
-
-	for (int i = 1; i < objects.size(); i++)
-	{
-		float highest = 0;
-		for (int j = 0; j < 4; j++)//selecting the highest pos in the square
-		{
-			float compare = terrain->getY(
-				(int)floorf(objects[i].getPosition().x + j),
-				(int)floorf(objects[i].getPosition().z + j));
-
-			if (highest < compare)
-			{
-				highest = compare;
-			}
-		}
-		objects[i].setPosY(highest);
-
-	}
+	objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (7.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 
 
-	*/
-	
+
+	nrOfObjects = objects.size();
 
 	quadTree.setTreeData(objects); //splits all the objects into the quads in the quadtree
 #pragma endregion
@@ -547,7 +526,6 @@ void UpdateCameraBuffer()
 	memcpy(oldCameraData.pData, &newCameraData, sizeof(cameraData));
 
 	gDeviceContext->Unmap(cameraBuffer, 0);
-	//-----
 }
 
 void Render(Object object1, int nrOfVertexToDraw)

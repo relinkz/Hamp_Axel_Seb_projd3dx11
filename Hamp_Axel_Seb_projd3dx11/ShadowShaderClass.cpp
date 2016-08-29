@@ -51,13 +51,10 @@ bool ShadowShaderClass::initialize(ID3D11Device* gDevice, HWND hWind, Vector3 li
 	this->projectionMatrix = Matrix(DirectX::XMMatrixPerspectiveFovLH
 		(
 			3.14f*0.45f,		// FOV
-			640.0f / 480.0f,	//Aspect Ratio
+			SM_WIDTH / SM_HEIGHT,	//Aspect Ratio
 			0.5f,				//near plane
 			20.0f				//far plane
 			));
-
-	//this->projectionMatrix = Matrix(DirectX::XMMatrixOrthographicLH(640.0f, 480.f, 0.5f, 20.0f));
-
 
 	//Matrix multipication to worldViewProjection
 	this->wvpMatrix = (this->worldMatrix * this->viewMatrix) * this->projectionMatrix;
@@ -202,8 +199,8 @@ bool ShadowShaderClass::initializeDepthStencil(ID3D11Device* gDevice)
 
 	D3D11_TEXTURE2D_DESC textureDepthDesc;
 	ZeroMemory(&textureDepthDesc, sizeof(textureDepthDesc));
-	textureDepthDesc.Width = 640.0f;
-	textureDepthDesc.Height = 480.0f;
+	textureDepthDesc.Width = SM_WIDTH;
+	textureDepthDesc.Height = SM_HEIGHT;
 	textureDepthDesc.MipLevels = 1;
 	textureDepthDesc.ArraySize = 1;
 	textureDepthDesc.Format = DXGI_FORMAT_R32_TYPELESS;
@@ -279,7 +276,6 @@ void ShadowShaderClass::outputShaderErrorMessage(ID3D10Blob* errorMessage, HWND 
 	char* compileErrors;
 	unsigned long bufferSize, i;
 	ofstream fout;
-
 
 	// Get a pointer to the error message text buffer.
 	compileErrors = (char*)(errorMessage->GetBufferPointer());

@@ -234,7 +234,7 @@ Vector3 Camera::getLookUp() const
 }
 void Camera::setDefaultValue()
 {
-	this->Pos = Vector3(0, 10, -2);
+	this->Pos = Vector3(0, 0, 0);
 
 	this->lookAtPoint = Vector3(0, 0, 1);
 	this->lookUpPoint = Vector3(0, 1, 0);
