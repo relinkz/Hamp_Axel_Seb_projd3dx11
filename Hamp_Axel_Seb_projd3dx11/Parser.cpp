@@ -73,7 +73,6 @@ void Parser::progressFile(const string& dest) throw(...)
 			{
 				//if needed
 				file >> this->usemtl;
-
 			}
 			//getting the material library
 			else if (data == "mtllib")

@@ -416,9 +416,8 @@ void createObjects()
 	srand(1000);
 	Parser fromFile;
 
-	fromFile.progressFile("obj2.txt");
+	fromFile.progressFile("obj.txt");
 	//fromFile.progressFile("ogreFullG.obj"); crashes in geometry shader
-	//fromFile.loadMaterial("box.mtl");
 
 	int nrOfVert = 0;
 	int counter = 0;
@@ -427,26 +426,26 @@ void createObjects()
 	fromFile.createList();
 	nrOfVert = fromFile.getNrOfTriangleVertices();
 
-	for (int i = 0; i < nrOfVert; i++)
-	{
-		//openGL
-		triangleVertices.push_back(fromFile.popFirst());
-	}
-	//Convert
-	for (int i = 0; i < nrOfVert; i++)
-	{
-		if (counter == 1)
-		{
-			TriangleVertex temp = triangleVertices[i];
+	//for (int i = 0; i < nrOfVert; i++)
+	//{
+	//	//openGL
+	//	triangleVertices.push_back(fromFile.popFirst());
+	//}
+	////Convert
+	//for (int i = 0; i < nrOfVert; i++)
+	//{
+	//	if (counter == 1)
+	//	{
+	//		TriangleVertex temp = triangleVertices[i];
 
-			triangleVertices[i] = triangleVertices[i + 1];
-			triangleVertices[i + 1] = temp;
-		}
-		else if (counter == 2)
-			counter = -1;
+	//		triangleVertices[i] = triangleVertices[i + 1];
+	//		triangleVertices[i + 1] = temp;
+	//	}
+	//	else if (counter == 2)
+	//		counter = -1;
 
-		counter++;
-	}
+	//	counter++;
+	//}
 
 	//create terrain
 	
@@ -835,9 +834,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 			WorldCamera.Update(wndHandle, terrain, dt); //update worldcamera
 			Vector3 camPos = WorldCamera.getCameraPos();
 			int y = terrain->getY(camPos.x, camPos.z);
-			if (y + 0.5f > camPos.y)
+			if (y + 1.5f > camPos.y)
 			{
-				//camPos.y = y + 0.5f;
+				camPos.y = y + 1.5f;
 			}           
 			WorldCamera.setPosition(camPos);
 			if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))

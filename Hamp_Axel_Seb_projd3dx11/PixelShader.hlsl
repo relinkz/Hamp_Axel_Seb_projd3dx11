@@ -102,8 +102,8 @@ float4 main(PS_IN input) : SV_TARGET
 	lightIntensity = saturate(lightIntensity);
 
 	//Create The texture coordinates for the projecting of the shadowMap
-	shadowUV.x = ((lightPos.x / lightPos.w) / 2.0f) + 0.50f;
-	shadowUV.y = ((lightPos.y / lightPos.w) / -2.0f) + 0.50f;
+	shadowUV.x = ((lightPos.x / lightPos.w) / 2.0f) + 0.5f;
+	shadowUV.y = ((lightPos.y / lightPos.w) / -2.0f) + 0.5f;
 
 	if (saturate(shadowUV.x) != shadowUV.x || saturate(shadowUV.y) != shadowUV.y)
 	{
