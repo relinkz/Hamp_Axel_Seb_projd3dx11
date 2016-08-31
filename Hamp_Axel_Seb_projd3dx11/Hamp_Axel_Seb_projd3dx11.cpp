@@ -150,7 +150,7 @@ struct newPosLight
 //the lights position
 newPosLight light
 {
-	Vector3(10,20, 5),
+	Vector3(5,10, 5),
 	0.0f,
 	0.2f,
 	0.8f,
@@ -416,7 +416,7 @@ void createObjects()
 	srand(1000);
 	Parser fromFile;
 
-	fromFile.progressFile("obj.txt");
+	fromFile.progressFile("sphere1.obj");
 	//fromFile.progressFile("ogreFullG.obj"); crashes in geometry shader
 
 	int nrOfVert = 0;
@@ -424,14 +424,15 @@ void createObjects()
 	vector<TriangleVertex> triangleVertices;
 
 	fromFile.createList();
+
+
 	nrOfVert = fromFile.getNrOfTriangleVertices();
 
-	//for (int i = 0; i < nrOfVert; i++)
-	//{
-	//	//openGL
-	//	triangleVertices.push_back(fromFile.popFirst());
-	//}
-	////Convert
+	for (int i = 0; i < nrOfVert; i++)
+	{
+		triangleVertices.push_back(fromFile.popFirst());
+	}
+	//Convert
 	//for (int i = 0; i < nrOfVert; i++)
 	//{
 	//	if (counter == 1)
@@ -481,10 +482,11 @@ void createObjects()
 	HRESULT hr = gDevice->CreateBuffer(&bufferDesc, &data, &quadVertexBuffer);
 
 	objects.push_back(Object(triangleVertices, Vector3((10.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
-	objects.push_back(Object(triangleVertices, Vector3((10.0f), (10.0f), (7.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
+	//objects.push_back(Object(triangleVertices, Vector3((light.pos.x), (light.pos.y), (light.pos.z)), gDevice, "", "cube_box_NormalMap.png", objNr++));
+	//objects.push_back(Object(triangleVertices, Vector3((10.0f), (10.0f), (7.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 
-	objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
-	objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (7.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
+	//objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
+	//objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (7.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 
 
 

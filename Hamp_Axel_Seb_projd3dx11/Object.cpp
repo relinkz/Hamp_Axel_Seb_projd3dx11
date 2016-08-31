@@ -218,6 +218,7 @@ void Object::create2DTexture(ID3D11Device* gDevice, string fileName)
 			&this->textureData,
 			&this->diffuseMapSRV
 		);
+
 }
 
 void Object::createNoarmalMap(ID3D11Device * gDevice, string fileName)

@@ -43,7 +43,7 @@ void Parser::progressFile(const string& dest) throw(...)
 				file >> vertex[0];
 				file >> vertex[1];
 				file >> vertex[2];
-
+			
 				this->verticies.push_back(Vector3(vertex[0], vertex[1], vertex[2]));
 			}
 			else if (data == "vt")
@@ -82,11 +82,12 @@ void Parser::progressFile(const string& dest) throw(...)
 			//faces
 			else if (data == "f")
 			{
-				string* temp;
+				triangleData face;
 				for (int i = 0; i < 3; i++)
 				{
 					file >> data;
-					this->loadDataIntoTriangleData(data);
+					face = this->stringToFace(data);
+					this->loadDataIntoTriangleData(face);
 				}
 			}
 
@@ -94,6 +95,47 @@ void Parser::progressFile(const string& dest) throw(...)
 	}
 	this->loadMaterial();
 	file.close();
+}
+
+void Parser::forceSharedNormal()
+{
+	for (std::list<gFace>::iterator iterator = this->faceList.begin(), end = this->faceList.end(); iterator != end; ++iterator) 
+	{
+
+		iterator->a.nx = iterator->a.nx;
+		iterator->a.ny = iterator->a.ny;
+		iterator->a.nz = iterator->a.nz;
+
+		iterator->b.nx = iterator->a.nx;
+		iterator->b.ny = iterator->a.ny;
+		iterator->b.nz = iterator->a.nz;
+
+		iterator->c.nx = iterator->a.nx;
+		iterator->c.ny = iterator->a.ny;
+		iterator->c.nz = iterator->a.nz;
+	}
+}
+
+void Parser::printFacesUVtoFile()
+{
+	ofstream f;
+	f.open("uvOutPut.txt");
+	int i = 0;
+
+	TriangleVertex a;
+	TriangleVertex b;
+	TriangleVertex c;
+
+	for (std::list<gFace>::iterator iterator = this->faceList.begin(), end = this->faceList.end(); iterator != end; ++iterator)
+	{
+		a = iterator->a;
+		b = iterator->b;
+		c = iterator->c;
+
+		f << i++ << " " << a.u << " " << a.v << " | " << b.u << " " << b.v << " | " << c.u << " " << c.v << "\n";
+	}
+	f.close();
+	
 }
 
 void Parser::loadMaterial()
@@ -201,6 +243,55 @@ void Parser::loadMaterial()
 	file.close();
 
 }
+triangleData Parser::stringToFace(const string& src)
+{
+	triangleData face;
+	int s_size = src.size();
+	int cutter = 0;
+	string stringLeft = "";
+	string source = src;
+
+	if (src == "1/9/15")
+	{
+		true;
+	}
+
+	stringLeft = src;
+
+	for (int i = 0; i < 3; i++)
+	{
+		//search string for first '/', save pos;
+		cutter = source.find('/');
+
+		//if '/' exists in string
+		if (cutter != -1)
+		{
+			//cutstring into two
+			stringLeft = source.substr(0, cutter);
+			source.erase(0, cutter + 1);
+		}
+		else
+		{
+			stringLeft = source;
+		}
+
+		//convert string to int in face
+		switch (i)
+		{
+		case 0:
+			face.vIndex = stoi(stringLeft);
+			break;
+		case 1:
+			face.txIndex = stoi(stringLeft);
+			break;
+		case 2:
+			face.vNormIndex = stoi(stringLeft);
+			break;
+		}
+	}
+
+	return face;
+}
 //getters
 int Parser::getNrOfTriangleVertices() const
 {
@@ -232,69 +323,24 @@ Vector3 Parser::getVertex(const int &nr) const
 	return this->verticies[nr];
 }
 
-void Parser::loadDataIntoTriangleData(const string& triangleDesc)
+void Parser::loadDataIntoTriangleData(triangleData &triangleDesc)
 {
-	string strIndex[3] = { "","","" };
-	stringstream test;
-
-	int counter = 0;
-	int nrOfCharacters = triangleDesc.size();
-	string temp = "";
-	int stringStart = 0;
-	int vertexCount = 0;
-
-	for (int i = 0; i < nrOfCharacters; i++)
-	{
-		if (triangleDesc[i] == '/')
-		{
-			//if / was hit
-			for (int j=0; j < counter; j++)
-			{
-				//I am not a smart man, but it works... :)
-				temp = triangleDesc.substr((i-counter), counter);
-				strIndex[vertexCount] = temp;
-				vertexCount++;
-				counter = 0;
-			}
-		}
-		else
-		{
-			//continue
-			counter++;
-			if (i == nrOfCharacters - 1)
-			{
-				//last part in the string
-				temp = triangleDesc.substr((i - counter + 1), counter);
-				strIndex[vertexCount] = temp;
-			}
-		}
-	}
-
-
-	triangleData data
-	{
-		0,0,0
-	};
-	string::size_type size = strIndex[0].size();
-	data.vIndex = stoi(strIndex[0], &size);
-
-	size = strIndex[1].size();
-	data.txIndex = stoi(strIndex[1], &size);
-
-	size = strIndex[2].size();
-	data.vNormIndex = stoi(strIndex[2], &size);
-
 	//push front
-	this->triVertex.push_back(data);
+	this->triVertex.push_back(triangleDesc);
 }
 
 void Parser::createList()
 {
+	//fatta vad som händer här
 	TriangleVertex newVertex;
 	triangleData temp;
-	
+	//Face temp
+	int counter = 0;
+
+	gFace currFace;
 	int size = this->verticies.size();
 
+	//Parsen
 	while(this->triVertex.empty() != true)
 	{
 		temp = this->triVertex.front();
@@ -303,8 +349,10 @@ void Parser::createList()
 		newVertex.y = this->verticies.at(temp.vIndex-1).y;
 		newVertex.z = this->verticies.at(temp.vIndex-1).z;
 
+
 		newVertex.u = this->UVtext.at(temp.txIndex-1).x;
 		newVertex.v = this->UVtext.at(temp.txIndex-1).y;
+		//open gl?
 		newVertex.v = 1.0f - newVertex.v;
 
 		newVertex.nx = this->vertexNormals.at(temp.vNormIndex - 1).x;
@@ -314,6 +362,22 @@ void Parser::createList()
 
 		this->finalVertexes.push_back(newVertex);
 		this->triVertex.pop_front();
+
+		counter %= 3;
+
+		switch (counter++)
+		{
+		case 0:
+			currFace.a = newVertex;
+			break;
+		case 1:
+			currFace.b = newVertex;
+			break;
+		case 2:
+			currFace.c = newVertex;
+			this->faceList.push_front(currFace);
+			break;
+		}
 	}
 }
 

@@ -24,6 +24,13 @@ struct TriangleVertex
 	int ID;
 };
 
+struct gFace
+{
+	TriangleVertex a;
+	TriangleVertex b;
+	TriangleVertex c;
+};
+
 class Parser
 {
 public:
@@ -43,6 +50,8 @@ public:
 	void createList();
 	TriangleVertex popFirst();
 
+	void forceSharedNormal();
+	void printFacesUVtoFile();
 private:
 	string imageFile;
 	string mtllib;
@@ -56,10 +65,13 @@ private:
 	list<triangleData>triVertex;
 	list<TriangleVertex>finalVertexes;
 	vector<Vector2>UVtext;
+	
+	list<gFace>faceList;
 
 	void loadMaterial() throw(...);
+	triangleData stringToFace(const string& src);
 
-	void loadDataIntoTriangleData(const string& triangleDesc);
+	void loadDataIntoTriangleData(triangleData &triangleDesc);
 };
 
 #endif

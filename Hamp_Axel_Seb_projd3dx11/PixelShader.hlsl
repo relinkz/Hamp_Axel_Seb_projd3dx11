@@ -61,7 +61,7 @@ float4 main(PS_IN input) : SV_TARGET
 	float2 shadowUV;				//texture uv that sample from the shadowmap texture from DeferredRendering
 
 	float3 vPosToLight;				//this will hold the vector, from the pixel position, to the light position.
-	float3 viewDir;					//this will hold the vector, from the pixel position, to the camera position
+	float3 vPosToCam;					//this will hold the vector, from the pixel position, to the camera position
 
 	float shineFactor;				//variable to create a illution of shinyness
 	float lightSpecular;			//unknown, i think light normal?
@@ -71,6 +71,10 @@ float4 main(PS_IN input) : SV_TARGET
 	float lightDepthValue = 0.0f;	//how far away an objects pixel is from the light
 	float depthValue = 0.0f;		//how far away an objects pixel is from the camera
 	float bias = 0.005f;			//a variable used to stabalize trash values
+
+									//constant values
+	shineFactor = 5.0f;
+	lightSpecular = 0.65f;
 
 	shadowUV = float2(0, 0); 
 
@@ -91,13 +95,11 @@ float4 main(PS_IN input) : SV_TARGET
 	//adding perspective into the lights position
 	lightPos = mul(float4(pos, 1.0f), lightWVP);
 
-	viewDir = cameraPos.xyz - pos.xyz;
-	viewDir = normalize(viewDir);
+	//direction to the camera from the pixel
+	vPosToCam = cameraPos.xyz - pos.xyz;
+	vPosToCam = normalize(vPosToCam);
 
-	shineFactor = 5.0f;
-	lightSpecular = 0.65f;
-
-
+	//finding out the lightIntensity
 	lightIntensity = dot(normal, vPosToLight);
 	lightIntensity = saturate(lightIntensity);
 
@@ -107,7 +109,7 @@ float4 main(PS_IN input) : SV_TARGET
 
 	if (saturate(shadowUV.x) != shadowUV.x || saturate(shadowUV.y) != shadowUV.y)
 	{
-		lightIntensity = saturate(dot(normal.xyz, outVec.xyz));
+		lightIntensity = saturate(dot(normal.xyz, vPosToLight.xyz));
 	}
 	else
 	{
@@ -126,7 +128,7 @@ float4 main(PS_IN input) : SV_TARGET
 		//light sees the pixel
 		if (lightDepthValue <= depthValue)
 		{
-			lightIntensity = saturate(dot(outVec.xyz, normal.xyz));
+			lightIntensity = saturate(dot(vPosToLight.xyz, normal.xyz));
 		}
 	}
 
@@ -136,10 +138,10 @@ float4 main(PS_IN input) : SV_TARGET
 	if (lightIntensity > 0.0f)
 	{
 		// Calculate the reflection vector based on the light intensity, normal vector, and light direction.
-		float3 reflection = normalize(lightIntensity * normal.xyz - outVec.xyz);
+		float3 reflection = normalize(lightIntensity * normal.xyz - vPosToLight.xyz);
 		
 		//determine the amount of specular light based on the reflection vector, viewing direction and specular power
-		specular = pow(saturate(dot(reflection, viewDir)), 32.0f);
+		specular = pow(saturate(dot(reflection, vPosToCam)), 32.0f);
 	}
 	color = saturate(diffuseColor + ambientColor);
 	color = saturate(color + specular);
@@ -166,11 +168,10 @@ float4 main(PS_IN input) : SV_TARGET
 	}
 
 	//does point light calculations
-	//this is for specular highlighting
 	PointLight pl;
 	
 	pl.Pos = float4(2.5f, 13.0f, 5.0f, 0.0f);
-	pl.Color = float3(0.5f, 0.0f, 0.0f);
+	pl.Color = float3(1.0f, 1.0f, 1.0f);
 	pl.intensity = 1.5f;
 
 	float3 toLightVec = pl.Pos.xyz - pos.xyz;
