@@ -416,8 +416,8 @@ void createObjects()
 	srand(1000);
 	Parser fromFile;
 
-	fromFile.progressFile("sphere1.obj");
-	//fromFile.progressFile("ogreFullG.obj"); crashes in geometry shader
+	//fromFile.progressFile("ogre.obj");
+	fromFile.progressFile("ogreFullG.obj");
 
 	int nrOfVert = 0;
 	int counter = 0;
