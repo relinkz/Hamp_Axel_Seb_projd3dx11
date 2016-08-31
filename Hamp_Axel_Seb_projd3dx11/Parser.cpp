@@ -93,8 +93,10 @@ void Parser::progressFile(const string& dest) throw(...)
 
 		}
 	}
-	this->loadMaterial();
 	file.close();
+
+	this->loadMaterial();
+	
 }
 
 void Parser::forceSharedNormal()
@@ -250,11 +252,6 @@ triangleData Parser::stringToFace(const string& src)
 	int cutter = 0;
 	string stringLeft = "";
 	string source = src;
-
-	if (src == "1/9/15")
-	{
-		true;
-	}
 
 	stringLeft = src;
 

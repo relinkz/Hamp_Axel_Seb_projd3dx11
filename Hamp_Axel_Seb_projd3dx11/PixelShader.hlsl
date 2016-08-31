@@ -103,6 +103,12 @@ float4 main(PS_IN input) : SV_TARGET
 	lightIntensity = dot(normal, vPosToLight);
 	lightIntensity = saturate(lightIntensity);
 
+	//float3 reflectionVector = normal.xyz - vPosToLight.xyz;
+	//reflectionVector = reflectionVector * (-1);
+
+	//float3 reflection = normalize(lightIntensity * (normal.xyz + vPosToLight.xyz));
+	//return float4(reflectionVector, 0);
+
 	//Create The texture coordinates for the projecting of the shadowMap
 	shadowUV.x = ((lightPos.x / lightPos.w) / 2.0f) + 0.5f;
 	shadowUV.y = ((lightPos.y / lightPos.w) / -2.0f) + 0.5f;
@@ -138,7 +144,14 @@ float4 main(PS_IN input) : SV_TARGET
 	if (lightIntensity > 0.0f)
 	{
 		// Calculate the reflection vector based on the light intensity, normal vector, and light direction.
-		float3 reflection = normalize(lightIntensity * normal.xyz - vPosToLight.xyz);
+		float3 reflectionVector = normal.xyz - vPosToLight.xyz;
+		float3 reflection = normalize(lightIntensity * reflectionVector);
+		
+		//franciscos
+		//float3 n = (dot(normal, light)*normal);
+		//float3 u = n - vPosToLight;
+		//specular = float4(2 * dot(normal, vPosToLight) * normal - vPosToLight, 0);
+
 		
 		//determine the amount of specular light based on the reflection vector, viewing direction and specular power
 		specular = pow(saturate(dot(reflection, vPosToCam)), 32.0f);

@@ -148,9 +148,10 @@ struct newPosLight
 };
 
 //the lights position
+//10 10 10, flaw in specular highlight, 
 newPosLight light
 {
-	Vector3(5,10, 5),
+	Vector3(5,15, 10),
 	0.0f,
 	0.2f,
 	0.8f,
@@ -183,12 +184,6 @@ void createWorldMatrices()
 {
 	Matrix* WVP_Ptr = nullptr;
 
-	//viewSpace = new Matrix(DirectX::XMMatrixLookAtLH
-	//	(
-	//		Vector3(-2, 0, 0),	//Position
-	//		Vector3(1, 2, 1),	//lookAtTarget
-	//		Vector3(0, 1, 0)	//upVector
-	//		));
 	viewSpace = new Matrix(DirectX::XMMatrixLookAtLH
 		(
 			Vector3(0, 0, 0),	//Position
@@ -416,14 +411,16 @@ void createObjects()
 	srand(1000);
 	Parser fromFile;
 
-	//fromFile.progressFile("ogre.obj");
-	fromFile.progressFile("ogreFullG.obj");
+	fromFile.progressFile("box.obj");
+	//fromFile.progressFile("power_supplier_box_reduced.obj");
+	//fromFile.progressFile("ogreFullG.obj");
 
 	int nrOfVert = 0;
 	int counter = 0;
 	vector<TriangleVertex> triangleVertices;
 
 	fromFile.createList();
+	fromFile.forceSharedNormal();
 
 
 	nrOfVert = fromFile.getNrOfTriangleVertices();
@@ -432,22 +429,6 @@ void createObjects()
 	{
 		triangleVertices.push_back(fromFile.popFirst());
 	}
-	//Convert
-	//for (int i = 0; i < nrOfVert; i++)
-	//{
-	//	if (counter == 1)
-	//	{
-	//		TriangleVertex temp = triangleVertices[i];
-
-	//		triangleVertices[i] = triangleVertices[i + 1];
-	//		triangleVertices[i + 1] = temp;
-	//	}
-	//	else if (counter == 2)
-	//		counter = -1;
-
-	//	counter++;
-	//}
-
 	//create terrain
 	
 	terrain = new Terrain();
@@ -482,7 +463,7 @@ void createObjects()
 	HRESULT hr = gDevice->CreateBuffer(&bufferDesc, &data, &quadVertexBuffer);
 
 	objects.push_back(Object(triangleVertices, Vector3((10.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
-	//objects.push_back(Object(triangleVertices, Vector3((light.pos.x), (light.pos.y), (light.pos.z)), gDevice, "", "cube_box_NormalMap.png", objNr++));
+	objects.push_back(Object(triangleVertices, Vector3((light.pos.x), (light.pos.y), (light.pos.z)), gDevice, "", "cube_box_NormalMap.png", objNr++));
 	//objects.push_back(Object(triangleVertices, Vector3((10.0f), (10.0f), (7.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 
 	//objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
