@@ -128,7 +128,7 @@ Object terrainObj;
 int nrOfObjects = 0;
 Terrain* terrain = nullptr;
 
-QuadTree quadTree(Vector3(0, 0, 0), Vector3(10, 0, 10), 0, 10, 1, 10, 0);
+QuadTree quadTree(Vector3(0, 0, 0), Vector3(10, 0, 10), 0, 10, 0, 10, 0);
 
 int nrOfVertexDrawn = 0;
 
@@ -151,7 +151,7 @@ struct newPosLight
 //10 10 10, flaw in specular highlight, 
 newPosLight light
 {
-	Vector3(5,15, 10),
+	Vector3(0,12, 5),
 	0.0f,
 	0.2f,
 	0.8f,
@@ -167,7 +167,8 @@ struct mouseData
 {
 	Vector2 pos;
 };
-
+float clearColor[4] = { 0, 0, 0, 1 };
+float whiteColor[4] = { 1, 1, 1, 1 };
 //Matrices
 SimpleMath::Matrix* viewSpace = nullptr;
 SimpleMath::Matrix* projectionSpace = nullptr;
@@ -433,7 +434,7 @@ void createObjects()
 	
 	terrain = new Terrain();
 	terrainData.nrOfVertex = terrain->getVertecies().size();
-	terrainData.obj = Object(terrain->getVertecies(), Vector3(0, 0, 0), gDevice, "grassTexture.jpg", "noNormalMap.png", objNr++);
+	terrainData.obj = Object(terrain->getVertecies(), Vector3(0, 0, 0), gDevice, "grassTexture.jpg", "7063-normal.png", objNr++);
 
 
 	nrOfVertexDrawn = triangleVertices.size();
@@ -462,13 +463,19 @@ void createObjects()
 
 	HRESULT hr = gDevice->CreateBuffer(&bufferDesc, &data, &quadVertexBuffer);
 
-	objects.push_back(Object(triangleVertices, Vector3((10.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
+	objects.push_back(Object(triangleVertices, Vector3((0.0f), (10.0f), (0.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 	objects.push_back(Object(triangleVertices, Vector3((light.pos.x), (light.pos.y), (light.pos.z)), gDevice, "", "cube_box_NormalMap.png", objNr++));
 	//objects.push_back(Object(triangleVertices, Vector3((10.0f), (10.0f), (7.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 
 	//objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 	//objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (7.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
-
+	for (int x = 0; x < 10; x++)
+	{
+		for (int z = 0; z < 10; z++)
+		{
+			objects.push_back(Object(triangleVertices, Vector3((x), (10.0f), (z)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
+		}
+	}
 
 
 	nrOfObjects = objects.size();
@@ -562,8 +569,7 @@ void FirstRenderCall()
 {
 	//THIS IS THE START OF THE FIRST RENDERCALL
 	HRESULT hr;
-	float clearColor[4] = { 0, 0, 0, 1 };
-	float whiteColor[4] = { 1, 1, 1, 1 };
+
 	//float grayColor[] = { 0.5, 0.5, 0.5 , 1 };
 
 	//clear all the RTV
@@ -602,7 +608,7 @@ void FirstRenderCall()
 
 	//render terrain
 
-	Render(terrainData.obj, terrainData.nrOfVertex);
+	//Render(terrainData.obj, terrainData.nrOfVertex);
 
 	for (int i = 0; i < objectsToDraw.size(); i++)
 	{
@@ -819,7 +825,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 			int y = terrain->getY(camPos.x, camPos.z);
 			if (y + 1.5f > camPos.y)
 			{
-				camPos.y = y + 1.5f;
+			  //camPos.y = y + 1.5f;
 			}           
 			WorldCamera.setPosition(camPos);
 			if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))

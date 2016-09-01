@@ -86,6 +86,7 @@ float4 main(PS_IN input) : SV_TARGET
 	normal = normalMap.Sample(sampAni, input.UVCoord).xyz;  //sample the normalMap from DeferredRendering											
 	normal = normalize(normal); 
 	
+	//return float4(normal,0);
 
 	//float4 lightPos = lightPosition;
 	float3 outVec = normalize(lightPos.xyz - pos.xyz);
@@ -108,10 +109,19 @@ float4 main(PS_IN input) : SV_TARGET
 
 	//float3 reflection = normalize(lightIntensity * (normal.xyz + vPosToLight.xyz));
 	//return float4(reflectionVector, 0);
-
+	//return float4(normal,0);
 	//Create The texture coordinates for the projecting of the shadowMap
 	shadowUV.x = ((lightPos.x / lightPos.w) / 2.0f) + 0.5f;
 	shadowUV.y = ((lightPos.y / lightPos.w) / -2.0f) + 0.5f;
+
+	//float3 r = reflect(vPosToLight, normal);
+	//float3 n = (dot(normal, vPosToLight)*normal);
+	//float3 u = n - vPosToLight;
+	//float3 r = float3(2 * dot(normal, vPosToLight) * normal - vPosToLight);
+	//r = vPosToLight + 2 * u;
+	//float sTest = saturate(pow(dot(r, vPosToCam), 200.0f));
+	//specular = float4(color * sTest, 0.0f);
+	//return specular * 20;
 
 	if (saturate(shadowUV.x) != shadowUV.x || saturate(shadowUV.y) != shadowUV.y)
 	{
@@ -140,24 +150,32 @@ float4 main(PS_IN input) : SV_TARGET
 
 	float3 diffuseColor = (color.rgb * lightIntensity * 0.8f);
 	float3 ambientColor = (color.rgb * 0.2f);
-	
+	float specularIntensity = 5;
+	//return float4(color, 0.0f);
 	if (lightIntensity > 0.0f)
 	{
 		// Calculate the reflection vector based on the light intensity, normal vector, and light direction.
-		float3 reflectionVector = normal.xyz - vPosToLight.xyz;
-		float3 reflection = normalize(lightIntensity * reflectionVector);
+		//float3 reflectionVector = vPosToLight - 2 * normal * dot(vPosToLight, normal);
+		//float3 reflectionVector = normal.xyz + vPosToLight.xyz;
+		//float3 reflection = normalize(lightIntensity * reflectionVector);
 		
 		//franciscos
-		//float3 n = (dot(normal, light)*normal);
-		//float3 u = n - vPosToLight;
-		//specular = float4(2 * dot(normal, vPosToLight) * normal - vPosToLight, 0);
+		float3 n = (dot(normal, vPosToLight)*normal);
+		float3 u = n - vPosToLight;
+		float3 r = float3(2 * dot(normal, vPosToLight) * normal - vPosToLight);
+		r = vPosToLight + 2 * u;
 
-		
+		//r = normalize(r);
+
+		float sTest = saturate(pow(dot(r, vPosToCam), 50.0f));
+
+		specular = float4(color * sTest, 0.0f);
+
 		//determine the amount of specular light based on the reflection vector, viewing direction and specular power
-		specular = pow(saturate(dot(reflection, vPosToCam)), 32.0f);
+		//specular = pow(saturate(dot(reflection, vPosToCam)), 32.0f);
 	}
 	color = saturate(diffuseColor + ambientColor);
-	color = saturate(color + specular);
+	color = saturate(color + (specular * specularIntensity));
 	
 	uint3 idColor = uint3(0, 0, 0);
 
@@ -184,7 +202,7 @@ float4 main(PS_IN input) : SV_TARGET
 	PointLight pl;
 	
 	pl.Pos = float4(2.5f, 13.0f, 5.0f, 0.0f);
-	pl.Color = float3(1.0f, 1.0f, 1.0f);
+	pl.Color = float3(0.0f, 0.0f, 0.0f);
 	pl.intensity = 1.5f;
 
 	float3 toLightVec = pl.Pos.xyz - pos.xyz;
