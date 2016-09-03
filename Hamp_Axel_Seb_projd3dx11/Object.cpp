@@ -16,6 +16,7 @@ Object::Object()
 Object::Object(vector<TriangleVertex>fromParser, Vector3 worldPos, ID3D11Device* gDevice, string srcImage)
 {
 	this->shouldRender = true;
+	this->isDead = false;
 	this->vertexSize = fromParser.size();
 
 	for (int i = 0; i < this->vertexSize; i++)
@@ -38,6 +39,7 @@ Object::Object(vector<TriangleVertex>fromParser, Vector3 worldPos, ID3D11Device*
 Object::Object(vector<TriangleVertex> fromParser, Vector3 worldPos, ID3D11Device * gDevice, string srcImage, string normalMap, int objID)
 {
 	this->shouldRender = true;
+	this->isDead = false;
 
 	this->vertexSize = fromParser.size();
 	this->objID = objID;
@@ -146,7 +148,24 @@ bool Object::getShouldRender() const
 
 void Object::swapRender()
 {
-	this->shouldRender = false;
+	if (this->shouldRender)
+	{
+		this->shouldRender = false;
+	}
+	else
+	{
+		this->shouldRender = true;
+	}
+}
+
+bool Object::getIsDead() const
+{
+	return this->isDead;
+}
+
+void Object::swapIsDead()
+{
+	this->isDead = true;
 }
 
 

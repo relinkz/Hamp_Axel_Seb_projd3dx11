@@ -128,7 +128,7 @@ Object terrainObj;
 int nrOfObjects = 0;
 Terrain* terrain = nullptr;
 
-QuadTree quadTree(Vector3(0, 0, 0), Vector3(10, 0, 10), 0, 10, 0, 10, 0);
+QuadTree quadTree(Vector3(0, 0, 0), Vector3(10, 0, 10), 4, 10, 0, 10, 0);
 
 int nrOfVertexDrawn = 0;
 
@@ -151,7 +151,7 @@ struct newPosLight
 //10 10 10, flaw in specular highlight, 
 newPosLight light
 {
-	Vector3(0,12, 5),
+	Vector3(0,5, 7),
 	0.0f,
 	0.2f,
 	0.8f,
@@ -169,6 +169,7 @@ struct mouseData
 };
 float clearColor[4] = { 0, 0, 0, 1 };
 float whiteColor[4] = { 1, 1, 1, 1 };
+bool gameWon = false;
 //Matrices
 SimpleMath::Matrix* viewSpace = nullptr;
 SimpleMath::Matrix* projectionSpace = nullptr;
@@ -434,7 +435,7 @@ void createObjects()
 	
 	terrain = new Terrain();
 	terrainData.nrOfVertex = terrain->getVertecies().size();
-	terrainData.obj = Object(terrain->getVertecies(), Vector3(0, 0, 0), gDevice, "grassTexture.jpg", "7063-normal.png", objNr++);
+	terrainData.obj = Object(terrain->getVertecies(), Vector3(0, -12, 0), gDevice, "grassTexture.jpg", "7063-normal.png", objNr++);
 
 
 	nrOfVertexDrawn = triangleVertices.size();
@@ -463,7 +464,7 @@ void createObjects()
 
 	HRESULT hr = gDevice->CreateBuffer(&bufferDesc, &data, &quadVertexBuffer);
 
-	objects.push_back(Object(triangleVertices, Vector3((0.0f), (10.0f), (0.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
+	objects.push_back(Object(triangleVertices, Vector3((5.0f), (5.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 	objects.push_back(Object(triangleVertices, Vector3((light.pos.x), (light.pos.y), (light.pos.z)), gDevice, "", "cube_box_NormalMap.png", objNr++));
 	//objects.push_back(Object(triangleVertices, Vector3((10.0f), (10.0f), (7.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 
@@ -473,7 +474,7 @@ void createObjects()
 	{
 		for (int z = 0; z < 10; z++)
 		{
-			objects.push_back(Object(triangleVertices, Vector3((x), (10.0f), (z)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
+			objects.push_back(Object(triangleVertices, Vector3((x), (0.0f), (z)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 		}
 	}
 
@@ -583,11 +584,8 @@ void FirstRenderCall()
 	//clearing the backbuffer her but nothing happens?
 	gDeviceContext->ClearDepthStencilView(gDepthBuffer, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 1);
 
-	//get all the object in the part of the quad tree that the camera is in (must be used)
-	objectsToDraw = quadTree.getObjectsToDraw(WorldCamera.getCameraPos()); 
 
-	//does viewfustrum culling on the objects gathered from the quadtree (does not have to be used)
-	//objectsToDraw = WorldCamera.doFustrumCulling(objectsToDraw);
+
 
 	//set the OutputMerger to use the 5 RTV
 	gDeviceContext->OMSetRenderTargets(5, deferredViews, gDepthBuffer);
@@ -608,58 +606,79 @@ void FirstRenderCall()
 
 	//render terrain
 
-	//Render(terrainData.obj, terrainData.nrOfVertex);
+	Render(terrainData.obj, terrainData.nrOfVertex);
 
-	for (int i = 0; i < objectsToDraw.size(); i++)
+	//get all the object in the part of the quad tree that the camera is in (must be used)
+	quadTree.getObjectsToDraw(WorldCamera.getCameraPos());
+
+	for (int i = 0; i < objects.size(); i++)
+	{
+		if (objects.at(i).getShouldRender() == true)
+		{
+			//WorldCamera.doFustrumCulling(&objects.at(i));
+			if (objects.at(i).getShouldRender() == true && objects.at(i).getIsDead() == false)
+			{
+   				Render(objects.at(i), nrOfVertexDrawn);
+				objects.at(i).swapRender();
+			}
+		}
+	}
+
+	/*for (int i = 0; i < objectsToDraw.size(); i++)
 	{
 		if (objectsToDraw.at(i) != nullptr && objectsToDraw.at(i)->getShouldRender() == true)
 		{
 			Render(*objectsToDraw.at(i), nrOfVertexDrawn);
 		}
-	}
+	}*/
 	//FIRST RENDER CALL DONE
 }
 
 void gameLogic()
 {
-	int objectsHit = 0;
-
-	for (int i = 0; i < nrOfObjects; i++)
+	if (gameWon == false)
 	{
-		if (objects.at(i).getShouldRender() == false)
-		{
-			objectsHit++;
-		}
-		//if (WorldCamera.getCameraPos().x >= objects[i].getPosition().x - 1 && WorldCamera.getCameraPos().x <= objects[i].getPosition().x + 1
-		//	&& WorldCamera.getCameraPos().z >= objects[i].getPosition().z - 1 && WorldCamera.getCameraPos().z <= objects[i].getPosition().z + 1
-		//	&& WorldCamera.getCameraPos().y >= objects[i].getPosition().y && WorldCamera.getCameraPos().y - 1<= objects[i].getPosition().y)
-		//{
-		//	objects.erase(objects.begin() + i);
-		//	nrOfObjects--;
-		//	if (objects.size() == 1)
-		//	{
-		//		//win message popup
-		//		MessageBox(NULL, L"You won", L"You won", MB_OK);
-		//	}
-		//}
-		Vector3 camPos = WorldCamera.getCameraPos();
-		Vector3 objPos = objects.at(i).getPosition();
+		int objectsHit = 0;
 
-		float xDiff = abs(camPos.x - objPos.x);
-		float yDiff = abs(camPos.y - objPos.y);
-		float zDiff = abs(camPos.z - objPos.z);
+		for (int i = 0; i < nrOfObjects; i++)
+		{
+			if (objects.at(i).getIsDead() == true)
+			{
+				objectsHit++;
+			}
+			//if (WorldCamera.getCameraPos().x >= objects[i].getPosition().x - 1 && WorldCamera.getCameraPos().x <= objects[i].getPosition().x + 1
+			//	&& WorldCamera.getCameraPos().z >= objects[i].getPosition().z - 1 && WorldCamera.getCameraPos().z <= objects[i].getPosition().z + 1
+			//	&& WorldCamera.getCameraPos().y >= objects[i].getPosition().y && WorldCamera.getCameraPos().y - 1<= objects[i].getPosition().y)
+			//{
+			//	objects.erase(objects.begin() + i);
+			//	nrOfObjects--;
+			//	if (objects.size() == 1)
+			//	{
+			//		//win message popup
+			//		MessageBox(NULL, L"You won", L"You won", MB_OK);
+			//	}
+			//}
+			Vector3 camPos = WorldCamera.getCameraPos();
+			Vector3 objPos = objects.at(i).getPosition();
 
-		if ((xDiff + yDiff + zDiff) < 3.0f)
-		{
-			//objects.erase(objects.begin()+i);
-			//nrOfObjects--;
-			objects.at(i).swapRender();
-		}
-		if (objectsHit == nrOfObjects)
-		{
-			MessageBox(NULL, L"You won", L"You won", MB_OK);
+			float xDiff = abs(camPos.x - objPos.x);
+			float yDiff = abs(camPos.y - objPos.y);
+			float zDiff = abs(camPos.z - objPos.z);
+
+			if ((xDiff + yDiff + zDiff) < 3.0f)
+			{
+				//objects.erase(objects.begin()+i);
+				//nrOfObjects--;
+				objects.at(i).swapIsDead();
+			}
+			if (objectsHit == nrOfObjects)
+			{
+				MessageBox(NULL, L"You won", L"You won", MB_OK);
+				gameWon = true;
+			}
 		}
 	}
+
 	
 }
 

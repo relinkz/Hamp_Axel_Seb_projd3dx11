@@ -70,7 +70,7 @@ void QuadTree::setTreeData(vector<Object> &objects)
 
 }
 
-vector<Object*> QuadTree::getObjectsToDraw(Vector3 position)
+void QuadTree::getObjectsToDraw(Vector3 position)
 {
 	if (position.x < this->xMin)
 	{
@@ -92,7 +92,11 @@ vector<Object*> QuadTree::getObjectsToDraw(Vector3 position)
 	{
 		if (this->bottomLeft == nullptr)
 		{
-			return this->objects;
+			for (int i = 0; i < this->objects.size(); i++)
+			{
+				this->objects.at(i)->swapRender();
+			}
+			//return this->objects;
 		}
 		else
 		{
@@ -100,21 +104,21 @@ vector<Object*> QuadTree::getObjectsToDraw(Vector3 position)
 			result = this->bottomLeft->isInsideQuad(position);
 			if (this->bottomLeft->isInsideQuad(position))
 			{
-				return this->bottomLeft->getObjectsToDraw(position);
+				this->bottomLeft->getObjectsToDraw(position);
 			}
 
 			else if (this->bottomRight->isInsideQuad(position))
 			{
-				return this->bottomRight->getObjectsToDraw(position);
+				this->bottomRight->getObjectsToDraw(position);
 			}
 
 			else if (this->topLeft->isInsideQuad(position))
 			{
-				return this->topLeft->getObjectsToDraw(position);
+				this->topLeft->getObjectsToDraw(position);
 			}
 			else
 			{
-				return this->topRight->getObjectsToDraw(position);
+				this->topRight->getObjectsToDraw(position);
 			}
 
 		}

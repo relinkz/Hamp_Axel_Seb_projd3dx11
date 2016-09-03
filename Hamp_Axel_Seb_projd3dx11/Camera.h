@@ -61,7 +61,9 @@ public:
 	POINT GetMousePos(HWND hWnd);
 	void setPosition(Vector3 pos);
 	void setUpViewFustrumPlanes();
-	std::vector<Object*> doFustrumCulling(std::vector<Object*> objects);
+	//std::vector<Object*> doFustrumCulling(std::vector<Object*> objects);
+	void doFustrumCulling(std::vector<Object> &objects);
+	void doFustrumCulling(Object *object);
 
 };
 

@@ -34,6 +34,7 @@ private:
 	ID3D11ShaderResourceView*	objectIndexSRV;
 
 	bool shouldRender;
+	bool isDead;
 
 
 	short int vertexSize;
@@ -63,6 +64,11 @@ public:
 	
 	bool getShouldRender() const;
 	void swapRender();
+
+	bool getIsDead() const;
+	void swapIsDead();
+
+
 
 };
 

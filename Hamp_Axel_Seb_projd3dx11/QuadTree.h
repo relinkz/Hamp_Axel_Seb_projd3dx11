@@ -42,7 +42,8 @@ public:
 	~QuadTree();
 
 	void setTreeData(vector<Object> &objects);
-	vector<Object*> getObjectsToDraw(Vector3 position);
+	//vector<Object*> getObjectsToDraw(Vector3 position);
+	void getObjectsToDraw(Vector3 position);
 
 
 
