@@ -128,7 +128,7 @@ Object terrainObj;
 int nrOfObjects = 0;
 Terrain* terrain = nullptr;
 
-QuadTree quadTree(Vector3(0, 0, 0), Vector3(10, 0, 10), 4, 10, 0, 10, 0);
+QuadTree quadTree(Vector3(0, 0, 0), Vector3(16, 0, 16), 0, 16, 0, 16, 0);
 
 int nrOfVertexDrawn = 0;
 
@@ -615,7 +615,7 @@ void FirstRenderCall()
 	{
 		if (objects.at(i).getShouldRender() == true)
 		{
-			//WorldCamera.doFustrumCulling(&objects.at(i));
+			WorldCamera.doFustrumCulling(&objects.at(i));
 			if (objects.at(i).getShouldRender() == true && objects.at(i).getIsDead() == false)
 			{
    				Render(objects.at(i), nrOfVertexDrawn);

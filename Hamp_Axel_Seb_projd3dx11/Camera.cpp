@@ -4,6 +4,7 @@
 
 Camera::Camera()
 {
+	this->useMouse = false;
 	this->screenHeight = 480;
 	this->screenWidth = 640;
 	setDefaultValue();
@@ -11,6 +12,7 @@ Camera::Camera()
 }
 Camera::Camera(int width, int height)
 {
+	this->useMouse = false;
 	this->screenHeight = height;
 	this->screenWidth = width;
 	setDefaultValue();
@@ -68,7 +70,7 @@ void Camera::Update(HWND hWnd, Terrain* terrain, float dt)
 	//offset = Vector3(0, 0, 0) - this->Pos;
 	//transBack = DirectX::XMMatrixTranslation(offset.x, offset.y, offset.z);
 
-	if (GetAsyncKeyState(VK_LEFT))
+	if (GetAsyncKeyState(VK_LEFT) || (posDiff.x < 0 && this->useMouse == true))
 	{
 		rotation = DirectX::XMMatrixRotationY(-rotationPerFrame* dt);
 		//this->lookAtPoint = DirectX::XMVector3Transform(this->lookAtPoint, rotation);
@@ -82,7 +84,7 @@ void Camera::Update(HWND hWnd, Terrain* terrain, float dt)
 			rotatePoint(this->viewFustrumPlanes.at(i).normal, rotation);
 		}
 	}
-	else if (GetAsyncKeyState(VK_RIGHT))
+	else if (GetAsyncKeyState(VK_RIGHT) || (posDiff.x > 0 && this->useMouse == true))
 	{
 		rotation = DirectX::XMMatrixRotationY(rotationPerFrame* dt);
 		//this->lookAtPoint = DirectX::XMVector3Transform(this->lookAtPoint, rotation);
@@ -102,7 +104,7 @@ void Camera::Update(HWND hWnd, Terrain* terrain, float dt)
 	leftRight = this->lookRightPoint - Vector3(0, 0, 0);
 	leftRight.Normalize();
 
-	if (this->yRotation > -3.14f / 3 && (GetAsyncKeyState(VK_UP)))
+	if (this->yRotation > -3.14f / 3 && (GetAsyncKeyState(VK_UP) || posDiff.y < 0))
 	{
 		rotation = DirectX::XMMatrixRotationAxis(leftRight, -rotationPerFrame* dt);
 		this->yRotation += -rotationPerFrame* dt;
@@ -116,7 +118,7 @@ void Camera::Update(HWND hWnd, Terrain* terrain, float dt)
 			rotatePoint(this->viewFustrumPlanes.at(i).normal, rotation);
 		}
 	}
-	else if (this->yRotation < 3.14f / 3 && (GetAsyncKeyState(VK_DOWN)))
+	else if (this->yRotation < 3.14f / 3 && (GetAsyncKeyState(VK_DOWN) || posDiff.y > 0))
 	{
 		rotation = DirectX::XMMatrixRotationAxis(leftRight, rotationPerFrame* dt);
 		this->yRotation += rotationPerFrame* dt;
@@ -133,13 +135,13 @@ void Camera::Update(HWND hWnd, Terrain* terrain, float dt)
 
 
 	this->mousePointOld = this->mousePoint;
-	if (this->mousePoint.x >= this->screenWidth || this->mousePoint.x <= 0)
+	if (this->useMouse == true && (this->mousePoint.x >= this->screenWidth || this->mousePoint.x <= 0))
 	{
-		//SetCursorPos(this->screenWidth / 2, this->mousePoint.y);
+		SetCursorPos(this->screenWidth / 2, this->mousePoint.y);
 	}
-	if (this->mousePoint.y >= this->screenHeight || this->mousePoint.y <= 0)
+	if (this->useMouse == true && (this->mousePoint.y >= this->screenHeight || this->mousePoint.y <= 5))
 	{
-		//SetCursorPos(this->mousePoint.x, this->screenHeight / 2);
+		SetCursorPos(this->mousePoint.x, this->screenHeight / 2);
 	}
 
 	//spacebar
@@ -201,6 +203,14 @@ void Camera::Update(HWND hWnd, Terrain* terrain, float dt)
 		this->viewFustrumPlanes.clear();
 		this->setUpViewFustrumPlanes();
 	}
+	if (GetAsyncKeyState(0x4D))
+	{
+		this->useMouse = false;
+	}
+	if (GetAsyncKeyState(0x4E))
+	{
+		this->useMouse = true;
+	}
 
 
 }
@@ -224,6 +234,9 @@ Matrix Camera::getViewMatrix()
 	upDown = newLookUpPoint - this->Pos;
 
 	viewMatrix = Matrix(DirectX::XMMatrixLookAtLH(this->Pos, newLookPoint, Vector3(0, 1, 0)));
+	//Vector3 tempPos = Vector3(5, 8, 2);
+	//Vector3 tempLook = Vector3(tempPos.x, tempPos.y - 1, tempPos.z);
+	//viewMatrix = Matrix(DirectX::XMMatrixLookAtLH(tempPos, tempLook, Vector3(0, 0, 1)));
 
 	return viewMatrix;
 }
@@ -258,7 +271,7 @@ void Camera::moveViewFustrum(Vector3 move)
 
 void Camera::setDefaultValue()
 {
-	this->Pos = Vector3(0, 0, 0);
+	this->Pos = Vector3(5, 1, -1);
 
 	this->lookAtPoint = Vector3(0, 0, 1);
 	this->lookUpPoint = Vector3(0, 1, 0);

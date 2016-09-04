@@ -38,6 +38,8 @@ private:
 	POINT mousePoint;
 	POINT mousePointOld;
 
+	bool useMouse;
+
 	std::vector<plane> viewFustrumPlanes;
 
 	void setDefaultValue();
