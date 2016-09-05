@@ -104,7 +104,7 @@ void Camera::Update(HWND hWnd, Terrain* terrain, float dt)
 	leftRight = this->lookRightPoint - Vector3(0, 0, 0);
 	leftRight.Normalize();
 
-	if (this->yRotation > -3.14f / 3 && (GetAsyncKeyState(VK_UP) || posDiff.y < 0))
+	if (this->yRotation > -3.14f / 3 && (GetAsyncKeyState(VK_UP) || (posDiff.y < 0 && this->useMouse == true)))
 	{
 		rotation = DirectX::XMMatrixRotationAxis(leftRight, -rotationPerFrame* dt);
 		this->yRotation += -rotationPerFrame* dt;
@@ -118,7 +118,7 @@ void Camera::Update(HWND hWnd, Terrain* terrain, float dt)
 			rotatePoint(this->viewFustrumPlanes.at(i).normal, rotation);
 		}
 	}
-	else if (this->yRotation < 3.14f / 3 && (GetAsyncKeyState(VK_DOWN) || posDiff.y > 0))
+	else if (this->yRotation < 3.14f / 3 && (GetAsyncKeyState(VK_DOWN) || (posDiff.y > 0 && this->useMouse == true)))
 	{
 		rotation = DirectX::XMMatrixRotationAxis(leftRight, rotationPerFrame* dt);
 		this->yRotation += rotationPerFrame* dt;
@@ -234,7 +234,7 @@ Matrix Camera::getViewMatrix()
 	upDown = newLookUpPoint - this->Pos;
 
 	viewMatrix = Matrix(DirectX::XMMatrixLookAtLH(this->Pos, newLookPoint, Vector3(0, 1, 0)));
-	//Vector3 tempPos = Vector3(5, 8, 2);
+	//Vector3 tempPos = Vector3(5, 7, 0);
 	//Vector3 tempLook = Vector3(tempPos.x, tempPos.y - 1, tempPos.z);
 	//viewMatrix = Matrix(DirectX::XMMatrixLookAtLH(tempPos, tempLook, Vector3(0, 0, 1)));
 

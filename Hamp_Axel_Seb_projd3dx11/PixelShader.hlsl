@@ -70,7 +70,8 @@ float4 main(PS_IN input) : SV_TARGET
 	float lightIntensity = 0.0f;	//brightness, the higher, the more lightning applies
 	float lightDepthValue = 0.0f;	//how far away an objects pixel is from the light
 	float depthValue = 0.0f;		//how far away an objects pixel is from the camera
-	float bias = 0.005f;			//a variable used to stabalize trash values
+	float bias = 0.00000000005f;			//a variable used to stabalize trash values
+	float specularIntensity = 0;
 
 									//constant values
 	shineFactor = 5.0f;
@@ -86,46 +87,35 @@ float4 main(PS_IN input) : SV_TARGET
 	normal = normalMap.Sample(sampAni, input.UVCoord).xyz;  //sample the normalMap from DeferredRendering											
 	normal = normalize(normal); 
 	
-	//return float4(normal,0);
-
-	//float4 lightPos = lightPosition;
 	float3 outVec = normalize(lightPos.xyz - pos.xyz);
 	vPosToLight = lightPos.xyz - pos.xyz;
 	vPosToLight = normalize(vPosToLight);
 
-	//adding perspective into the lights position
-	lightPos = mul(float4(pos, 1.0f), lightWVP);
+	//bias = 0.00005 * tan(acos(clamp(dot(normal, vPosToLight), 0, 1)));
+	//bias = clamp(bias, 0, 0.01);
 
 	//direction to the camera from the pixel
 	vPosToCam = cameraPos.xyz - pos.xyz;
 	vPosToCam = normalize(vPosToCam);
 
-	//finding out the lightIntensity
-	lightIntensity = dot(normal, vPosToLight);
-	lightIntensity = saturate(lightIntensity);
+	//adding perspective into the lights position
+	lightPos = mul(float4(pos, 1.0f), lightWVP);
 
-	//float3 reflectionVector = normal.xyz - vPosToLight.xyz;
-	//reflectionVector = reflectionVector * (-1);
-
-	//float3 reflection = normalize(lightIntensity * (normal.xyz + vPosToLight.xyz));
-	//return float4(reflectionVector, 0);
-	//return float4(normal,0);
 	//Create The texture coordinates for the projecting of the shadowMap
 	shadowUV.x = ((lightPos.x / lightPos.w) / 2.0f) + 0.5f;
 	shadowUV.y = ((lightPos.y / lightPos.w) / -2.0f) + 0.5f;
 
-	//float3 r = reflect(vPosToLight, normal);
-	//float3 n = (dot(normal, vPosToLight)*normal);
-	//float3 u = n - vPosToLight;
-	//float3 r = float3(2 * dot(normal, vPosToLight) * normal - vPosToLight);
-	//r = vPosToLight + 2 * u;
-	//float sTest = saturate(pow(dot(r, vPosToCam), 200.0f));
-	//specular = float4(color * sTest, 0.0f);
-	//return specular * 20;
+	//finding out the lightIntensity
+	lightIntensity = dot(normal, vPosToLight);
+	lightIntensity = saturate(lightIntensity);
+
+	specularIntensity = 5;
 
 	if (saturate(shadowUV.x) != shadowUV.x || saturate(shadowUV.y) != shadowUV.y)
 	{
 		lightIntensity = saturate(dot(normal.xyz, vPosToLight.xyz));
+		
+		//lightIntensity = 0.0;
 	}
 	else
 	{
@@ -145,20 +135,26 @@ float4 main(PS_IN input) : SV_TARGET
 		if (lightDepthValue <= depthValue)
 		{
 			lightIntensity = saturate(dot(vPosToLight.xyz, normal.xyz));
+			//lightIntensity = 0.5;
+			
+		}
+		else
+		{
+			specularIntensity = 0;
 		}
 	}
 
-	float3 diffuseColor = (color.rgb * lightIntensity * 0.8f);
+	
+	//float3 diffuseColor = float3(0, 0, 0);
+	float3 diffuseColor = (color.rgb * 0.8f);
+	diffuseColor = lightIntensity * diffuseColor;
+	
 	float3 ambientColor = (color.rgb * 0.2f);
-	float specularIntensity = 5;
+	
 	//return float4(color, 0.0f);
 	if (lightIntensity > 0.0f)
 	{
-		// Calculate the reflection vector based on the light intensity, normal vector, and light direction.
-		//float3 reflectionVector = vPosToLight - 2 * normal * dot(vPosToLight, normal);
-		//float3 reflectionVector = normal.xyz + vPosToLight.xyz;
-		//float3 reflection = normalize(lightIntensity * reflectionVector);
-		
+		//specularIntensity = 5;
 		//franciscos
 		float3 n = (dot(normal, vPosToLight)*normal);
 		float3 u = n - vPosToLight;
@@ -174,6 +170,9 @@ float4 main(PS_IN input) : SV_TARGET
 		//determine the amount of specular light based on the reflection vector, viewing direction and specular power
 		//specular = pow(saturate(dot(reflection, vPosToCam)), 32.0f);
 	}
+
+	//return float4(specularIntensity, 0, 0, 0);
+	
 	color = saturate(diffuseColor + ambientColor);
 	color = saturate(color + (specular * specularIntensity));
 	

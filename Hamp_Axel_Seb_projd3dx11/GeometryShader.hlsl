@@ -41,7 +41,7 @@ void main(triangle VS_IN input[3], inout TriangleStream< VS_OUT > data)
 
 	float angle = dot(toCamera, input[0].Norm);
 	//backface culling
-	if (angle > -1.1f)
+	if (angle > -0.1f)
 	{
 		//calculate the Tangent to be used in NormalMapping
 		float3 edge1 = normalize(input[1].PosView - input[0].PosView);

@@ -151,7 +151,7 @@ struct newPosLight
 //10 10 10, flaw in specular highlight, 
 newPosLight light
 {
-	Vector3(0,5, 7),
+	Vector3(0,7, 5),
 	0.0f,
 	0.2f,
 	0.8f,
@@ -464,7 +464,7 @@ void createObjects()
 
 	HRESULT hr = gDevice->CreateBuffer(&bufferDesc, &data, &quadVertexBuffer);
 
-	objects.push_back(Object(triangleVertices, Vector3((5.0f), (5.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
+	objects.push_back(Object(triangleVertices, Vector3((3.0f), (5.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 	objects.push_back(Object(triangleVertices, Vector3((light.pos.x), (light.pos.y), (light.pos.z)), gDevice, "", "cube_box_NormalMap.png", objNr++));
 	//objects.push_back(Object(triangleVertices, Vector3((10.0f), (10.0f), (7.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 
@@ -817,9 +817,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 		ShowWindow(wndHandle, nCmdShow);
 
-		Vector3 lookAt = Vector3(0, -1, 0);
+		Vector3 lookAt = light.pos + Vector3(0, -1, 0);
 
-		Vector3 upVector = Vector3(0, 1, 0);
+		Vector3 upVector = Vector3(0, 0, 1);
 
 		try
 		{
@@ -865,15 +865,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 				//shadowMap.updateBuffer(terrainData.obj, gDeviceContext);
 				//shadowMap.render(terrainData.obj, terrainData.nrOfVertex, gDevice, gDeviceContext);
-				for (int i = 0; i < objectsToDraw.size(); i++)
+				for (int i = 0; i < objects.size(); i++)
 				{
-					if (objectsToDraw.at(i) != nullptr)
-					{
-						//updateBuffers(objectsToDraw.at(i));
-						//RenderShadowMap(*objectsToDraw.at(i));
-						shadowMap.updateBuffer(*objectsToDraw.at(i), gDeviceContext);
-						shadowMap.render(*objectsToDraw.at(i), nrOfVertexDrawn, gDevice, gDeviceContext);
-					}
+					//updateBuffers(objectsToDraw.at(i));
+					//RenderShadowMap(*objectsToDraw.at(i));
+					shadowMap.updateBuffer(objects.at(i), gDeviceContext);
+					shadowMap.render(objects.at(i), nrOfVertexDrawn, gDevice, gDeviceContext);
 				}
 
 				timer = std::chrono::steady_clock::now();
