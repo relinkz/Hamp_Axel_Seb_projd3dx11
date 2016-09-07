@@ -151,7 +151,7 @@ struct newPosLight
 //10 10 10, flaw in specular highlight, 
 newPosLight light
 {
-	Vector3(0,7, 5),
+	Vector3(7,10,5),
 	0.0f,
 	0.2f,
 	0.8f,
@@ -464,8 +464,8 @@ void createObjects()
 
 	HRESULT hr = gDevice->CreateBuffer(&bufferDesc, &data, &quadVertexBuffer);
 
-	objects.push_back(Object(triangleVertices, Vector3((3.0f), (5.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
-	objects.push_back(Object(triangleVertices, Vector3((light.pos.x), (light.pos.y), (light.pos.z)), gDevice, "", "cube_box_NormalMap.png", objNr++));
+	objects.push_back(Object(triangleVertices, Vector3((4.0f), (3.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
+	//objects.push_back(Object(triangleVertices, Vector3((light.pos.x), (light.pos.y), (light.pos.z)), gDevice, "", "cube_box_NormalMap.png", objNr++));
 	//objects.push_back(Object(triangleVertices, Vector3((10.0f), (10.0f), (7.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 
 	//objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
@@ -599,14 +599,9 @@ void FirstRenderCall()
 	gDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	//set the topology
 	gDeviceContext->IASetInputLayout(gVertexLayout);								//set the input layout
 
-	//donno why this is here
-	//gDeviceContext->Draw(nrOfVertexDrawn, 0);
-
-	//renders all the individual objects and stores their values in the RTVs
-
 	//render terrain
-
 	Render(terrainData.obj, terrainData.nrOfVertex);
+	
 
 	//get all the object in the part of the quad tree that the camera is in (must be used)
 	quadTree.getObjectsToDraw(WorldCamera.getCameraPos());
@@ -623,15 +618,6 @@ void FirstRenderCall()
 			}
 		}
 	}
-
-	/*for (int i = 0; i < objectsToDraw.size(); i++)
-	{
-		if (objectsToDraw.at(i) != nullptr && objectsToDraw.at(i)->getShouldRender() == true)
-		{
-			Render(*objectsToDraw.at(i), nrOfVertexDrawn);
-		}
-	}*/
-	//FIRST RENDER CALL DONE
 }
 
 void gameLogic()
@@ -712,23 +698,9 @@ void SecondRenderCall()
 	gDeviceContext->PSSetShaderResources(2, 1, &ColorSRV);								//ShaderResouresView and send it to the PixelShader
 
 	shadowMapSRV = shadowMap.getShaderResourceView();
+
 	gDeviceContext->PSSetShaderResources(3, 1, &shadowMapSRV);
-
-	
 	gDeviceContext->PSSetShaderResources(4, 1, &ObjectIndexSRV);
-	
-	/*
-	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDescID;
-	memset(&SRVDescID, 0, sizeof(SRVDescID));
-	SRVDescID.Format = DXGI_FORMAT_R32_UINT;
-	SRVDescID.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DMS;
-	SRVDescID.Texture2D.MipLevels = 1;
-	SRVDescID.Texture2D.MostDetailedMip = 0;
-
-	hr = gDevice->CreateShaderResourceView(ObjectIndexStencil, &SRVDescID, &ObjectIndexSRV);
-	gDeviceContext->PSSetShaderResources(4, 1, &ObjectIndexSRV);
-
-	*/
 
 	UINT32 vertexSize = sizeof(float) * 5;	//set the size of a vertex sizeof(float) * 5 the positions(x,y,z) and the UV coords(U,V) 
 	UINT32 offset = 0; // offset 0

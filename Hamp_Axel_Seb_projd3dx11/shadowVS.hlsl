@@ -1,15 +1,15 @@
 cbuffer LightBuffer2 : register(b0)
 {
-	float4x4 lightHomoClipSpace;
+	float4x4 perspectiveMatrix;
 	float4x4 objWorldSpace;
 };
 
 float4 ShadowVertexShader(float3 inPosition : SHADOW_POSITION) : SV_POSITION
 {
-	//place it in the world
+	//place it in the world, relative to camera
 	inPosition = mul(float4(inPosition, 1.0f), objWorldSpace);
-	//relative to the "light camera"
-	float4 result = mul(float4(inPosition, 1.0f), lightHomoClipSpace);
+	//transform the position into homogeneus clip space
+	float4 result = mul(float4(inPosition, 1.0f), perspectiveMatrix);
 
 	return  result;
 }

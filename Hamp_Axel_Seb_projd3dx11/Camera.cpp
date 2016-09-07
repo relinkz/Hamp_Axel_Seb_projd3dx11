@@ -234,6 +234,7 @@ Matrix Camera::getViewMatrix()
 	upDown = newLookUpPoint - this->Pos;
 
 	viewMatrix = Matrix(DirectX::XMMatrixLookAtLH(this->Pos, newLookPoint, Vector3(0, 1, 0)));
+	
 	//Vector3 tempPos = Vector3(5, 7, 0);
 	//Vector3 tempLook = Vector3(tempPos.x, tempPos.y - 1, tempPos.z);
 	//viewMatrix = Matrix(DirectX::XMMatrixLookAtLH(tempPos, tempLook, Vector3(0, 0, 1)));

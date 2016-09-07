@@ -135,8 +135,6 @@ void ShadowShaderClass::render(Object & toDraw, int nrOfVertex, ID3D11Device * g
 
 	gDeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &vertexSize, &offset);
 	gDeviceContext->OMSetRenderTargets(0, nullptr, this->shadowDepthStencilView);
-	//gDeviceContext->OMSetRenderTargets(2, &shadowBufferRTV, gDepthBuffer);
-
 
 	gDeviceContext->VSSetShader(this->shadow_vertexShader, NULL, 0);
 	gDeviceContext->GSSetShader(NULL, NULL, 0);
@@ -213,7 +211,7 @@ bool ShadowShaderClass::initializeDepthStencil(ID3D11Device* gDevice)
 	textureDepthDesc.CPUAccessFlags = 0;
 	textureDepthDesc.MiscFlags = 0;
 
-	//create the texture for depthmap?
+	//create the texture for depthmap
 	resultHandler = gDevice->CreateTexture2D(&textureDepthDesc,	NULL, &(this->shadowmapDepthtexture));
 
 	//create Depth Stencil

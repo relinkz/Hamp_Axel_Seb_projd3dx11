@@ -53,9 +53,11 @@ void main(triangle VS_IN input[3], inout TriangleStream< VS_OUT > data)
 		float det = (texEdge1.x * texEdge2.y) - (texEdge1.y * texEdge2.x);
 
 		float3 tangent = float3(0, 0, 0);
+
 		tangent.x = (texEdge2.y * edge1.x - texEdge1.y * edge2.x) * det;
 		tangent.y = (texEdge2.y * edge1.y - texEdge1.y * edge2.y) * det;
 		tangent.z = (texEdge2.y * edge1.z - texEdge1.y * edge2.z) * det;
+
 		tangent = normalize(tangent);
 
 		VS_OUT output[3];

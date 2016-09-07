@@ -70,7 +70,7 @@ float4 main(PS_IN input) : SV_TARGET
 	float lightIntensity = 0.0f;	//brightness, the higher, the more lightning applies
 	float lightDepthValue = 0.0f;	//how far away an objects pixel is from the light
 	float depthValue = 0.0f;		//how far away an objects pixel is from the camera
-	float bias = 0.00000000005f;			//a variable used to stabalize trash values
+	float bias = 0.000000000005f;			//a variable used to stabalize trash values
 	float specularIntensity = 0;
 
 									//constant values
@@ -113,9 +113,9 @@ float4 main(PS_IN input) : SV_TARGET
 
 	if (saturate(shadowUV.x) != shadowUV.x || saturate(shadowUV.y) != shadowUV.y)
 	{
-		lightIntensity = saturate(dot(normal.xyz, vPosToLight.xyz));
+		//lightIntensity = saturate(dot(normal.xyz, vPosToLight.xyz));
 		
-		//lightIntensity = 0.0;
+		lightIntensity = 0.3;
 	}
 	else
 	{
