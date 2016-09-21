@@ -188,7 +188,7 @@ bool QuadTree::isInsideQuad(Vector3 position)
 
 	if (position.x >= this->quadStart.x && position.z >= this->quadStart.z)
 	{
-		if (position.x <= this->quadEnd.x && position.z <= this->quadEnd.z)
+		if (position.x < this->quadEnd.x && position.z < this->quadEnd.z)
 		{
 			result = true;
 		}

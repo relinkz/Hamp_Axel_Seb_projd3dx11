@@ -470,9 +470,9 @@ void createObjects()
 
 	//objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (5.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 	//objects.push_back(Object(triangleVertices, Vector3((5.0f), (10.0f), (7.0f)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
-	for (int x = 0; x < 10; x++)
+	for (int x = 0; x < 16; x++)
 	{
-		for (int z = 0; z < 10; z++)
+		for (int z = 0; z < 16; z++)
 		{
 			objects.push_back(Object(triangleVertices, Vector3((x), (0.0f), (z)), gDevice, fromFile.getImageFile(), "cube_box_NormalMap.png", objNr++));
 		}
@@ -610,7 +610,7 @@ void FirstRenderCall()
 	{
 		if (objects.at(i).getShouldRender() == true)
 		{
-			WorldCamera.doFustrumCulling(&objects.at(i));
+			//WorldCamera.doFustrumCulling(&objects.at(i));
 			if (objects.at(i).getShouldRender() == true && objects.at(i).getIsDead() == false)
 			{
    				Render(objects.at(i), nrOfVertexDrawn);
